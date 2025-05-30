@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSK to Confluent Cloud Migration Estimator</title>
+    <!-- Load React -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+    <!-- Load Babel for JSX support -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+    <div id="root">
+        <div class="p-4 bg-yellow-100 text-yellow-700">
+            Loading...
+        </div>
+    </div>
+
+    <!-- Debug script -->
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Error: ' + msg + '\nURL: ' + url + '\nLine: ' + lineNo + '\nColumn: ' + columnNo + '\nError object: ' + JSON.stringify(error));
+            return false;
+        };
+    </script>
+
+    <!-- Load our component -->
+    <script type="text/babel" src="msk-cc-migration-estimator.js"></script>
+
+    <!-- Render the app -->
+    <script type="text/babel">
+        console.log('Starting app render...');
+        try {
+            if (typeof App === 'undefined') {
+                throw new Error('App component is not defined');
+            }
+            console.log('App component found, rendering...');
+            ReactDOM.render(<App />, document.getElementById('root'));
+            console.log('App rendered successfully');
+        } catch (error) {
+            console.error('Error rendering app:', error);
+            document.getElementById('root').innerHTML = `
+                <div class="p-4 bg-red-100 text-red-700">
+                    Error rendering app: ${error.message}
+                    <br>
+                    <pre>${error.stack}</pre>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
