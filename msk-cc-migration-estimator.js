@@ -1043,6 +1043,34 @@ const App = () => {
                   <li><span className="font-medium">Storage Type:</span> {formData.storageType}</li>
                 </ul>
               </div>
+
+              {/* Target State */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-indigo-600 mb-2">Target State</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">Cluster Type:</span> {formData.targetClusterType}</li>
+                  <li><span className="font-medium">Region:</span> {formData.targetRegion}</li>
+                  <li><span className="font-medium">Environment:</span> {formData.targetEnvironment}</li>
+                  <li><span className="font-medium">Security Model:</span> {formData.targetSecurityModel}</li>
+                  <li><span className="font-medium">Monitoring:</span> {formData.targetMonitoring.replace(/_/g, ' ')}</li>
+                  <li><span className="font-medium">Logging:</span> {formData.targetLogging.replace(/_/g, ' ')}</li>
+                  <li><span className="font-medium">Automation:</span> {formData.targetAutomation}</li>
+                  <li><span className="font-medium">Compliance:</span> {formData.targetCompliance}</li>
+                </ul>
+              </div>
+
+              {/* Migration Goals */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-indigo-600 mb-2">Migration Goals</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">Primary Goal:</span> {formData.primaryGoal.replace(/_/g, ' ')}</li>
+                  <li><span className="font-medium">Secondary Goals:</span> {formData.secondaryGoals.map(goal => goal.replace(/_/g, ' ')).join(', ') || 'None'}</li>
+                  <li><span className="font-medium">Timeline Constraint:</span> {formData.timelineConstraint}</li>
+                  <li><span className="font-medium">Budget Constraint:</span> {formData.budgetConstraint}</li>
+                  <li><span className="font-medium">Risk Tolerance:</span> {formData.riskTolerance}</li>
+                  <li><span className="font-medium">Success Criteria:</span> {formData.successCriteria}</li>
+                </ul>
+              </div>
             </div>
 
             <h3 className="text-xl font-semibold text-indigo-700 mb-3">Complexity Breakdown by Category:</h3>
