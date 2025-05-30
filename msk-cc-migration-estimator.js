@@ -82,6 +82,24 @@ const App = () => {
     reservedPricing: 'no',
     dataRetention: 'standard',
     storageType: 'standard',
+
+    // Target State
+    targetClusterType: 'dedicated',
+    targetRegion: 'same',
+    targetEnvironment: 'production',
+    targetSecurityModel: 'rbac',
+    targetMonitoring: 'confluent_cloud',
+    targetLogging: 'confluent_cloud',
+    targetAutomation: 'terraform',
+    targetCompliance: 'none',
+
+    // Migration Goals
+    primaryGoal: 'cost_reduction',
+    secondaryGoals: [],
+    timelineConstraint: 'flexible',
+    budgetConstraint: 'flexible',
+    riskTolerance: 'medium',
+    successCriteria: 'basic',
   });
 
   const handleChange = (e) => {
@@ -89,6 +107,16 @@ const App = () => {
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  // Add function to handle multiple selections
+  const handleMultiSelect = (name, value) => {
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: prevData[name].includes(value)
+        ? prevData[name].filter(item => item !== value)
+        : [...prevData[name], value]
     }));
   };
 
@@ -104,6 +132,8 @@ const App = () => {
       performance: 0,
       dr: 0,
       cost: 0,
+      targetState: 0,
+      goals: 0
     };
 
     // --- General & Scope ---
@@ -256,6 +286,46 @@ const App = () => {
     if (formData.storageType === 'performance') categoryScores.cost += 2;
     else if (formData.storageType === 'custom') categoryScores.cost += 3;
 
+    // --- Target State ---
+    if (formData.targetClusterType === 'dedicated') categoryScores.targetState += 3;
+    else if (formData.targetClusterType === 'standard') categoryScores.targetState += 2;
+
+    if (formData.targetRegion === 'multi') categoryScores.targetState += 4;
+    else if (formData.targetRegion === 'different') categoryScores.targetState += 2;
+
+    if (formData.targetEnvironment === 'multi') categoryScores.targetState += 3;
+
+    if (formData.targetSecurityModel === 'hybrid') categoryScores.targetState += 3;
+    else if (formData.targetSecurityModel === 'rbac') categoryScores.targetState += 2;
+
+    if (formData.targetMonitoring === 'hybrid' || formData.targetMonitoring === 'custom') categoryScores.targetState += 2;
+    if (formData.targetLogging === 'hybrid' || formData.targetLogging === 'custom') categoryScores.targetState += 2;
+
+    if (formData.targetAutomation === 'custom') categoryScores.targetState += 3;
+    else if (formData.targetAutomation === 'terraform' || formData.targetAutomation === 'ansible') categoryScores.targetState += 2;
+
+    if (formData.targetCompliance === 'advanced') categoryScores.targetState += 4;
+    else if (formData.targetCompliance === 'basic') categoryScores.targetState += 2;
+
+    // --- Migration Goals ---
+    if (formData.primaryGoal === 'security' || formData.primaryGoal === 'reliability') categoryScores.goals += 3;
+    else if (formData.primaryGoal === 'scalability') categoryScores.goals += 2;
+
+    // Add points for each secondary goal
+    categoryScores.goals += formData.secondaryGoals.length;
+
+    if (formData.timelineConstraint === 'strict') categoryScores.goals += 4;
+    else if (formData.timelineConstraint === 'moderate') categoryScores.goals += 2;
+
+    if (formData.budgetConstraint === 'strict') categoryScores.goals += 3;
+    else if (formData.budgetConstraint === 'moderate') categoryScores.goals += 2;
+
+    if (formData.riskTolerance === 'low') categoryScores.goals += 3;
+    else if (formData.riskTolerance === 'high') categoryScores.goals += 2;
+
+    if (formData.successCriteria === 'comprehensive') categoryScores.goals += 3;
+    else if (formData.successCriteria === 'enhanced') categoryScores.goals += 2;
+
     for (const category in categoryScores) {
       totalScore += categoryScores[category];
     }
@@ -347,6 +417,26 @@ const App = () => {
               if (formData.reservedPricing === 'yes') specificRecs.push("Consider reserved pricing options for predictable workloads.");
               if (formData.dataRetention === 'extended') specificRecs.push("Implement tiered storage strategy for cost-effective long-term data retention.");
               break;
+            case 'targetState':
+              categoryName = 'Target State';
+              if (formData.targetClusterType === 'dedicated') specificRecs.push("Consider using a dedicated Confluent Cloud cluster for better performance and security.");
+              if (formData.targetRegion === 'multi') specificRecs.push("Plan for multi-region deployment to improve availability and reduce latency.");
+              if (formData.targetEnvironment === 'multi') specificRecs.push("Consider deploying to multiple environments to support different use cases.");
+              if (formData.targetSecurityModel === 'hybrid') specificRecs.push("Consider using a hybrid security model to balance RBAC and ACL control.");
+              if (formData.targetMonitoring === 'hybrid' || formData.targetMonitoring === 'custom') specificRecs.push("Consider using a hybrid monitoring approach to integrate with existing tools.");
+              if (formData.targetLogging === 'hybrid' || formData.targetLogging === 'custom') specificRecs.push("Consider using a hybrid logging approach to integrate with existing tools.");
+              if (formData.targetAutomation === 'custom') specificRecs.push("Consider using custom automation scripts or tools for better integration.");
+              if (formData.targetCompliance === 'advanced') specificRecs.push("Ensure Confluent Cloud's compliance certifications meet your regulatory needs.");
+              break;
+            case 'goals':
+              categoryName = 'Migration Goals';
+              if (formData.primaryGoal === 'security' || formData.primaryGoal === 'reliability') specificRecs.push("Focus on improving security and reliability in the migration.");
+              if (formData.primaryGoal === 'scalability') specificRecs.push("Focus on improving scalability in the migration.");
+              if (formData.timelineConstraint === 'strict') specificRecs.push("Consider extending the timeline if possible, or ensure sufficient dedicated resources for a rapid migration.");
+              if (formData.budgetConstraint === 'strict') specificRecs.push("Consider implementing cost-effective strategies for the migration.");
+              if (formData.riskTolerance === 'low') specificRecs.push("Consider implementing risk-mitigation strategies in the migration.");
+              if (formData.successCriteria === 'comprehensive') specificRecs.push("Focus on achieving full optimization in the migration.");
+              break;
             default:
               break;
           }
@@ -362,6 +452,67 @@ const App = () => {
 
     return recommendations;
   }, [totalScore, categoryScores, formData]);
+
+  // Add PDF generation function
+  const generatePDF = () => {
+    const element = document.getElementById('results-section');
+    if (!element) {
+      console.error('Results section not found');
+      return;
+    }
+
+    // Create a new window for PDF content
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      console.error('Could not open print window');
+      return;
+    }
+
+    // Write the content to the new window
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>MSK Migration Estimate</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              color: #333;
+            }
+            h2 { color: #4f46e5; }
+            h3 { color: #4f46e5; margin-top: 20px; }
+            .section { margin-bottom: 20px; }
+            .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+            .card { 
+              border: 1px solid #ddd;
+              padding: 15px;
+              border-radius: 8px;
+              background: #fff;
+            }
+            .card h4 { color: #4f46e5; margin-top: 0; }
+            ul { margin-left: 20px; }
+            li { margin-bottom: 5px; }
+            .score { font-weight: bold; }
+            .recommendation { margin-bottom: 10px; }
+          </style>
+        </head>
+        <body>
+          ${element.innerHTML}
+        </body>
+      </html>
+    `);
+
+    // Wait for content to load
+    printWindow.document.close();
+    printWindow.focus();
+
+    // Print to PDF
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-8 font-sans text-gray-800">
@@ -665,40 +816,252 @@ const App = () => {
               <option value="custom">Custom</option>
             </Question>
           </Section>
+
+          {/* Target State */}
+          <Section title="10. Target State">
+            <Question label="What type of Confluent Cloud cluster do you plan to use?" name="targetClusterType" type="select" value={formData.targetClusterType} onChange={handleChange}>
+              <option value="dedicated">Dedicated</option>
+              <option value="standard">Standard</option>
+              <option value="basic">Basic</option>
+              <option value="custom">Custom</option>
+            </Question>
+            <Question label="Where will your target Confluent Cloud cluster be located?" name="targetRegion" type="select" value={formData.targetRegion} onChange={handleChange}>
+              <option value="same">Same as current MSK region</option>
+              <option value="different">Different region</option>
+              <option value="multi">Multi-region</option>
+            </Question>
+            <Question label="What is the target environment type?" name="targetEnvironment" type="select" value={formData.targetEnvironment} onChange={handleChange}>
+              <option value="production">Production</option>
+              <option value="staging">Staging</option>
+              <option value="development">Development</option>
+              <option value="multi">Multiple environments</option>
+            </Question>
+            <Question label="What security model will you use in Confluent Cloud?" name="targetSecurityModel" type="select" value={formData.targetSecurityModel} onChange={handleChange}>
+              <option value="rbac">RBAC (Role-Based Access Control)</option>
+              <option value="acl">ACL (Access Control Lists)</option>
+              <option value="hybrid">Hybrid (RBAC + ACL)</option>
+            </Question>
+            <Question label="What monitoring solution will you use?" name="targetMonitoring" type="select" value={formData.targetMonitoring} onChange={handleChange}>
+              <option value="confluent_cloud">Confluent Cloud Monitoring</option>
+              <option value="custom">Custom Solution</option>
+              <option value="hybrid">Hybrid Approach</option>
+            </Question>
+            <Question label="What logging solution will you use?" name="targetLogging" type="select" value={formData.targetLogging} onChange={handleChange}>
+              <option value="confluent_cloud">Confluent Cloud Logging</option>
+              <option value="custom">Custom Solution</option>
+              <option value="hybrid">Hybrid Approach</option>
+            </Question>
+            <Question label="What automation approach will you use?" name="targetAutomation" type="select" value={formData.targetAutomation} onChange={handleChange}>
+              <option value="terraform">Terraform</option>
+              <option value="ansible">Ansible</option>
+              <option value="custom">Custom Scripts</option>
+              <option value="none">No Automation</option>
+            </Question>
+            <Question label="What compliance requirements need to be met?" name="targetCompliance" type="select" value={formData.targetCompliance} onChange={handleChange}>
+              <option value="none">None</option>
+              <option value="basic">Basic (SOC 2)</option>
+              <option value="advanced">Advanced (HIPAA, PCI)</option>
+              <option value="custom">Custom Requirements</option>
+            </Question>
+          </Section>
+
+          {/* Migration Goals */}
+          <Section title="11. Migration Goals">
+            <Question label="What is your primary migration goal?" name="primaryGoal" type="select" value={formData.primaryGoal} onChange={handleChange}>
+              <option value="cost_reduction">Cost Reduction</option>
+              <option value="simplified_ops">Simplified Operations</option>
+              <option value="better_features">Better Features</option>
+              <option value="scalability">Improved Scalability</option>
+              <option value="reliability">Enhanced Reliability</option>
+              <option value="security">Improved Security</option>
+            </Question>
+            <div className="space-y-2">
+              <label className="block text-md font-medium text-gray-700 mb-2">
+                Select secondary goals (multiple):
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {['cost_reduction', 'simplified_ops', 'better_features', 'scalability', 'reliability', 'security'].map(goal => (
+                  <label key={goal} className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.secondaryGoals.includes(goal)}
+                      onChange={() => handleMultiSelect('secondaryGoals', goal)}
+                      className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">
+                      {goal.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <Question label="What are your timeline constraints?" name="timelineConstraint" type="select" value={formData.timelineConstraint} onChange={handleChange}>
+              <option value="flexible">Flexible</option>
+              <option value="moderate">Moderate (3-6 months)</option>
+              <option value="strict">Strict ({'<'} 3 months)</option>
+            </Question>
+            <Question label="What are your budget constraints?" name="budgetConstraint" type="select" value={formData.budgetConstraint} onChange={handleChange}>
+              <option value="flexible">Flexible</option>
+              <option value="moderate">Moderate</option>
+              <option value="strict">Strict</option>
+            </Question>
+            <Question label="What is your risk tolerance?" name="riskTolerance" type="select" value={formData.riskTolerance} onChange={handleChange}>
+              <option value="low">Low (Minimal Risk)</option>
+              <option value="medium">Medium (Balanced)</option>
+              <option value="high">High (Aggressive)</option>
+            </Question>
+            <Question label="What are your success criteria?" name="successCriteria" type="select" value={formData.successCriteria} onChange={handleChange}>
+              <option value="basic">Basic (Successful Migration)</option>
+              <option value="enhanced">Enhanced (Improved Performance)</option>
+              <option value="comprehensive">Comprehensive (Full Optimization)</option>
+            </Question>
+          </Section>
         </form>
 
         {/* Results Section */}
         <div className="mt-10 p-6 bg-indigo-50 rounded-xl shadow-inner border border-indigo-200">
-          <h2 className="text-2xl font-bold text-indigo-800 mb-4">Migration Effort Estimate</h2>
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-            <p className="text-xl font-semibold text-gray-700">Overall Estimated Effort:</p>
-            <span className={`text-3xl font-extrabold px-4 py-2 rounded-lg ${
-              effortLevel === 'Low Effort' ? 'bg-green-200 text-green-800' :
-              effortLevel === 'Medium Effort' ? 'bg-yellow-200 text-yellow-800' :
-              effortLevel === 'High Effort' ? 'bg-orange-200 text-orange-800' :
-              'bg-red-200 text-red-800'
-            }`}>
-              {effortLevel}
-            </span>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-indigo-800">Migration Effort Estimate</h2>
+            <button
+              onClick={generatePDF}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clipRule="evenodd" />
+              </svg>
+              Download PDF
+            </button>
           </div>
-          <p className="text-lg text-gray-700 mb-4">Total Complexity Score: <span className="font-bold">{totalScore}</span></p>
+          <div id="results-section">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+              <p className="text-xl font-semibold text-gray-700">Overall Estimated Effort:</p>
+              <span className={`text-3xl font-extrabold px-4 py-2 rounded-lg ${
+                effortLevel === 'Low Effort' ? 'bg-green-200 text-green-800' :
+                effortLevel === 'Medium Effort' ? 'bg-yellow-200 text-yellow-800' :
+                effortLevel === 'High Effort' ? 'bg-orange-200 text-orange-800' :
+                'bg-red-200 text-red-800'
+              }`}>
+                {effortLevel}
+              </span>
+            </div>
+            <p className="text-lg text-gray-700 mb-4">Total Complexity Score: <span className="font-bold">{totalScore}</span></p>
 
-          <h3 className="text-xl font-semibold text-indigo-700 mb-3">Complexity Breakdown by Category:</h3>
-          <ul className="list-disc list-inside space-y-2 text-gray-700">
-            {Object.entries(categoryScores).map(([category, score]) => (
-              <li key={category} className="flex justify-between items-center">
-                <span className="capitalize font-medium">{category.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                <span className="font-bold text-lg">{score}</span>
-              </li>
-            ))}
-          </ul>
+            <h3 className="text-xl font-semibold text-indigo-700 mb-3">Selected Configuration:</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {/* General & Scope */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-indigo-600 mb-2">General & Scope</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">MSK Clusters:</span> {formData.numMskClusters}</li>
+                  <li><span className="font-medium">Timeline:</span> {formData.desiredTimeline.replace(/_/g, ' ')}</li>
+                  <li><span className="font-medium">Strict NFRs:</span> {formData.hasStrictNFRs}</li>
+                  <li><span className="font-medium">Team Experience:</span> {formData.teamKafkaExperience}</li>
+                  <li><span className="font-medium">Dedicated Team:</span> {formData.dedicatedMigrationTeam}</li>
+                </ul>
+              </div>
 
-          <h3 className="text-xl font-semibold text-indigo-700 mt-6 mb-3">Key Recommendations:</h3>
-          <ul className="list-disc list-inside space-y-2 text-gray-700">
-            {getRecommendations.map((rec, index) => (
-              <li key={index} dangerouslySetInnerHTML={{ __html: rec }} />
-            ))}
-          </ul>
+              {/* Kafka Core */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-indigo-600 mb-2">Kafka Core & Data Migration</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">Topics:</span> {formData.numTopics}</li>
+                  <li><span className="font-medium">Partitions:</span> {formData.numPartitions}</li>
+                  <li><span className="font-medium">Complex Configs:</span> {formData.hasComplexTopicConfigs}</li>
+                  <li><span className="font-medium">Data Migration:</span> {formData.historicalDataMigration}</li>
+                  <li><span className="font-medium">Downtime:</span> {formData.acceptableDowntime}</li>
+                </ul>
+              </div>
+
+              {/* Applications */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-indigo-600 mb-2">Applications & Connectivity</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">Applications:</span> {formData.numApplications}</li>
+                  <li><span className="font-medium">Diverse Languages:</span> {formData.diverseLanguages}</li>
+                  <li><span className="font-medium">Authentication:</span> {formData.mskAuthentication}</li>
+                  <li><span className="font-medium">Private Connectivity:</span> {formData.privateConnectivityRequired}</li>
+                  <li><span className="font-medium">Credential Management:</span> {formData.credentialManagement.replace(/_/g, ' ')}</li>
+                </ul>
+              </div>
+
+              {/* Ecosystem */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-indigo-600 mb-2">Ecosystem & Tools</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">Schema Registry:</span> {formData.usesSchemaRegistry}</li>
+                  <li><span className="font-medium">Kafka Connect:</span> {formData.usesKafkaConnect}</li>
+                  <li><span className="font-medium">ksqlDB:</span> {formData.usesKsqlDB}</li>
+                  <li><span className="font-medium">Stream Processing:</span> {formData.usesOtherStreamProcessing}</li>
+                  <li><span className="font-medium">Monitoring:</span> {formData.monitoringTools.replace(/_/g, ' ')}</li>
+                </ul>
+              </div>
+
+              {/* Network */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-indigo-600 mb-2">Network & Connectivity</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">Network Type:</span> {formData.networkType}</li>
+                  <li><span className="font-medium">VPC Peering:</span> {formData.vpcPeeringRequired}</li>
+                  <li><span className="font-medium">PrivateLink:</span> {formData.privateLinkRequired}</li>
+                  <li><span className="font-medium">Cross-Region:</span> {formData.crossRegionReplication}</li>
+                  <li><span className="font-medium">Bandwidth:</span> {formData.networkBandwidth}</li>
+                </ul>
+              </div>
+
+              {/* Performance */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-indigo-600 mb-2">Performance & Scaling</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">Throughput:</span> {formData.peakThroughput}</li>
+                  <li><span className="font-medium">Message Size:</span> {formData.messageSize}</li>
+                  <li><span className="font-medium">Retention:</span> {formData.retentionPeriod.replace(/_/g, ' ')}</li>
+                  <li><span className="font-medium">Auto Scaling:</span> {formData.autoScaling}</li>
+                  <li><span className="font-medium">Partition Scaling:</span> {formData.partitionScaling}</li>
+                </ul>
+              </div>
+
+              {/* DR & HA */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-indigo-600 mb-2">Disaster Recovery & HA</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">DR Strategy:</span> {formData.drStrategy.replace(/_/g, ' ')}</li>
+                  <li><span className="font-medium">Backup Frequency:</span> {formData.backupFrequency}</li>
+                  <li><span className="font-medium">Backup Retention:</span> {formData.backupRetention}</li>
+                  <li><span className="font-medium">Failover Time:</span> {formData.failoverTime}</li>
+                  <li><span className="font-medium">Multi-Region:</span> {formData.multiRegion}</li>
+                </ul>
+              </div>
+
+              {/* Cost */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-indigo-600 mb-2">Cost Analysis</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">Current MSK Cost:</span> {formData.currentMskCost}</li>
+                  <li><span className="font-medium">Cost Optimization:</span> {formData.costOptimization}</li>
+                  <li><span className="font-medium">Reserved Pricing:</span> {formData.reservedPricing}</li>
+                  <li><span className="font-medium">Data Retention:</span> {formData.dataRetention}</li>
+                  <li><span className="font-medium">Storage Type:</span> {formData.storageType}</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3 className="text-xl font-semibold text-indigo-700 mb-3">Complexity Breakdown by Category:</h3>
+            <ul className="list-disc list-inside space-y-2 text-gray-700">
+              {Object.entries(categoryScores).map(([category, score]) => (
+                <li key={category} className="flex justify-between items-center">
+                  <span className="capitalize font-medium">{category.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                  <span className="font-bold text-lg">{score}</span>
+                </li>
+              ))}
+            </ul>
+
+            <h3 className="text-xl font-semibold text-indigo-700 mt-6 mb-3">Key Recommendations:</h3>
+            <ul className="list-disc list-inside space-y-2 text-gray-700">
+              {getRecommendations.map((rec, index) => (
+                <li key={index} dangerouslySetInnerHTML={{ __html: rec }} />
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </div>
