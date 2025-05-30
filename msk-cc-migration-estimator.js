@@ -950,125 +950,155 @@ const App = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {/* General & Scope */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-indigo-600 mb-2">General & Scope</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">1. General & Scope</h4>
                 <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">MSK Clusters:</span> {formData.numMskClusters}</li>
-                  <li><span className="font-medium">Timeline:</span> {formData.desiredTimeline.replace(/_/g, ' ')}</li>
-                  <li><span className="font-medium">Strict NFRs:</span> {formData.hasStrictNFRs}</li>
-                  <li><span className="font-medium">Team Experience:</span> {formData.teamKafkaExperience}</li>
-                  <li><span className="font-medium">Dedicated Team:</span> {formData.dedicatedMigrationTeam}</li>
+                  <li><span className="font-medium">Number of MSK Clusters:</span> {formData.numMskClusters}</li>
+                  <li><span className="font-medium">Desired Timeline:</span> {formData.desiredTimeline.replace(/_/g, ' ')}</li>
+                  <li><span className="font-medium">Strict NFRs:</span> {formData.hasStrictNFRs === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Team Kafka Experience:</span> {formData.teamKafkaExperience.charAt(0).toUpperCase() + formData.teamKafkaExperience.slice(1)}</li>
+                  <li><span className="font-medium">Dedicated Migration Team:</span> {formData.dedicatedMigrationTeam === 'yes' ? 'Yes' : 'No'}</li>
                 </ul>
               </div>
 
               {/* Kafka Core */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-indigo-600 mb-2">Kafka Core & Data Migration</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">2. Kafka Core & Data Migration</h4>
                 <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Topics:</span> {formData.numTopics}</li>
-                  <li><span className="font-medium">Partitions:</span> {formData.numPartitions}</li>
-                  <li><span className="font-medium">Complex Configs:</span> {formData.hasComplexTopicConfigs}</li>
-                  <li><span className="font-medium">Data Migration:</span> {formData.historicalDataMigration}</li>
-                  <li><span className="font-medium">Downtime:</span> {formData.acceptableDowntime}</li>
+                  <li><span className="font-medium">Number of Topics:</span> {formData.numTopics}</li>
+                  <li><span className="font-medium">Number of Partitions:</span> {formData.numPartitions}</li>
+                  <li><span className="font-medium">Complex Topic Configs:</span> {formData.hasComplexTopicConfigs === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Historical Data Migration:</span> {formData.historicalDataMigration.charAt(0).toUpperCase() + formData.historicalDataMigration.slice(1)}</li>
+                  <li><span className="font-medium">Acceptable Downtime:</span> {formData.acceptableDowntime.charAt(0).toUpperCase() + formData.acceptableDowntime.slice(1)}</li>
+                  <li><span className="font-medium">Data Migration Tool:</span> {formData.preferredDataMigrationTool.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
+                  <li><span className="font-medium">Number of Consumer Groups:</span> {formData.numConsumerGroups}</li>
+                  <li><span className="font-medium">Offset Migration Required:</span> {formData.offsetMigrationRequired === 'yes' ? 'Yes' : 'No'}</li>
                 </ul>
               </div>
 
               {/* Applications */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-indigo-600 mb-2">Applications & Connectivity</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">3. Applications & Connectivity</h4>
                 <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Applications:</span> {formData.numApplications}</li>
-                  <li><span className="font-medium">Diverse Languages:</span> {formData.diverseLanguages}</li>
-                  <li><span className="font-medium">Authentication:</span> {formData.mskAuthentication}</li>
-                  <li><span className="font-medium">Private Connectivity:</span> {formData.privateConnectivityRequired}</li>
-                  <li><span className="font-medium">Credential Management:</span> {formData.credentialManagement.replace(/_/g, ' ')}</li>
+                  <li><span className="font-medium">Number of Applications:</span> {formData.numApplications}</li>
+                  <li><span className="font-medium">Diverse Languages:</span> {formData.diverseLanguages === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">MSK Authentication:</span> {formData.mskAuthentication.toUpperCase()}</li>
+                  <li><span className="font-medium">Private Connectivity Required:</span> {formData.privateConnectivityRequired === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Credential Management:</span> {formData.credentialManagement.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
                 </ul>
               </div>
 
               {/* Ecosystem */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-indigo-600 mb-2">Ecosystem & Tools</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">4. Ecosystem & Tools</h4>
                 <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Schema Registry:</span> {formData.usesSchemaRegistry}</li>
-                  <li><span className="font-medium">Kafka Connect:</span> {formData.usesKafkaConnect}</li>
-                  <li><span className="font-medium">ksqlDB:</span> {formData.usesKsqlDB}</li>
-                  <li><span className="font-medium">Stream Processing:</span> {formData.usesOtherStreamProcessing}</li>
-                  <li><span className="font-medium">Monitoring:</span> {formData.monitoringTools.replace(/_/g, ' ')}</li>
+                  <li><span className="font-medium">Schema Registry:</span> {formData.usesSchemaRegistry === 'yes' ? 'Yes' : 'No'}</li>
+                  {formData.usesSchemaRegistry === 'yes' && (
+                    <li><span className="font-medium">Schema Registry Type:</span> {formData.schemaRegistryType.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
+                  )}
+                  <li><span className="font-medium">Kafka Connect:</span> {formData.usesKafkaConnect === 'yes' ? 'Yes' : 'No'}</li>
+                  {formData.usesKafkaConnect === 'yes' && (
+                    <>
+                      <li><span className="font-medium">Connect Type:</span> {formData.kafkaConnectType.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
+                      <li><span className="font-medium">Number of Connectors:</span> {formData.numConnectors}</li>
+                    </>
+                  )}
+                  <li><span className="font-medium">ksqlDB:</span> {formData.usesKsqlDB === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Other Stream Processing:</span> {formData.usesOtherStreamProcessing === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Monitoring Tools:</span> {formData.monitoringTools.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
+                  <li><span className="font-medium">Logging Tools:</span> {formData.loggingTools.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
+                  <li><span className="font-medium">Custom MSK Automation:</span> {formData.customMskAutomation === 'yes' ? 'Yes' : 'No'}</li>
+                </ul>
+              </div>
+
+              {/* Security */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-indigo-600 mb-2">5. Security & Governance</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">ACL Management:</span> {formData.aclManagement.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
+                  <li><span className="font-medium">Number of Service Accounts:</span> {formData.numServiceAccounts}</li>
+                  <li><span className="font-medium">Auditing Requirements:</span> {formData.auditingRequirements.charAt(0).toUpperCase() + formData.auditingRequirements.slice(1)}</li>
+                  <li><span className="font-medium">Compliance Requirements:</span> {formData.complianceRequirements === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Custom Key Encryption:</span> {formData.customKeyEncryption === 'yes' ? 'Yes' : 'No'}</li>
                 </ul>
               </div>
 
               {/* Network */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-indigo-600 mb-2">Network & Connectivity</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">6. Network & Connectivity</h4>
                 <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Network Type:</span> {formData.networkType}</li>
-                  <li><span className="font-medium">VPC Peering:</span> {formData.vpcPeeringRequired}</li>
-                  <li><span className="font-medium">PrivateLink:</span> {formData.privateLinkRequired}</li>
-                  <li><span className="font-medium">Cross-Region:</span> {formData.crossRegionReplication}</li>
-                  <li><span className="font-medium">Bandwidth:</span> {formData.networkBandwidth}</li>
+                  <li><span className="font-medium">Network Type:</span> {formData.networkType.charAt(0).toUpperCase() + formData.networkType.slice(1)}</li>
+                  <li><span className="font-medium">VPC Peering Required:</span> {formData.vpcPeeringRequired === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">PrivateLink Required:</span> {formData.privateLinkRequired === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Cross-Region Replication:</span> {formData.crossRegionReplication === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Network Bandwidth:</span> {formData.networkBandwidth.charAt(0).toUpperCase() + formData.networkBandwidth.slice(1)}</li>
+                  <li><span className="font-medium">Network Latency:</span> {formData.networkLatency.charAt(0).toUpperCase() + formData.networkLatency.slice(1)}</li>
+                  <li><span className="font-medium">Network Security Groups:</span> {formData.networkSecurityGroups.charAt(0).toUpperCase() + formData.networkSecurityGroups.slice(1)}</li>
                 </ul>
               </div>
 
               {/* Performance */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-indigo-600 mb-2">Performance & Scaling</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">7. Performance & Scaling</h4>
                 <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Throughput:</span> {formData.peakThroughput}</li>
-                  <li><span className="font-medium">Message Size:</span> {formData.messageSize}</li>
-                  <li><span className="font-medium">Retention:</span> {formData.retentionPeriod.replace(/_/g, ' ')}</li>
-                  <li><span className="font-medium">Auto Scaling:</span> {formData.autoScaling}</li>
-                  <li><span className="font-medium">Partition Scaling:</span> {formData.partitionScaling}</li>
+                  <li><span className="font-medium">Peak Throughput:</span> {formData.peakThroughput.charAt(0).toUpperCase() + formData.peakThroughput.slice(1)}</li>
+                  <li><span className="font-medium">Message Size:</span> {formData.messageSize.charAt(0).toUpperCase() + formData.messageSize.slice(1)}</li>
+                  <li><span className="font-medium">Retention Period:</span> {formData.retentionPeriod.replace(/_/g, ' ')}</li>
+                  <li><span className="font-medium">Auto Scaling:</span> {formData.autoScaling === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Partition Scaling:</span> {formData.partitionScaling.charAt(0).toUpperCase() + formData.partitionScaling.slice(1)}</li>
+                  <li><span className="font-medium">Broker Scaling:</span> {formData.brokerScaling.charAt(0).toUpperCase() + formData.brokerScaling.slice(1)}</li>
                 </ul>
               </div>
 
               {/* DR & HA */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-indigo-600 mb-2">Disaster Recovery & HA</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">8. Disaster Recovery & HA</h4>
                 <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">DR Strategy:</span> {formData.drStrategy.replace(/_/g, ' ')}</li>
-                  <li><span className="font-medium">Backup Frequency:</span> {formData.backupFrequency}</li>
-                  <li><span className="font-medium">Backup Retention:</span> {formData.backupRetention}</li>
-                  <li><span className="font-medium">Failover Time:</span> {formData.failoverTime}</li>
-                  <li><span className="font-medium">Multi-Region:</span> {formData.multiRegion}</li>
+                  <li><span className="font-medium">DR Strategy:</span> {formData.drStrategy.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
+                  <li><span className="font-medium">Backup Frequency:</span> {formData.backupFrequency.charAt(0).toUpperCase() + formData.backupFrequency.slice(1)}</li>
+                  <li><span className="font-medium">Backup Retention:</span> {formData.backupRetention.replace(/_/g, ' ')}</li>
+                  <li><span className="font-medium">Failover Time:</span> {formData.failoverTime.charAt(0).toUpperCase() + formData.failoverTime.slice(1)}</li>
+                  <li><span className="font-medium">Multi-Region:</span> {formData.multiRegion === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Replication Factor:</span> {formData.replicationFactor}</li>
                 </ul>
               </div>
 
               {/* Cost */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-indigo-600 mb-2">Cost Analysis</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">9. Cost Analysis</h4>
                 <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Current MSK Cost:</span> {formData.currentMskCost}</li>
-                  <li><span className="font-medium">Cost Optimization:</span> {formData.costOptimization}</li>
-                  <li><span className="font-medium">Reserved Pricing:</span> {formData.reservedPricing}</li>
-                  <li><span className="font-medium">Data Retention:</span> {formData.dataRetention}</li>
-                  <li><span className="font-medium">Storage Type:</span> {formData.storageType}</li>
+                  <li><span className="font-medium">Current MSK Cost:</span> {formData.currentMskCost.charAt(0).toUpperCase() + formData.currentMskCost.slice(1)}</li>
+                  <li><span className="font-medium">Cost Optimization:</span> {formData.costOptimization === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Reserved Pricing:</span> {formData.reservedPricing === 'yes' ? 'Yes' : 'No'}</li>
+                  <li><span className="font-medium">Data Retention:</span> {formData.dataRetention.charAt(0).toUpperCase() + formData.dataRetention.slice(1)}</li>
+                  <li><span className="font-medium">Storage Type:</span> {formData.storageType.charAt(0).toUpperCase() + formData.storageType.slice(1)}</li>
                 </ul>
               </div>
 
               {/* Target State */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-indigo-600 mb-2">Target State</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">10. Target State</h4>
                 <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Cluster Type:</span> {formData.targetClusterType}</li>
-                  <li><span className="font-medium">Region:</span> {formData.targetRegion}</li>
-                  <li><span className="font-medium">Environment:</span> {formData.targetEnvironment}</li>
-                  <li><span className="font-medium">Security Model:</span> {formData.targetSecurityModel}</li>
-                  <li><span className="font-medium">Monitoring:</span> {formData.targetMonitoring.replace(/_/g, ' ')}</li>
-                  <li><span className="font-medium">Logging:</span> {formData.targetLogging.replace(/_/g, ' ')}</li>
-                  <li><span className="font-medium">Automation:</span> {formData.targetAutomation}</li>
-                  <li><span className="font-medium">Compliance:</span> {formData.targetCompliance}</li>
+                  <li><span className="font-medium">Cluster Type:</span> {formData.targetClusterType.charAt(0).toUpperCase() + formData.targetClusterType.slice(1)}</li>
+                  <li><span className="font-medium">Region:</span> {formData.targetRegion.charAt(0).toUpperCase() + formData.targetRegion.slice(1)}</li>
+                  <li><span className="font-medium">Environment:</span> {formData.targetEnvironment.charAt(0).toUpperCase() + formData.targetEnvironment.slice(1)}</li>
+                  <li><span className="font-medium">Security Model:</span> {formData.targetSecurityModel.toUpperCase()}</li>
+                  <li><span className="font-medium">Monitoring:</span> {formData.targetMonitoring.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
+                  <li><span className="font-medium">Logging:</span> {formData.targetLogging.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
+                  <li><span className="font-medium">Automation:</span> {formData.targetAutomation.charAt(0).toUpperCase() + formData.targetAutomation.slice(1)}</li>
+                  <li><span className="font-medium">Compliance:</span> {formData.targetCompliance.charAt(0).toUpperCase() + formData.targetCompliance.slice(1)}</li>
                 </ul>
               </div>
 
               {/* Migration Goals */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-indigo-600 mb-2">Migration Goals</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">11. Migration Goals</h4>
                 <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Primary Goal:</span> {formData.primaryGoal.replace(/_/g, ' ')}</li>
-                  <li><span className="font-medium">Secondary Goals:</span> {formData.secondaryGoals.map(goal => goal.replace(/_/g, ' ')).join(', ') || 'None'}</li>
-                  <li><span className="font-medium">Timeline Constraint:</span> {formData.timelineConstraint}</li>
-                  <li><span className="font-medium">Budget Constraint:</span> {formData.budgetConstraint}</li>
-                  <li><span className="font-medium">Risk Tolerance:</span> {formData.riskTolerance}</li>
-                  <li><span className="font-medium">Success Criteria:</span> {formData.successCriteria}</li>
+                  <li><span className="font-medium">Primary Goal:</span> {formData.primaryGoal.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
+                  <li><span className="font-medium">Secondary Goals:</span> {formData.secondaryGoals.length > 0 ? formData.secondaryGoals.map(goal => goal.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')).join(', ') : 'None'}</li>
+                  <li><span className="font-medium">Timeline Constraint:</span> {formData.timelineConstraint.charAt(0).toUpperCase() + formData.timelineConstraint.slice(1)}</li>
+                  <li><span className="font-medium">Budget Constraint:</span> {formData.budgetConstraint.charAt(0).toUpperCase() + formData.budgetConstraint.slice(1)}</li>
+                  <li><span className="font-medium">Risk Tolerance:</span> {formData.riskTolerance.charAt(0).toUpperCase() + formData.riskTolerance.slice(1)}</li>
+                  <li><span className="font-medium">Success Criteria:</span> {formData.successCriteria.charAt(0).toUpperCase() + formData.successCriteria.slice(1)}</li>
                 </ul>
               </div>
             </div>
