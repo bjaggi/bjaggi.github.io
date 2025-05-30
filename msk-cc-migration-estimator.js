@@ -50,6 +50,38 @@ const App = () => {
     auditingRequirements: 'basic',
     complianceRequirements: 'no',
     customKeyEncryption: 'no',
+
+    // Network & Connectivity
+    networkType: 'public',
+    vpcPeeringRequired: 'no',
+    privateLinkRequired: 'no',
+    crossRegionReplication: 'no',
+    networkBandwidth: 'medium',
+    networkLatency: 'medium',
+    networkSecurityGroups: 'basic',
+
+    // Performance & Scaling
+    peakThroughput: 'medium',
+    messageSize: 'small',
+    retentionPeriod: '7_days',
+    autoScaling: 'no',
+    partitionScaling: 'manual',
+    brokerScaling: 'manual',
+
+    // Disaster Recovery & High Availability
+    drStrategy: 'none',
+    backupFrequency: 'none',
+    backupRetention: 'none',
+    failoverTime: 'none',
+    multiRegion: 'no',
+    replicationFactor: '3',
+
+    // Cost Analysis & Optimization
+    currentMskCost: 'unknown',
+    costOptimization: 'no',
+    reservedPricing: 'no',
+    dataRetention: 'standard',
+    storageType: 'standard',
   });
 
   const handleChange = (e) => {
@@ -68,6 +100,10 @@ const App = () => {
       applications: 0,
       ecosystem: 0,
       security: 0,
+      network: 0,
+      performance: 0,
+      dr: 0,
+      cost: 0,
     };
 
     // --- General & Scope ---
@@ -158,6 +194,67 @@ const App = () => {
 
     if (formData.customKeyEncryption === 'yes') categoryScores.security += 4;
 
+    // --- Network & Connectivity ---
+    if (formData.networkType === 'private' || formData.networkType === 'hybrid') categoryScores.network += 3;
+    
+    if (formData.vpcPeeringRequired === 'yes') categoryScores.network += 2;
+    if (formData.privateLinkRequired === 'yes') categoryScores.network += 2;
+    if (formData.crossRegionReplication === 'yes') categoryScores.network += 3;
+
+    if (formData.networkBandwidth === 'high') categoryScores.network += 3;
+    else if (formData.networkBandwidth === 'medium') categoryScores.network += 2;
+
+    if (formData.networkLatency === 'low') categoryScores.network += 3;
+    else if (formData.networkLatency === 'medium') categoryScores.network += 2;
+
+    if (formData.networkSecurityGroups === 'strict') categoryScores.network += 3;
+    else if (formData.networkSecurityGroups === 'advanced') categoryScores.network += 2;
+
+    // --- Performance & Scaling ---
+    if (formData.peakThroughput === 'high') categoryScores.performance += 4;
+    else if (formData.peakThroughput === 'medium') categoryScores.performance += 2;
+
+    if (formData.messageSize === 'large') categoryScores.performance += 2;
+
+    if (formData.retentionPeriod === '90_days' || formData.retentionPeriod === 'custom') categoryScores.performance += 3;
+    else if (formData.retentionPeriod === '30_days') categoryScores.performance += 2;
+
+    if (formData.autoScaling === 'yes') categoryScores.performance += 3;
+
+    if (formData.partitionScaling === 'automatic') categoryScores.performance += 2;
+    if (formData.brokerScaling === 'automatic') categoryScores.performance += 2;
+
+    // --- Disaster Recovery & High Availability ---
+    if (formData.drStrategy === 'active_active') categoryScores.dr += 5;
+    else if (formData.drStrategy === 'active_passive') categoryScores.dr += 3;
+    else if (formData.drStrategy === 'basic') categoryScores.dr += 2;
+
+    if (formData.backupFrequency === 'daily') categoryScores.dr += 3;
+    else if (formData.backupFrequency === 'weekly') categoryScores.dr += 2;
+
+    if (formData.backupRetention === '90_days' || formData.backupRetention === 'custom') categoryScores.dr += 3;
+    else if (formData.backupRetention === '30_days') categoryScores.dr += 2;
+
+    if (formData.failoverTime === 'minutes') categoryScores.dr += 4;
+    else if (formData.failoverTime === 'hours') categoryScores.dr += 2;
+
+    if (formData.multiRegion === 'yes') categoryScores.dr += 4;
+
+    if (formData.replicationFactor === '3') categoryScores.dr += 2;
+    else if (formData.replicationFactor === 'custom') categoryScores.dr += 3;
+
+    // --- Cost Analysis & Optimization ---
+    if (formData.currentMskCost === 'high') categoryScores.cost += 3;
+    else if (formData.currentMskCost === 'medium') categoryScores.cost += 2;
+
+    if (formData.costOptimization === 'yes') categoryScores.cost += 2;
+    if (formData.reservedPricing === 'yes') categoryScores.cost += 2;
+
+    if (formData.dataRetention === 'extended') categoryScores.cost += 3;
+    else if (formData.dataRetention === 'custom') categoryScores.cost += 2;
+
+    if (formData.storageType === 'performance') categoryScores.cost += 2;
+    else if (formData.storageType === 'custom') categoryScores.cost += 3;
 
     for (const category in categoryScores) {
       totalScore += categoryScores[category];
@@ -220,6 +317,35 @@ const App = () => {
               if (formData.aclManagement === 'iam_policies') specificRecs.push("Translate IAM policies to Confluent Cloud's RBAC model. This requires careful planning and testing of permissions.");
               if (formData.complianceRequirements === 'yes') specificRecs.push("Thoroughly review Confluent Cloud's compliance certifications and ensure they meet your regulatory needs.");
               if (formData.customKeyEncryption === 'yes') specificRecs.push("Verify Confluent Cloud's support for customer-managed encryption keys if required.");
+              break;
+            case 'network':
+              categoryName = 'Network & Connectivity';
+              if (formData.networkType === 'private' || formData.networkType === 'hybrid') specificRecs.push("Plan for private network connectivity using AWS PrivateLink or VPC Peering with Confluent Cloud.");
+              if (formData.vpcPeeringRequired === 'yes' || formData.privateLinkRequired === 'yes') specificRecs.push("Ensure proper network configuration and security groups are in place for private connectivity.");
+              if (formData.crossRegionReplication === 'yes') specificRecs.push("Design and implement cross-region replication strategy using Confluent Cloud's multi-region capabilities.");
+              if (formData.networkBandwidth === 'high' || formData.networkLatency === 'low') specificRecs.push("Consider dedicated network connectivity options for high bandwidth/low latency requirements.");
+              break;
+            case 'performance':
+              categoryName = 'Performance & Scaling';
+              if (formData.peakThroughput === 'high') specificRecs.push("Plan for appropriate cluster sizing and consider dedicated clusters for high-throughput workloads.");
+              if (formData.messageSize === 'large') specificRecs.push("Optimize message size and consider compression for large messages.");
+              if (formData.retentionPeriod === '90_days' || formData.retentionPeriod === 'custom') specificRecs.push("Plan for appropriate storage capacity and consider tiered storage options.");
+              if (formData.autoScaling === 'yes') specificRecs.push("Implement and test auto-scaling policies for both partitions and brokers.");
+              break;
+            case 'dr':
+              categoryName = 'Disaster Recovery & High Availability';
+              if (formData.drStrategy === 'active_active') specificRecs.push("Implement active-active replication across regions using Confluent Cloud's multi-region capabilities.");
+              if (formData.drStrategy === 'active_passive') specificRecs.push("Set up active-passive replication with appropriate failover procedures.");
+              if (formData.backupFrequency === 'daily' || formData.backupFrequency === 'weekly') specificRecs.push("Implement regular backup procedures and test restore processes.");
+              if (formData.failoverTime === 'minutes') specificRecs.push("Design and test rapid failover procedures with minimal data loss.");
+              if (formData.multiRegion === 'yes') specificRecs.push("Plan for multi-region deployment and ensure proper replication configuration.");
+              break;
+            case 'cost':
+              categoryName = 'Cost Analysis & Optimization';
+              if (formData.currentMskCost === 'high') specificRecs.push("Analyze current MSK costs and compare with Confluent Cloud pricing to identify optimization opportunities.");
+              if (formData.costOptimization === 'yes') specificRecs.push("Implement cost optimization strategies such as appropriate cluster sizing and storage tiering.");
+              if (formData.reservedPricing === 'yes') specificRecs.push("Consider reserved pricing options for predictable workloads.");
+              if (formData.dataRetention === 'extended') specificRecs.push("Implement tiered storage strategy for cost-effective long-term data retention.");
               break;
             default:
               break;
@@ -398,6 +524,145 @@ const App = () => {
             <Question label="Do you require customer-managed encryption keys (CMKs) for data at rest?" name="customKeyEncryption" type="select" value={formData.customKeyEncryption} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
+            </Question>
+          </Section>
+
+          {/* Network & Connectivity */}
+          <Section title="6. Network & Connectivity">
+            <Question label="What type of network connectivity do you require?" name="networkType" type="select" value={formData.networkType} onChange={handleChange}>
+              <option value="public">Public Internet</option>
+              <option value="private">Private Network</option>
+              <option value="hybrid">Hybrid (Both)</option>
+            </Question>
+            <Question label="Is VPC Peering required for Confluent Cloud connectivity?" name="vpcPeeringRequired" type="select" value={formData.vpcPeeringRequired} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="Is AWS PrivateLink required for Confluent Cloud connectivity?" name="privateLinkRequired" type="select" value={formData.privateLinkRequired} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="Do you require cross-region replication?" name="crossRegionReplication" type="select" value={formData.crossRegionReplication} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="What is your expected network bandwidth requirement?" name="networkBandwidth" type="select" value={formData.networkBandwidth} onChange={handleChange}>
+              <option value="low">Low ({'<'} 10 Mbps)</option>
+              <option value="medium">Medium (10-100 Mbps)</option>
+              <option value="high">High ({'>'} 100 Mbps)</option>
+            </Question>
+            <Question label="What are your network latency requirements?" name="networkLatency" type="select" value={formData.networkLatency} onChange={handleChange}>
+              <option value="low">Low ({'<'} 10ms)</option>
+              <option value="medium">Medium (10-50ms)</option>
+              <option value="high">High ({'>'} 50ms)</option>
+            </Question>
+            <Question label="What level of network security group configuration do you require?" name="networkSecurityGroups" type="select" value={formData.networkSecurityGroups} onChange={handleChange}>
+              <option value="basic">Basic (Default)</option>
+              <option value="advanced">Advanced (Custom)</option>
+              <option value="strict">Strict (Highly restricted)</option>
+            </Question>
+          </Section>
+
+          {/* Performance & Scaling */}
+          <Section title="7. Performance & Scaling">
+            <Question label="What is your expected peak throughput?" name="peakThroughput" type="select" value={formData.peakThroughput} onChange={handleChange}>
+              <option value="low">Low ({'<'} 1 MB/s)</option>
+              <option value="medium">Medium (1-10 MB/s)</option>
+              <option value="high">High ({'>'} 10 MB/s)</option>
+            </Question>
+            <Question label="What is your typical message size?" name="messageSize" type="select" value={formData.messageSize} onChange={handleChange}>
+              <option value="small">Small ({'<'} 1KB)</option>
+              <option value="medium">Medium (1-10KB)</option>
+              <option value="large">Large ({'>'} 10KB)</option>
+            </Question>
+            <Question label="What is your data retention period requirement?" name="retentionPeriod" type="select" value={formData.retentionPeriod} onChange={handleChange}>
+              <option value="1_day">1 Day</option>
+              <option value="7_days">7 Days</option>
+              <option value="30_days">30 Days</option>
+              <option value="90_days">90 Days</option>
+              <option value="custom">Custom</option>
+            </Question>
+            <Question label="Do you require automatic scaling?" name="autoScaling" type="select" value={formData.autoScaling} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="How do you handle partition scaling?" name="partitionScaling" type="select" value={formData.partitionScaling} onChange={handleChange}>
+              <option value="manual">Manual</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="automatic">Automatic</option>
+            </Question>
+            <Question label="How do you handle broker scaling?" name="brokerScaling" type="select" value={formData.brokerScaling} onChange={handleChange}>
+              <option value="manual">Manual</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="automatic">Automatic</option>
+            </Question>
+          </Section>
+
+          {/* Disaster Recovery & High Availability */}
+          <Section title="8. Disaster Recovery & High Availability">
+            <Question label="What is your DR strategy?" name="drStrategy" type="select" value={formData.drStrategy} onChange={handleChange}>
+              <option value="none">None</option>
+              <option value="basic">Basic (Backup & Restore)</option>
+              <option value="active_passive">Active-Passive</option>
+              <option value="active_active">Active-Active</option>
+            </Question>
+            <Question label="What is your backup frequency requirement?" name="backupFrequency" type="select" value={formData.backupFrequency} onChange={handleChange}>
+              <option value="none">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="custom">Custom</option>
+            </Question>
+            <Question label="What is your backup retention requirement?" name="backupRetention" type="select" value={formData.backupRetention} onChange={handleChange}>
+              <option value="none">None</option>
+              <option value="7_days">7 Days</option>
+              <option value="30_days">30 Days</option>
+              <option value="90_days">90 Days</option>
+              <option value="custom">Custom</option>
+            </Question>
+            <Question label="What is your acceptable failover time?" name="failoverTime" type="select" value={formData.failoverTime} onChange={handleChange}>
+              <option value="none">None</option>
+              <option value="minutes">Minutes</option>
+              <option value="hours">Hours</option>
+              <option value="days">Days</option>
+            </Question>
+            <Question label="Do you require multi-region deployment?" name="multiRegion" type="select" value={formData.multiRegion} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="What replication factor do you require?" name="replicationFactor" type="select" value={formData.replicationFactor} onChange={handleChange}>
+              <option value="1">1 (No replication)</option>
+              <option value="2">2</option>
+              <option value="3">3 (Recommended)</option>
+              <option value="custom">Custom</option>
+            </Question>
+          </Section>
+
+          {/* Cost Analysis & Optimization */}
+          <Section title="9. Cost Analysis & Optimization">
+            <Question label="What is your current MSK cost per month?" name="currentMskCost" type="select" value={formData.currentMskCost} onChange={handleChange}>
+              <option value="unknown">Unknown</option>
+              <option value="low">{'<'} $1,000</option>
+              <option value="medium">$1,000 - $5,000</option>
+              <option value="high">{'>'} $5,000</option>
+            </Question>
+            <Question label="Do you require cost optimization strategies?" name="costOptimization" type="select" value={formData.costOptimization} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="Are you interested in reserved pricing?" name="reservedPricing" type="select" value={formData.reservedPricing} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="What is your data retention strategy?" name="dataRetention" type="select" value={formData.dataRetention} onChange={handleChange}>
+              <option value="standard">Standard (7 days)</option>
+              <option value="extended">Extended (30+ days)</option>
+              <option value="minimal">Minimal (1-3 days)</option>
+              <option value="custom">Custom</option>
+            </Question>
+            <Question label="What type of storage do you require?" name="storageType" type="select" value={formData.storageType} onChange={handleChange}>
+              <option value="standard">Standard</option>
+              <option value="performance">Performance</option>
+              <option value="custom">Custom</option>
             </Question>
           </Section>
         </form>
