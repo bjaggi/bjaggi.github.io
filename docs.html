@@ -8,6 +8,8 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #F5F9FF;
+            color: #0A3D62;
         }
         .content {
             max-width: 800px;
@@ -17,39 +19,102 @@
             margin-bottom: 2rem;
         }
         .category h2 {
-            color: #4f46e5;
-            border-bottom: 2px solid #e5e7eb;
+            color: #0A3D62;
+            border-bottom: 2px solid #E5E7EB;
             padding-bottom: 0.5rem;
             margin-bottom: 1rem;
         }
         .category h3 {
-            color: #4f46e5;
+            color: #0A3D62;
             margin-top: 1.5rem;
             margin-bottom: 1rem;
         }
         .points {
-            color: #6b7280;
+            color: #0A3D62;
             font-size: 0.9rem;
         }
         .effort-level {
-            background-color: #f3f4f6;
+            background-color: #ffffff;
             border-radius: 0.5rem;
             padding: 1rem;
             margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #E5E7EB;
         }
         .effort-level h3 {
-            color: #1f2937;
+            color: #0A3D62;
             margin-top: 0;
+        }
+        a {
+            color: #0A85EA;
+        }
+        a:hover {
+            color: #0A3D62;
+        }
+        .text-primary {
+            color: #0A85EA;
+        }
+        .text-dark {
+            color: #0A3D62;
+        }
+        .text-accent {
+            color: #00A4EF;
+        }
+        .bg-primary {
+            background-color: #0A85EA;
+        }
+        .bg-dark {
+            background-color: #0A3D62;
+        }
+        .bg-accent {
+            background-color: #00A4EF;
+        }
+        .hover\:text-dark:hover {
+            color: #0A3D62;
+        }
+        .hover\:bg-dark:hover {
+            background-color: #0A3D62;
+        }
+        .border-primary {
+            border-color: #0A85EA;
+        }
+        .focus\:ring-primary:focus {
+            --tw-ring-color: #0A85EA;
+        }
+        .focus\:border-primary:focus {
+            border-color: #0A85EA;
+        }
+        .logo-container {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1000;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .logo-container img {
+            height: 40px;
+            width: auto;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #0A3D62;
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
+    <div class="logo-container">
+        <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
+            <img src="assets/image.png" alt="Confluent Logo">
+        </a>
+    </div>
     <div class="container mx-auto px-4 py-8">
-        <div class="content bg-white shadow-lg rounded-lg p-8">
+        <div class="content shadow-lg rounded-lg p-8">
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold mb-2">AWS MSK to Confluent Cloud Migration Estimator</h1>
-                <p class="text-gray-600">Documentation and Scoring Guide</p>
-                <a href="index.html" class="text-indigo-600 hover:text-indigo-800 underline mt-4 inline-block">← Back to Estimator</a>
+                <h1 class="text-3xl font-bold mb-2 text-dark">AWS MSK to Confluent Cloud Migration Estimator</h1>
+                <p class="text-dark">Documentation and Scoring Guide</p>
+                <a href="index.html" class="text-primary hover:text-dark underline mt-4 inline-block">← Back to Estimator</a>
             </div>
 
             <div class="category">

@@ -480,8 +480,8 @@ const App = () => {
               padding: 20px;
               color: #333;
             }
-            h2 { color: #4f46e5; }
-            h3 { color: #4f46e5; margin-top: 20px; }
+            h2 { color: #0A3D62; }
+            h3 { color: #0A3D62; margin-top: 20px; }
             .section { margin-bottom: 20px; }
             .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
             .card { 
@@ -490,7 +490,7 @@ const App = () => {
               border-radius: 8px;
               background: #fff;
             }
-            .card h4 { color: #4f46e5; margin-top: 0; }
+            .card h4 { color: #0A3D62; margin-top: 0; }
             ul { margin-left: 20px; }
             li { margin-bottom: 5px; }
             .score { font-weight: bold; }
@@ -515,12 +515,10 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-8 font-sans text-gray-800">
-      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-xl p-6 sm:p-8">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-center text-indigo-700 mb-6">
-          AWS MSK to Confluent Cloud Migration Estimator
-        </h1>
-        <p className="text-center text-gray-600 mb-8">
+    <div className="min-h-screen p-4 sm:p-8 font-sans text-[#0A3D62]">
+      <div className="max-w-4xl mx-auto shadow-lg rounded-xl p-6 sm:p-8">
+
+        <p className="text-center text-[#0A3D62] mb-8">
           Answer the questions below to get an estimated complexity and level of effort for your migration.
         </p>
 
@@ -1129,7 +1127,7 @@ const App = () => {
 // Helper Components for better readability
 const Section = ({ title, children }) => (
   <div className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
-    <h2 className="text-xl font-bold text-indigo-600 mb-5">{title}</h2>
+    <h2 className="text-xl font-bold text-[#0A3D62] mb-5">{title}</h2>
     <div className="space-y-5">
       {children}
     </div>
@@ -1138,7 +1136,7 @@ const Section = ({ title, children }) => (
 
 const Question = ({ label, name, type, value, onChange, children, min }) => (
   <div>
-    <label htmlFor={name} className="block text-md font-medium text-gray-700 mb-2">
+    <label htmlFor={name} className="block text-md font-medium text-[#0A3D62] mb-2">
       {label}
     </label>
     {type === 'select' ? (
