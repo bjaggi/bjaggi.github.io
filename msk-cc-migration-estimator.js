@@ -10,6 +10,9 @@ const App = () => {
   const [formData, setFormData] = useState({
     // General & Scope
     numMskClusters: 1,
+    currentMskVersion: '2.8.1',
+    targetConfluentVersion: '7.5.0',
+    numEnvironments: '1',
     desiredTimeline: '6-12_months',
     hasStrictNFRs: 'no',
     teamKafkaExperience: 'medium',
@@ -113,6 +116,61 @@ const App = () => {
     budgetConstraint: 'flexible',
     riskTolerance: 'medium',
     successCriteria: 'basic',
+
+    // Encryption
+    encryptionAtRest: 'kms',
+    encryptionInTransit: 'tls',
+    clientAuthentication: 'iam',
+    authorizationMethod: 'acl',
+    credentialManagement: 'secrets_manager',
+    hasComplianceRequirements: 'no',
+    auditLogging: 'cloudtrail',
+    hasCustomSecurityPolicies: 'no',
+
+    // Network & Connectivity
+    networkTopology: 'single_vpc',
+    securityGroups: 'default',
+    bandwidthUsage: 'medium',
+    usesVpcPeering: 'no',
+    usesPrivateLink: 'no',
+    hasCustomNetworkConfigs: 'no',
+    latencyRequirement: 'medium',
+    hasNetworkSecurityRequirements: 'no',
+
+    // Performance & Scaling
+    throughputRequirement: 'medium',
+    performanceLatencyRequirement: 'medium',
+    partitionCount: 'medium',
+    brokerCount: 'medium',
+    requiresAutoScaling: 'no',
+    hasSpecificPerformanceRequirements: 'no',
+
+    // Disaster Recovery & High Availability
+    backupStrategy: 'none',
+    rto: 'hours',
+    rpo: 'hours',
+    requiresMultiRegion: 'no',
+    highAvailabilitySetup: 'none',
+    hasDisasterRecoveryPlan: 'no',
+    requiresAutomatedFailover: 'no',
+    hasSpecificDRRequirements: 'no',
+
+    // Cost Analysis & Optimization
+    storageUsage: 'medium',
+    networkUsage: 'medium',
+    computeUsage: 'medium',
+    currentMonthlyCost: 'medium',
+    targetMonthlyCost: 'same',
+    hasCostOptimizationRequirements: 'no',
+    requiresCostAllocation: 'no',
+    hasBudgetConstraints: 'no',
+
+    // Target State
+    targetClusterSize: 'small',
+    targetTimeline: 'immediate',
+    targetBudget: 'same',
+    hasTargetStateRequirements: 'no',
+    hasSpecificFeatureRequirements: 'no',
   });
 
   const handleChange = (e) => {
@@ -492,7 +550,7 @@ const App = () => {
     // Helper function to get section fields
     const getSectionFields = (section) => {
       const sectionMap = {
-        general: ['numMskClusters', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam'],
+        general: ['numMskClusters', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam'],
         kafkaCore: ['numTopics', 'numPartitions', 'hasComplexTopicConfigs', 'historicalDataMigration', 'acceptableDowntime', 'preferredDataMigrationTool', 'numConsumerGroups', 'offsetMigrationRequired'],
         applications: ['numApplications', 'diverseLanguages', 'mskAuthentication', 'privateConnectivityRequired', 'credentialManagement'],
         ecosystem: ['usesSchemaRegistry', 'schemaRegistryType', 'usesKafkaConnect', 'kafkaConnectType', 'numConnectors', 'usesKsqlDB', 'usesOtherStreamProcessing', 'monitoringTools', 'loggingTools', 'customMskAutomation'],
@@ -723,6 +781,25 @@ const App = () => {
             sectionKey="general"
           >
             <Question label="How many AWS MSK clusters do you currently operate?" name="numMskClusters" type="number" value={formData.numMskClusters} onChange={handleChange} min="1" />
+            <Question label="What is your current MSK version?" name="currentMskVersion" type="select" value={formData.currentMskVersion} onChange={handleChange}>
+              <option value="2.8.1">2.8.1</option>
+              <option value="2.7.0">2.7.0</option>
+              <option value="2.6.2">2.6.2</option>
+              <option value="2.5.1">2.5.1</option>
+              <option value="2.4.1">2.4.1</option>
+              <option value="2.3.1">2.3.1</option>
+              <option value="2.2.1">2.2.1</option>
+              <option value="2.1.1">2.1.1</option>
+              <option value="2.0.1">2.0.1</option>
+              <option value="1.1.1">1.1.1</option>
+            </Question>
+
+            <Question label="How many environments do you need to migrate?" name="numEnvironments" type="select" value={formData.numEnvironments} onChange={handleChange}>
+              <option value="1">1 (Production only)</option>
+              <option value="2">2 (Production + Staging)</option>
+              <option value="3">3 (Production + Staging + Development)</option>
+              <option value="4">4+ (Multiple environments)</option>
+            </Question>
             <Question label="What is the desired timeline for the migration?" name="desiredTimeline" type="select" value={formData.desiredTimeline} onChange={handleChange}>
               <option value=">12_months">{'>'} 12 months</option>
               <option value="6-12_months">6-12 months</option>
@@ -751,6 +828,35 @@ const App = () => {
           >
             <Question label="How many active Kafka topics are in use across all MSK clusters?" name="numTopics" type="number" value={formData.numTopics} onChange={handleChange} min="1" />
             <Question label="What is the total number of partitions across all topics?" name="numPartitions" type="number" value={formData.numPartitions} onChange={handleChange} min="1" />
+            <Question label="What is your current replication factor?" name="currentReplicationFactor" type="select" value={formData.currentReplicationFactor} onChange={handleChange}>
+              <option value="1">1 (No replication)</option>
+              <option value="2">2</option>
+              <option value="3">3 (Recommended)</option>
+              <option value="custom">Custom</option>
+            </Question>
+            <Question label="What is your current retention period?" name="currentRetentionPeriod" type="select" value={formData.currentRetentionPeriod} onChange={handleChange}>
+              <option value="1_day">1 Day</option>
+              <option value="7_days">7 Days</option>
+              <option value="30_days">30 Days</option>
+              <option value="90_days">90 Days</option>
+              <option value="custom">Custom</option>
+            </Question>
+            <Question label="What message format do you currently use?" name="messageFormat" type="select" value={formData.messageFormat} onChange={handleChange}>
+              <option value="json">JSON</option>
+              <option value="avro">Avro</option>
+              <option value="protobuf">Protobuf</option>
+              <option value="string">String</option>
+              <option value="binary">Binary</option>
+              <option value="mixed">Mixed formats</option>
+            </Question>
+            <Question label="Do you use message compression?" name="messageCompression" type="select" value={formData.messageCompression} onChange={handleChange}>
+              <option value="none">No compression</option>
+              <option value="gzip">Gzip</option>
+              <option value="snappy">Snappy</option>
+              <option value="lz4">LZ4</option>
+              <option value="zstd">ZSTD</option>
+              <option value="mixed">Mixed compression</option>
+            </Question>
             <Question label="Are there any topics with specific/complex configurations (e.g., custom retention, compaction, replication factor)?" name="hasComplexTopicConfigs" type="select" value={formData.hasComplexTopicConfigs} onChange={handleChange}>
               <option value="no">No (Mostly defaults)</option>
               <option value="yes">Yes (Several custom configs)</option>
@@ -783,25 +889,56 @@ const App = () => {
             title="3. Applications & Connectivity" 
             sectionKey="applications"
           >
-            <Question label="How many distinct applications (producers/consumers) interact with MSK?" name="numApplications" type="number" value={formData.numApplications} onChange={handleChange} min="1" />
-            <Question label="Do your applications use a diverse set of programming languages/client libraries (e.g., Java, Python, Go, .NET)?" name="diverseLanguages" type="select" value={formData.diverseLanguages} onChange={handleChange}>
-              <option value="no">No (Mostly one language/stack)</option>
-              <option value="yes">Yes (Multiple languages/stacks)</option>
+            <Question label="How many applications are currently connected to MSK?" name="numApplications" type="number" value={formData.numApplications} onChange={handleChange} min="1" />
+            <Question label="What Kafka client versions are currently in use?" name="kafkaClientVersions" type="select" value={formData.kafkaClientVersions} onChange={handleChange}>
+              <option value="0.10.x">0.10.x</option>
+              <option value="0.11.x">0.11.x</option>
+              <option value="1.0.x">1.0.x</option>
+              <option value="2.0.x">2.0.x</option>
+              <option value="2.5.x">2.5.x</option>
+              <option value="2.8.x">2.8.x</option>
+              <option value="3.0.x">3.0.x</option>
+              <option value="mixed">Mixed versions</option>
             </Question>
-            <Question label="What authentication mechanism is currently used for MSK?" name="mskAuthentication" type="select" value={formData.mskAuthentication} onChange={handleChange}>
-              <option value="iam">IAM Authentication</option>
-              <option value="sasl_scram">SASL/SCRAM</option>
-              <option value="mtls">mTLS</option>
-              <option value="plain">SASL/PLAIN</option>
+            <Question label="What client libraries are being used?" name="clientLibraries" type="select" value={formData.clientLibraries} onChange={handleChange}>
+              <option value="java">Java</option>
+              <option value="python">Python</option>
+              <option value="nodejs">Node.js</option>
+              <option value="golang">Go</option>
+              <option value="dotnet">.NET</option>
+              <option value="mixed">Mixed languages</option>
             </Question>
-            <Question label="Is private network connectivity (e.g., AWS PrivateLink, VPC Peering) a requirement for Confluent Cloud?" name="privateConnectivityRequired" type="select" value={formData.privateConnectivityRequired} onChange={handleChange}>
+            <Question label="Are there any custom client configurations in use?" name="hasCustomClientConfigs" type="select" value={formData.hasCustomClientConfigs} onChange={handleChange}>
+              <option value="no">No (Mostly defaults)</option>
+              <option value="yes">Yes (Custom configs)</option>
+            </Question>
+            <Question label="Do you use any custom serializers/deserializers?" name="hasCustomSerializers" type="select" value={formData.hasCustomSerializers} onChange={handleChange}>
+              <option value="no">No (Standard serializers)</option>
+              <option value="yes">Yes (Custom serializers)</option>
+            </Question>
+            <Question label="Are there any applications using custom partitioning logic?" name="hasCustomPartitioning" type="select" value={formData.hasCustomPartitioning} onChange={handleChange}>
+              <option value="no">No (Default partitioning)</option>
+              <option value="yes">Yes (Custom partitioning)</option>
+            </Question>
+            <Question label="Do you have any applications using exactly-once semantics?" name="hasExactlyOnceSemantics" type="select" value={formData.hasExactlyOnceSemantics} onChange={handleChange}>
+              <option value="no">No</option>
               <option value="yes">Yes</option>
-              <option value="no">No (Public internet access is acceptable)</option>
             </Question>
-            <Question label="How are Kafka client credentials currently managed and distributed?" name="credentialManagement" type="select" value={formData.credentialManagement} onChange={handleChange}>
-              <option value="secrets_manager">AWS Secrets Manager / Vault</option>
-              <option value="env_vars">Environment Variables</option>
-              <option value="direct_config">Directly in application config/code</option>
+            <Question label="Are there any applications using transactions?" name="hasTransactions" type="select" value={formData.hasTransactions} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="Do you have any applications using custom interceptors?" name="hasCustomInterceptors" type="select" value={formData.hasCustomInterceptors} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="Are there any applications using custom error handling?" name="hasCustomErrorHandling" type="select" value={formData.hasCustomErrorHandling} onChange={handleChange}>
+              <option value="no">No (Standard error handling)</option>
+              <option value="yes">Yes (Custom error handling)</option>
+            </Question>
+            <Question label="Do you have any applications using custom retry logic?" name="hasCustomRetryLogic" type="select" value={formData.hasCustomRetryLogic} onChange={handleChange}>
+              <option value="no">No (Standard retry)</option>
+              <option value="yes">Yes (Custom retry)</option>
             </Question>
           </Section>
 
@@ -810,51 +947,51 @@ const App = () => {
             title="4. Ecosystem & Operational Tools" 
             sectionKey="ecosystem"
           >
-            <Question label="Do you use a Schema Registry with MSK?" name="usesSchemaRegistry" type="select" value={formData.usesSchemaRegistry} onChange={handleChange}>
+            <Question label="What monitoring tools are currently in use?" name="monitoringTools" type="select" value={formData.monitoringTools} onChange={handleChange}>
+              <option value="cloudwatch">AWS CloudWatch</option>
+              <option value="prometheus">Prometheus</option>
+              <option value="grafana">Grafana</option>
+              <option value="datadog">Datadog</option>
+              <option value="newrelic">New Relic</option>
+              <option value="custom">Custom solution</option>
+              <option value="none">No monitoring</option>
+            </Question>
+            <Question label="What metrics are you currently monitoring?" name="monitoredMetrics" type="select" value={formData.monitoredMetrics} onChange={handleChange}>
+              <option value="basic">Basic (CPU, Memory, Disk)</option>
+              <option value="standard">Standard (Basic + Kafka metrics)</option>
+              <option value="advanced">Advanced (Standard + Custom metrics)</option>
+            </Question>
+            <Question label="What alerting system is in place?" name="alertingSystem" type="select" value={formData.alertingSystem} onChange={handleChange}>
+              <option value="cloudwatch">AWS CloudWatch Alarms</option>
+              <option value="pagerduty">PagerDuty</option>
+              <option value="opsgenie">OpsGenie</option>
+              <option value="custom">Custom solution</option>
+              <option value="none">No alerting</option>
+            </Question>
+            <Question label="What logging solution is being used?" name="loggingSolution" type="select" value={formData.loggingSolution} onChange={handleChange}>
+              <option value="cloudwatch">AWS CloudWatch Logs</option>
+              <option value="elasticsearch">Elasticsearch</option>
+              <option value="splunk">Splunk</option>
+              <option value="datadog">Datadog</option>
+              <option value="custom">Custom solution</option>
+            </Question>
+            <Question label="What automation tools are in use?" name="automationTools" type="select" value={formData.automationTools} onChange={handleChange}>
+              <option value="terraform">Terraform</option>
+              <option value="cloudformation">CloudFormation</option>
+              <option value="ansible">Ansible</option>
+              <option value="custom">Custom scripts</option>
+              <option value="none">No automation</option>
+            </Question>
+            <Question label="Do you use any custom operational tools?" name="hasCustomOperationalTools" type="select" value={formData.hasCustomOperationalTools} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
             </Question>
-            {formData.usesSchemaRegistry === 'yes' && (
-              <Question label="What type of Schema Registry?" name="schemaRegistryType" type="select" value={formData.schemaRegistryType} onChange={handleChange}>
-                <option value="aws_glue">AWS Glue Schema Registry</option>
-                <option value="confluent_platform">Confluent Platform (self-managed)</option>
-                <option value="self_managed">Other self-managed</option>
-              </Question>
-            )}
-            <Question label="Do you use Kafka Connect with MSK?" name="usesKafkaConnect" type="select" value={formData.usesKafkaConnect} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
+            <Question label="What backup solution is currently in use?" name="backupSolution" type="select" value={formData.backupSolution} onChange={handleChange}>
+              <option value="s3">AWS S3</option>
+              <option value="custom">Custom solution</option>
+              <option value="none">No backup solution</option>
             </Question>
-            {formData.usesKafkaConnect === 'yes' && (
-              <Fragment>
-                <Question label="What type of Kafka Connect deployment?" name="kafkaConnectType" type="select" value={formData.kafkaConnectType} onChange={handleChange}>
-                  <option value="msk_connect">MSK Connect</option>
-                  <option value="self_managed">Self-managed (EC2/Containers)</option>
-                </Question>
-                <Question label="How many Kafka Connect connectors are currently deployed?" name="numConnectors" type="number" value={formData.numConnectors} onChange={handleChange} min="0" />
-              </Fragment>
-            )}
-
-            <Question label="Do you use ksqlDB with MSK?" name="usesKsqlDB" type="select" value={formData.usesKsqlDB} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Question>
-            <Question label="Do you use other stream processing frameworks (e.g., Kafka Streams, Spark Streaming) with MSK?" name="usesOtherStreamProcessing" type="select" value={formData.usesOtherStreamProcessing} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Question>
-            <Question label="What tools are used for monitoring MSK?" name="monitoringTools" type="select" value={formData.monitoringTools} onChange={handleChange}>
-              <option value="cloudwatch">AWS CloudWatch (primary)</option>
-              <option value="grafana_prometheus">Grafana/Prometheus</option>
-              <option value="datadog_newrelic">Datadog/New Relic</option>
-              <option value="custom">Custom/Multiple tools</option>
-            </Question>
-            <Question label="How are Kafka broker and application logs collected and analyzed?" name="loggingTools" type="select" value={formData.loggingTools} onChange={handleChange}>
-              <option value="cloudwatch_logs">AWS CloudWatch Logs</option>
-              <option value="splunk_elk">Splunk/ELK Stack</option>
-              <option value="custom">Custom/Multiple tools</option>
-            </Question>
-            <Question label="Do you have custom automation scripts or tools for MSK operations (e.g., topic creation, ACL management)?" name="customMskAutomation" type="select" value={formData.customMskAutomation} onChange={handleChange}>
+            <Question label="Do you have any custom dashboards or reporting tools?" name="hasCustomDashboards" type="select" value={formData.hasCustomDashboards} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
             </Question>
@@ -865,213 +1002,269 @@ const App = () => {
             title="5. Security & Governance" 
             sectionKey="security"
           >
-            <Question label="How are Kafka ACLs (Access Control Lists) currently managed on MSK?" name="aclManagement" type="select" value={formData.aclManagement} onChange={handleChange}>
-              <option value="iam_policies">IAM Policies</option>
-              <option value="kafka_cli">Kafka CLI/Admin API</option>
-              <option value="manual">Manual/Ad-hoc</option>
+            <Question label="What encryption method is used for data at rest?" name="encryptionAtRest" type="select" value={formData.encryptionAtRest} onChange={handleChange}>
+              <option value="kms">AWS KMS</option>
+              <option value="custom">Custom encryption</option>
+              <option value="none">No encryption</option>
             </Question>
-            <Question label="How many distinct service accounts or users require access to Kafka topics?" name="numServiceAccounts" type="number" value={formData.numServiceAccounts} onChange={handleChange} min="1" />
-            <Question label="What are the auditing requirements for Kafka interactions?" name="auditingRequirements" type="select" value={formData.auditingRequirements} onChange={handleChange}>
-              <option value="basic">Basic (Standard logs)</option>
-              <option value="strict">Strict (Detailed, immutable audit trails)</option>
+            <Question label="What encryption method is used for data in transit?" name="encryptionInTransit" type="select" value={formData.encryptionInTransit} onChange={handleChange}>
+              <option value="tls">TLS/SSL</option>
+              <option value="custom">Custom encryption</option>
+              <option value="none">No encryption</option>
             </Question>
-            <Question label="Are there any specific regulatory compliance requirements (e.g., HIPAA, PCI DSS, GDPR) that apply to Kafka data?" name="complianceRequirements" type="select" value={formData.complianceRequirements} onChange={handleChange}>
+            <Question label="What authentication method is used for clients?" name="clientAuthentication" type="select" value={formData.clientAuthentication} onChange={handleChange}>
+              <option value="iam">IAM</option>
+              <option value="sasl_scram">SASL/SCRAM</option>
+              <option value="mtls">mTLS</option>
+              <option value="plain">SASL/PLAIN</option>
+              <option value="none">No authentication</option>
+            </Question>
+            <Question label="What authorization method is used?" name="authorizationMethod" type="select" value={formData.authorizationMethod} onChange={handleChange}>
+              <option value="acl">ACLs</option>
+              <option value="rbac">RBAC</option>
+              <option value="custom">Custom authorization</option>
+              <option value="none">No authorization</option>
+            </Question>
+            <Question label="How are credentials managed?" name="credentialManagement" type="select" value={formData.credentialManagement} onChange={handleChange}>
+              <option value="secrets_manager">AWS Secrets Manager</option>
+              <option value="vault">HashiCorp Vault</option>
+              <option value="custom">Custom solution</option>
+              <option value="none">No credential management</option>
+            </Question>
+            <Question label="Do you have any compliance requirements?" name="hasComplianceRequirements" type="select" value={formData.hasComplianceRequirements} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
             </Question>
-            <Question label="Do you require customer-managed encryption keys (CMKs) for data at rest?" name="customKeyEncryption" type="select" value={formData.customKeyEncryption} onChange={handleChange}>
+            <Question label="What audit logging is in place?" name="auditLogging" type="select" value={formData.auditLogging} onChange={handleChange}>
+              <option value="cloudtrail">AWS CloudTrail</option>
+              <option value="custom">Custom solution</option>
+              <option value="none">No audit logging</option>
+            </Question>
+            <Question label="Do you have any custom security policies?" name="hasCustomSecurityPolicies" type="select" value={formData.hasCustomSecurityPolicies} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
             </Question>
           </Section>
 
           {/* Network & Connectivity */}
-          <Section title="6. Network & Connectivity" sectionKey="network">
-            <Question label="What type of network connectivity do you require?" name="networkType" type="select" value={formData.networkType} onChange={handleChange}>
-              <option value="public">Public Internet</option>
-              <option value="private">Private Network</option>
-              <option value="hybrid">Hybrid (Both)</option>
+          <Section 
+            title="6. Network & Connectivity" 
+            sectionKey="network"
+          >
+            <Question label="What is your current network topology?" name="networkTopology" type="select" value={formData.networkTopology} onChange={handleChange}>
+              <option value="single_vpc">Single VPC</option>
+              <option value="multi_vpc">Multiple VPCs</option>
+              <option value="hybrid">Hybrid (On-prem + Cloud)</option>
             </Question>
-            <Question label="Is VPC Peering required for Confluent Cloud connectivity?" name="vpcPeeringRequired" type="select" value={formData.vpcPeeringRequired} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
+            <Question label="What security groups are in use?" name="securityGroups" type="select" value={formData.securityGroups} onChange={handleChange}>
+              <option value="default">Default security groups</option>
+              <option value="custom">Custom security groups</option>
+              <option value="none">No security groups</option>
             </Question>
-            <Question label="Is AWS PrivateLink required for Confluent Cloud connectivity?" name="privateLinkRequired" type="select" value={formData.privateLinkRequired} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Question>
-            <Question label="Do you require cross-region replication?" name="crossRegionReplication" type="select" value={formData.crossRegionReplication} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Question>
-            <Question label="What is your expected network bandwidth requirement?" name="networkBandwidth" type="select" value={formData.networkBandwidth} onChange={handleChange}>
-              <option value="low">Low ({'<'} 10 Mbps)</option>
+            <Question label="What is your current bandwidth usage?" name="bandwidthUsage" type="select" value={formData.bandwidthUsage} onChange={handleChange}>
+              <option value="low">Low (&lt; 10 Mbps)</option>
               <option value="medium">Medium (10-100 Mbps)</option>
-              <option value="high">High ({'>'} 100 Mbps)</option>
+              <option value="high">High (&gt; 100 Mbps)</option>
             </Question>
-            <Question label="What are your network latency requirements?" name="networkLatency" type="select" value={formData.networkLatency} onChange={handleChange}>
-              <option value="low">Low ({'<'} 10ms)</option>
-              <option value="medium">Medium (10-50ms)</option>
-              <option value="high">High ({'>'} 50ms)</option>
+            <Question label="Do you use VPC peering?" name="usesVpcPeering" type="select" value={formData.usesVpcPeering} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
             </Question>
-            <Question label="What level of network security group configuration do you require?" name="networkSecurityGroups" type="select" value={formData.networkSecurityGroups} onChange={handleChange}>
-              <option value="basic">Basic (Default)</option>
-              <option value="advanced">Advanced (Custom)</option>
-              <option value="strict">Strict (Highly restricted)</option>
+            <Question label="Do you use AWS PrivateLink?" name="usesPrivateLink" type="select" value={formData.usesPrivateLink} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="Do you have any custom network configurations?" name="hasCustomNetworkConfigs" type="select" value={formData.hasCustomNetworkConfigs} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="What is your current latency requirement?" name="latencyRequirement" type="select" value={formData.latencyRequirement} onChange={handleChange}>
+              <option value="high">High (&gt; 100ms)</option>
+              <option value="medium">Medium (50-100ms)</option>
+              <option value="low">Low (&lt; 50ms)</option>
+            </Question>
+            <Question label="Do you have any specific network security requirements?" name="hasNetworkSecurityRequirements" type="select" value={formData.hasNetworkSecurityRequirements} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
             </Question>
           </Section>
 
           {/* Performance & Scaling */}
-          <Section title="7. Performance & Scaling" sectionKey="performance">
-            <Question label="What is your expected peak throughput?" name="peakThroughput" type="select" value={formData.peakThroughput} onChange={handleChange}>
-              <option value="low">Low ({'<'} 1 MB/s)</option>
+          <Section 
+            title="7. Performance & Scaling" 
+            sectionKey="performance"
+          >
+            <Question label="What is your current throughput requirement?" name="throughputRequirement" type="select" value={formData.throughputRequirement} onChange={handleChange}>
+              <option value="low">Low (&lt; 1 MB/s)</option>
               <option value="medium">Medium (1-10 MB/s)</option>
-              <option value="high">High ({'>'} 10 MB/s)</option>
+              <option value="high">High (&gt; 10 MB/s)</option>
             </Question>
-            <Question label="What is your typical message size?" name="messageSize" type="select" value={formData.messageSize} onChange={handleChange}>
-              <option value="small">Small ({'<'} 1KB)</option>
-              <option value="medium">Medium (1-10KB)</option>
-              <option value="large">Large ({'>'} 10KB)</option>
+            <Question label="What is your current latency requirement?" name="performanceLatencyRequirement" type="select" value={formData.performanceLatencyRequirement} onChange={handleChange}>
+              <option value="high">High (&gt; 100ms)</option>
+              <option value="medium">Medium (50-100ms)</option>
+              <option value="low">Low (&lt; 50ms)</option>
             </Question>
-            <Question label="What is your data retention period requirement?" name="retentionPeriod" type="select" value={formData.retentionPeriod} onChange={handleChange}>
-              <option value="1_day">1 Day</option>
-              <option value="7_days">7 Days</option>
-              <option value="30_days">30 Days</option>
-              <option value="90_days">90 Days</option>
-              <option value="custom">Custom</option>
+            <Question label="What is your current partition count?" name="partitionCount" type="select" value={formData.partitionCount} onChange={handleChange}>
+              <option value="low">Low (&lt; 100)</option>
+              <option value="medium">Medium (100-1000)</option>
+              <option value="high">High (&gt; 1000)</option>
             </Question>
-            <Question label="Do you require automatic scaling?" name="autoScaling" type="select" value={formData.autoScaling} onChange={handleChange}>
+            <Question label="What is your current broker count?" name="brokerCount" type="select" value={formData.brokerCount} onChange={handleChange}>
+              <option value="low">Low (1-3)</option>
+              <option value="medium">Medium (4-9)</option>
+              <option value="high">High (&gt; 9)</option>
+            </Question>
+            <Question label="Do you require auto-scaling?" name="requiresAutoScaling" type="select" value={formData.requiresAutoScaling} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
             </Question>
-            <Question label="How do you handle partition scaling?" name="partitionScaling" type="select" value={formData.partitionScaling} onChange={handleChange}>
-              <option value="manual">Manual</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="automatic">Automatic</option>
+            <Question label="What is your current message size?" name="messageSize" type="select" value={formData.messageSize} onChange={handleChange}>
+              <option value="small">Small (&lt; 1KB)</option>
+              <option value="medium">Medium (1KB-10KB)</option>
+              <option value="large">Large (&gt; 10KB)</option>
             </Question>
-            <Question label="How do you handle broker scaling?" name="brokerScaling" type="select" value={formData.brokerScaling} onChange={handleChange}>
-              <option value="manual">Manual</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="automatic">Automatic</option>
+            <Question label="What is your current retention period?" name="retentionPeriod" type="select" value={formData.retentionPeriod} onChange={handleChange}>
+              <option value="short">Short (&lt; 1 day)</option>
+              <option value="medium">Medium (1-7 days)</option>
+              <option value="long">Long (&gt; 7 days)</option>
+            </Question>
+            <Question label="Do you have any specific performance requirements?" name="hasSpecificPerformanceRequirements" type="select" value={formData.hasSpecificPerformanceRequirements} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
             </Question>
           </Section>
 
           {/* Disaster Recovery & High Availability */}
-          <Section title="8. Disaster Recovery & High Availability" sectionKey="dr">
-            <Question label="What is your DR strategy?" name="drStrategy" type="select" value={formData.drStrategy} onChange={handleChange}>
-              <option value="none">None</option>
-              <option value="basic">Basic (Backup & Restore)</option>
-              <option value="active_passive">Active-Passive</option>
-              <option value="active_active">Active-Active</option>
+          <Section 
+            title="8. Disaster Recovery & High Availability" 
+            sectionKey="disasterRecovery"
+          >
+            <Question label="What is your current backup strategy?" name="backupStrategy" type="select" value={formData.backupStrategy} onChange={handleChange}>
+              <option value="none">No backup</option>
+              <option value="manual">Manual backup</option>
+              <option value="automated">Automated backup</option>
+              <option value="continuous">Continuous backup</option>
             </Question>
-            <Question label="What is your backup frequency requirement?" name="backupFrequency" type="select" value={formData.backupFrequency} onChange={handleChange}>
-              <option value="none">None</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="custom">Custom</option>
-            </Question>
-            <Question label="What is your backup retention requirement?" name="backupRetention" type="select" value={formData.backupRetention} onChange={handleChange}>
-              <option value="none">None</option>
-              <option value="7_days">7 Days</option>
-              <option value="30_days">30 Days</option>
-              <option value="90_days">90 Days</option>
-              <option value="custom">Custom</option>
-            </Question>
-            <Question label="What is your acceptable failover time?" name="failoverTime" type="select" value={formData.failoverTime} onChange={handleChange}>
-              <option value="none">None</option>
-              <option value="minutes">Minutes</option>
+            <Question label="What is your Recovery Time Objective (RTO)?" name="rto" type="select" value={formData.rto} onChange={handleChange}>
               <option value="hours">Hours</option>
-              <option value="days">Days</option>
+              <option value="minutes">Minutes</option>
+              <option value="seconds">Seconds</option>
             </Question>
-            <Question label="Do you require multi-region deployment?" name="multiRegion" type="select" value={formData.multiRegion} onChange={handleChange}>
+            <Question label="What is your Recovery Point Objective (RPO)?" name="rpo" type="select" value={formData.rpo} onChange={handleChange}>
+              <option value="hours">Hours</option>
+              <option value="minutes">Minutes</option>
+              <option value="seconds">Seconds</option>
+            </Question>
+            <Question label="Do you require multi-region deployment?" name="requiresMultiRegion" type="select" value={formData.requiresMultiRegion} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
             </Question>
-            <Question label="What replication factor do you require?" name="replicationFactor" type="select" value={formData.replicationFactor} onChange={handleChange}>
-              <option value="1">1 (No replication)</option>
-              <option value="2">2</option>
-              <option value="3">3 (Recommended)</option>
-              <option value="custom">Custom</option>
+            <Question label="What is your current high availability setup?" name="highAvailabilitySetup" type="select" value={formData.highAvailabilitySetup} onChange={handleChange}>
+              <option value="none">No HA</option>
+              <option value="basic">Basic (2-3 brokers)</option>
+              <option value="advanced">Advanced (4+ brokers)</option>
+            </Question>
+            <Question label="Do you have a disaster recovery plan?" name="hasDisasterRecoveryPlan" type="select" value={formData.hasDisasterRecoveryPlan} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="Do you require automated failover?" name="requiresAutomatedFailover" type="select" value={formData.requiresAutomatedFailover} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Question>
+            <Question label="Do you have any specific disaster recovery requirements?" name="hasSpecificDRRequirements" type="select" value={formData.hasSpecificDRRequirements} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
             </Question>
           </Section>
 
           {/* Cost Analysis & Optimization */}
-          <Section title="9. Cost Analysis & Optimization" sectionKey="cost">
-            <Question label="What is your current MSK cost per month?" name="currentMskCost" type="select" value={formData.currentMskCost} onChange={handleChange}>
-              <option value="unknown">Unknown</option>
-              <option value="low">{'<'} $1,000</option>
-              <option value="medium">$1,000 - $5,000</option>
-              <option value="high">{'>'} $5,000</option>
+          <Section 
+            title="9. Cost Analysis & Optimization" 
+            sectionKey="costAnalysis"
+          >
+            <Question label="What is your current storage usage?" name="storageUsage" type="select" value={formData.storageUsage} onChange={handleChange}>
+              <option value="low">Low (&lt; 100 GB)</option>
+              <option value="medium">Medium (100 GB - 1 TB)</option>
+              <option value="high">High (&gt; 1 TB)</option>
             </Question>
-            <Question label="Do you require cost optimization strategies?" name="costOptimization" type="select" value={formData.costOptimization} onChange={handleChange}>
+            <Question label="What is your current network usage?" name="networkUsage" type="select" value={formData.networkUsage} onChange={handleChange}>
+              <option value="low">Low (&lt; 1 TB/month)</option>
+              <option value="medium">Medium (1-10 TB/month)</option>
+              <option value="high">High (&gt; 10 TB/month)</option>
+            </Question>
+            <Question label="What is your current compute usage?" name="computeUsage" type="select" value={formData.computeUsage} onChange={handleChange}>
+              <option value="low">Low (&lt; 10 vCPUs)</option>
+              <option value="medium">Medium (10-50 vCPUs)</option>
+              <option value="high">High (&gt; 50 vCPUs)</option>
+            </Question>
+            <Question label="What is your current monthly cost?" name="currentMonthlyCost" type="select" value={formData.currentMonthlyCost} onChange={handleChange}>
+              <option value="low">Low (&lt; $1,000)</option>
+              <option value="medium">Medium ($1,000-$5,000)</option>
+              <option value="high">High (&gt; $5,000)</option>
+            </Question>
+            <Question label="What is your target monthly cost?" name="targetMonthlyCost" type="select" value={formData.targetMonthlyCost} onChange={handleChange}>
+              <option value="lower">Lower than current</option>
+              <option value="same">Same as current</option>
+              <option value="higher">Higher than current</option>
+            </Question>
+            <Question label="Do you have any specific cost optimization requirements?" name="hasCostOptimizationRequirements" type="select" value={formData.hasCostOptimizationRequirements} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
             </Question>
-            <Question label="Are you interested in reserved pricing?" name="reservedPricing" type="select" value={formData.reservedPricing} onChange={handleChange}>
+            <Question label="Do you require cost allocation by team/department?" name="requiresCostAllocation" type="select" value={formData.requiresCostAllocation} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
             </Question>
-            <Question label="What is your data retention strategy?" name="dataRetention" type="select" value={formData.dataRetention} onChange={handleChange}>
-              <option value="standard">Standard (7 days)</option>
-              <option value="extended">Extended (30+ days)</option>
-              <option value="minimal">Minimal (1-3 days)</option>
-              <option value="custom">Custom</option>
-            </Question>
-            <Question label="What type of storage do you require?" name="storageType" type="select" value={formData.storageType} onChange={handleChange}>
-              <option value="standard">Standard</option>
-              <option value="performance">Performance</option>
-              <option value="custom">Custom</option>
+            <Question label="Do you have any specific budget constraints?" name="hasBudgetConstraints" type="select" value={formData.hasBudgetConstraints} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
             </Question>
           </Section>
 
           {/* Target State */}
-          <Section title="10. Target State" sectionKey="targetState">
-            <Question label="What type of Confluent Cloud cluster do you plan to use?" name="targetClusterType" type="select" value={formData.targetClusterType} onChange={handleChange}>
-              <option value="dedicated">Dedicated</option>
-              <option value="standard">Standard</option>
-              <option value="basic">Basic</option>
-              <option value="basic">Enterprise</option>
-              <option value="basic">Freight</option>
-              <option value="basic">Warpstream</option>
+          <Section 
+            title="10. Target State" 
+            sectionKey="targetState"
+          >
+            <Question label="What is your target cluster size?" name="targetClusterSize" type="select" value={formData.targetClusterSize} onChange={handleChange}>
+              <option value="small">Small (1-3 brokers)</option>
+              <option value="medium">Medium (4-9 brokers)</option>
+              <option value="large">Large (&gt; 9 brokers)</option>
+            </Question>
+            <Question label="What is your target region?" name="targetRegion" type="select" value={formData.targetRegion} onChange={handleChange}>
+              <option value="us_east_1">US East (N. Virginia)</option>
+              <option value="us_west_2">US West (Oregon)</option>
+              <option value="eu_west_1">EU (Ireland)</option>
+              <option value="ap_southeast_1">Asia Pacific (Singapore)</option>
               <option value="custom">Custom</option>
             </Question>
-            <Question label="Where will your target Confluent Cloud cluster be located?" name="targetRegion" type="select" value={formData.targetRegion} onChange={handleChange}>
-              <option value="same">Same as current MSK region</option>
-              <option value="different">Different region</option>
-              <option value="multi">Multi-region</option>
-            </Question>
-            <Question label="What is the target environment type?" name="targetEnvironment" type="select" value={formData.targetEnvironment} onChange={handleChange}>
-              <option value="production">Production</option>
+            <Question label="What is your target environment?" name="targetEnvironment" type="select" value={formData.targetEnvironment} onChange={handleChange}>
+              <option value="dev">Development</option>
               <option value="staging">Staging</option>
-              <option value="development">Development</option>
+              <option value="prod">Production</option>
               <option value="multi">Multiple environments</option>
             </Question>
-            <Question label="What security model will you use in Confluent Cloud?" name="targetSecurityModel" type="select" value={formData.targetSecurityModel} onChange={handleChange}>
-              <option value="rbac">RBAC (Role-Based Access Control)</option>
-              <option value="acl">ACL (Access Control Lists)</option>
-              <option value="hybrid">Hybrid (RBAC + ACL)</option>
+
+            <Question label="What is your target timeline?" name="targetTimeline" type="select" value={formData.targetTimeline} onChange={handleChange}>
+              <option value="immediate">Immediate</option>
+              <option value="1_month">1 Month</option>
+              <option value="3_months">3 Months</option>
+              <option value="6_months">6 Months</option>
+              <option value="custom">Custom</option>
             </Question>
-            <Question label="What monitoring solution will you use?" name="targetMonitoring" type="select" value={formData.targetMonitoring} onChange={handleChange}>
-              <option value="confluent_cloud">Confluent Cloud Monitoring</option>
-              <option value="custom">Custom Solution</option>
-              <option value="hybrid">Hybrid Approach</option>
+            <Question label="What is your target budget?" name="targetBudget" type="select" value={formData.targetBudget} onChange={handleChange}>
+              <option value="lower">Lower than current</option>
+              <option value="same">Same as current</option>
+              <option value="higher">Higher than current</option>
             </Question>
-            <Question label="What logging solution will you use?" name="targetLogging" type="select" value={formData.targetLogging} onChange={handleChange}>
-              <option value="confluent_cloud">Confluent Cloud Logging</option>
-              <option value="custom">Custom Solution</option>
-              <option value="hybrid">Hybrid Approach</option>
+            <Question label="Do you have any specific target state requirements?" name="hasTargetStateRequirements" type="select" value={formData.hasTargetStateRequirements} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
             </Question>
-            <Question label="What automation approach will you use?" name="targetAutomation" type="select" value={formData.targetAutomation} onChange={handleChange}>
-              <option value="terraform">Terraform</option>
-              <option value="ansible">Ansible</option>
-              <option value="custom">Custom Scripts</option>
-              <option value="none">No Automation</option>
-            </Question>
-            <Question label="What compliance requirements need to be met?" name="targetCompliance" type="select" value={formData.targetCompliance} onChange={handleChange}>
-              <option value="none">None</option>
-              <option value="basic">Basic (SOC 2)</option>
-              <option value="advanced">Advanced (HIPAA, PCI)</option>
-              <option value="custom">Custom Requirements</option>
+            <Question label="Do you require any specific features in the target state?" name="hasSpecificFeatureRequirements" type="select" value={formData.hasSpecificFeatureRequirements} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
             </Question>
           </Section>
 
@@ -1163,6 +1356,9 @@ const App = () => {
                 <h4 className="font-bold text-[#0A3D62] mb-2">1. General & Scope</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Number of MSK Clusters:</span> {formData.numMskClusters}</li>
+                  <li><span className="font-medium">Current MSK Version:</span> {formData.currentMskVersion}</li>
+                  <li><span className="font-medium">Target Confluent Cloud Version:</span> {formData.targetConfluentVersion}</li>
+                  <li><span className="font-medium">Number of Environments:</span> {formData.numEnvironments}</li>
                   <li><span className="font-medium">Desired Timeline:</span> {formData.desiredTimeline.replace(/_/g, ' ')}</li>
                   <li><span className="font-medium">Strict NFRs:</span> {formData.hasStrictNFRs === 'yes' ? 'Yes' : 'No'}</li>
                   <li><span className="font-medium">Team Kafka Experience:</span> {formData.teamKafkaExperience.charAt(0).toUpperCase() + formData.teamKafkaExperience.slice(1)}</li>
