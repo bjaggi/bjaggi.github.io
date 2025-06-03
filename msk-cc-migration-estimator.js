@@ -798,11 +798,7 @@ const App = () => {
               <option value="application_replay">Confluent Recommened tool</option>
               <option value="custom">Custom/Other</option>
             </Question>
-            <Question label="How many active consumer groups are consuming from MSK?" name="numConsumerGroups" type="number" value={formData.numConsumerGroups} onChange={handleChange} min="1" />
-            <Question label="Is consumer offset migration a hard requirement for all groups?" name="offsetMigrationRequired" type="select" value={formData.offsetMigrationRequired} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Question>
+
           </Section>
 
           {/* Applications & Connectivity */}
