@@ -36,8 +36,9 @@ const App = () => {
     numPartitions: 100,
     hasComplexTopicConfigs: 'no',
     historicalDataMigration: 'no',
+    historicalDataSize: 0,
     acceptableDowntime: 'hours',
-    preferredDataMigrationTool: 'mirrormaker2',
+    preferredDataMigrationTool: 'replicator',
     numConsumerGroups: 10,
     offsetMigrationRequired: 'no',
 
@@ -222,8 +223,20 @@ const App = () => {
     else if (formData.numMskClusters > 2) categoryScores.general += 3;
     else categoryScores.general += 1;
 
+    if (formData.currentMskVersion === '1.1.1' || formData.currentMskVersion === '2.0.1') categoryScores.general += 5;
+    else if (formData.currentMskVersion === '2.1.1' || formData.currentMskVersion === '2.2.1') categoryScores.general += 4;
+    else if (formData.currentMskVersion === '2.3.1' || formData.currentMskVersion === '2.4.1') categoryScores.general += 3;
+    else if (formData.currentMskVersion === '2.5.1' || formData.currentMskVersion === '2.6.2') categoryScores.general += 2;
+    else categoryScores.general += 1;
+
+    if (formData.numEnvironments === '4+') categoryScores.general += 5;
+    else if (formData.numEnvironments === '3') categoryScores.general += 3;
+    else if (formData.numEnvironments === '2') categoryScores.general += 2;
+    else categoryScores.general += 1;
+
     if (formData.desiredTimeline === '<3_months') categoryScores.general += 5;
     else if (formData.desiredTimeline === '3-6_months') categoryScores.general += 3;
+    else if (formData.desiredTimeline === '6-12_months') categoryScores.general += 2;
     else categoryScores.general += 1;
 
     if (formData.hasStrictNFRs === 'yes') categoryScores.general += 4;
@@ -245,7 +258,11 @@ const App = () => {
     if (formData.hasComplexTopicConfigs === 'yes') categoryScores.kafkaCore += 3;
 
     if (formData.historicalDataMigration === 'full') categoryScores.kafkaCore += 5;
-    else if (formData.historicalDataMigration === 'partial') categoryScores.kafkaCore += 3;
+    else if (formData.historicalDataMigration === 'partial') {
+      categoryScores.kafkaCore += 3;
+      if (formData.historicalDataSize > 1000) categoryScores.kafkaCore += 2;
+      else if (formData.historicalDataSize > 100) categoryScores.kafkaCore += 1;
+    }
 
     if (formData.acceptableDowntime === 'minutes') categoryScores.kafkaCore += 5;
     else if (formData.acceptableDowntime === 'hours') categoryScores.kafkaCore += 3;
@@ -257,156 +274,35 @@ const App = () => {
 
     if (formData.offsetMigrationRequired === 'yes') categoryScores.kafkaCore += 3;
 
-    // --- Applications & Connectivity ---
-    if (formData.numApplications > 50) categoryScores.applications += 5;
-    else if (formData.numApplications > 20) categoryScores.applications += 3;
-    else categoryScores.applications += 1;
-
-    if (formData.diverseLanguages === 'yes') categoryScores.applications += 4;
-
-    if (formData.mskAuthentication === 'iam') categoryScores.applications += 5; // IAM requires more client-side changes
-    else if (formData.mskAuthentication === 'mtls') categoryScores.applications += 4; // mTLS also complex
-    else categoryScores.applications += 2; // SASL/SCRAM is easier to port
-
-    if (formData.privateConnectivityRequired === 'yes') categoryScores.applications += 3;
-
-    if (formData.credentialManagement === 'direct_config') categoryScores.applications += 3; // Hardcoded credentials are a risk/effort to change
-
-    // --- Ecosystem & Operational Tools ---
-    if (formData.usesSchemaRegistry === 'yes') {
-      categoryScores.ecosystem += 3;
-      if (formData.schemaRegistryType === 'self_managed') categoryScores.ecosystem += 2; // More effort to port
-    }
-
-    if (formData.usesKafkaConnect === 'yes') {
-      categoryScores.ecosystem += 3;
-      if (formData.kafkaConnectType === 'self_managed') categoryScores.ecosystem += 3; // More effort to port
-      categoryScores.ecosystem += Math.min(formData.numConnectors / 5, 5); // Scale based on number of connectors
-    }
-
-    if (formData.usesKsqlDB === 'yes') categoryScores.ecosystem += 5;
-    if (formData.usesOtherStreamProcessing === 'yes') categoryScores.ecosystem += 4;
-
-    if (formData.monitoringTools === 'custom' || formData.monitoringTools === 'multiple') categoryScores.ecosystem += 3;
-    if (formData.loggingTools === 'custom' || formData.loggingTools === 'multiple') categoryScores.ecosystem += 3;
-
-    if (formData.customMskAutomation === 'yes') categoryScores.ecosystem += 4;
-
-    // --- Security & Governance ---
-    if (formData.aclManagement === 'iam_policies') categoryScores.security += 4; // IAM policies map to RBAC differently
-    else if (formData.aclManagement === 'manual') categoryScores.security += 3;
-
-    if (formData.numServiceAccounts > 20) categoryScores.security += 3;
-    else if (formData.numServiceAccounts > 10) categoryScores.security += 2;
-
-    if (formData.auditingRequirements === 'strict') categoryScores.security += 3;
-
-    if (formData.complianceRequirements === 'yes') categoryScores.security += 5;
-
-    if (formData.customKeyEncryption === 'yes') categoryScores.security += 4;
-
-    // --- Network & Connectivity ---
-    if (formData.networkType === 'private' || formData.networkType === 'hybrid') categoryScores.network += 3;
-    
-    if (formData.vpcPeeringRequired === 'yes') categoryScores.network += 2;
-    if (formData.privateLinkRequired === 'yes') categoryScores.network += 2;
-    if (formData.crossRegionReplication === 'yes') categoryScores.network += 3;
-
-    if (formData.networkBandwidth === 'high') categoryScores.network += 3;
-    else if (formData.networkBandwidth === 'medium') categoryScores.network += 2;
-
-    if (formData.networkLatency === 'low') categoryScores.network += 3;
-    else if (formData.networkLatency === 'medium') categoryScores.network += 2;
-
-    if (formData.networkSecurityGroups === 'strict') categoryScores.network += 3;
-    else if (formData.networkSecurityGroups === 'advanced') categoryScores.network += 2;
-
     // --- Performance & Scaling ---
-    if (formData.peakThroughput === 'high') categoryScores.performance += 4;
-    else if (formData.peakThroughput === 'medium') categoryScores.performance += 2;
+    if (formData.throughputRequirement === 'high') categoryScores.performance += 4;
+    else if (formData.throughputRequirement === 'medium') categoryScores.performance += 2;
+
+    if (formData.partitionCount === 'high') categoryScores.performance += 4;
+    else if (formData.partitionCount === 'medium') categoryScores.performance += 2;
 
     if (formData.messageSize === 'large') categoryScores.performance += 2;
 
-    if (formData.retentionPeriod === '90_days' || formData.retentionPeriod === 'custom') categoryScores.performance += 3;
-    else if (formData.retentionPeriod === '30_days') categoryScores.performance += 2;
-
-    if (formData.autoScaling === 'yes') categoryScores.performance += 3;
-
-    if (formData.partitionScaling === 'automatic') categoryScores.performance += 2;
-    if (formData.brokerScaling === 'automatic') categoryScores.performance += 2;
-
-    // --- Disaster Recovery & High Availability ---
-    if (formData.drStrategy === 'active_active') categoryScores.dr += 5;
-    else if (formData.drStrategy === 'active_passive') categoryScores.dr += 3;
-    else if (formData.drStrategy === 'basic') categoryScores.dr += 2;
-
-    if (formData.backupFrequency === 'daily') categoryScores.dr += 3;
-    else if (formData.backupFrequency === 'weekly') categoryScores.dr += 2;
-
-    if (formData.backupRetention === '90_days' || formData.backupRetention === 'custom') categoryScores.dr += 3;
-    else if (formData.backupRetention === '30_days') categoryScores.dr += 2;
-
-    if (formData.failoverTime === 'minutes') categoryScores.dr += 4;
-    else if (formData.failoverTime === 'hours') categoryScores.dr += 2;
-
-    if (formData.multiRegion === 'yes') categoryScores.dr += 4;
-
-    if (formData.replicationFactor === '3') categoryScores.dr += 2;
-    else if (formData.replicationFactor === 'custom') categoryScores.dr += 3;
-
-    // --- Cost Analysis & Optimization ---
-    if (formData.currentMskCost === 'high') categoryScores.cost += 3;
-    else if (formData.currentMskCost === 'medium') categoryScores.cost += 2;
-
-    if (formData.costOptimization === 'yes') categoryScores.cost += 2;
-    if (formData.reservedPricing === 'yes') categoryScores.cost += 2;
-
-    if (formData.dataRetention === 'extended') categoryScores.cost += 3;
-    else if (formData.dataRetention === 'custom') categoryScores.cost += 2;
-
-    if (formData.storageType === 'performance') categoryScores.cost += 2;
-    else if (formData.storageType === 'custom') categoryScores.cost += 3;
+    if (formData.hasSpecificPerformanceRequirements === 'yes') categoryScores.performance += 3;
 
     // --- Target State ---
-    if (formData.targetClusterType === 'dedicated') categoryScores.targetState += 3;
-    else if (formData.targetClusterType === 'standard') categoryScores.targetState += 2;
+    if (formData.targetClusterSize === 'large') categoryScores.targetState += 4;
+    else if (formData.targetClusterSize === 'medium') categoryScores.targetState += 2;
 
-    if (formData.targetRegion === 'multi') categoryScores.targetState += 4;
-    else if (formData.targetRegion === 'different') categoryScores.targetState += 2;
+    if (formData.targetRegion === 'custom') categoryScores.targetState += 3;
 
     if (formData.targetEnvironment === 'multi') categoryScores.targetState += 3;
 
-    if (formData.targetSecurityModel === 'hybrid') categoryScores.targetState += 3;
-    else if (formData.targetSecurityModel === 'rbac') categoryScores.targetState += 2;
+    if (formData.targetTimeline === 'immediate') categoryScores.targetState += 4;
+    else if (formData.targetTimeline === '1_month') categoryScores.targetState += 3;
+    else if (formData.targetTimeline === '3_months') categoryScores.targetState += 2;
 
-    if (formData.targetMonitoring === 'hybrid' || formData.targetMonitoring === 'custom') categoryScores.targetState += 2;
-    if (formData.targetLogging === 'hybrid' || formData.targetLogging === 'custom') categoryScores.targetState += 2;
+    if (formData.targetBudget === 'lower') categoryScores.targetState += 3;
 
-    if (formData.targetAutomation === 'custom') categoryScores.targetState += 3;
-    else if (formData.targetAutomation === 'terraform' || formData.targetAutomation === 'ansible') categoryScores.targetState += 2;
+    if (formData.hasTargetStateRequirements === 'yes') categoryScores.targetState += 3;
+    if (formData.hasSpecificFeatureRequirements === 'yes') categoryScores.targetState += 3;
 
-    if (formData.targetCompliance === 'advanced') categoryScores.targetState += 4;
-    else if (formData.targetCompliance === 'basic') categoryScores.targetState += 2;
-
-    // --- Migration Goals ---
-    if (formData.primaryGoal === 'security' || formData.primaryGoal === 'reliability') categoryScores.goals += 3;
-    else if (formData.primaryGoal === 'scalability') categoryScores.goals += 2;
-
-    // Add points for each secondary goal
-    categoryScores.goals += formData.secondaryGoals.length;
-
-    if (formData.timelineConstraint === 'strict') categoryScores.goals += 4;
-    else if (formData.timelineConstraint === 'moderate') categoryScores.goals += 2;
-
-    if (formData.budgetConstraint === 'strict') categoryScores.goals += 3;
-    else if (formData.budgetConstraint === 'moderate') categoryScores.goals += 2;
-
-    if (formData.riskTolerance === 'low') categoryScores.goals += 3;
-    else if (formData.riskTolerance === 'high') categoryScores.goals += 2;
-
-    if (formData.successCriteria === 'comprehensive') categoryScores.goals += 3;
-    else if (formData.successCriteria === 'enhanced') categoryScores.goals += 2;
-
+    // Calculate total score
     for (const category in categoryScores) {
       totalScore += categoryScores[category];
     }
@@ -551,7 +447,7 @@ const App = () => {
     const getSectionFields = (section) => {
       const sectionMap = {
         general: ['numMskClusters', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam'],
-        kafkaCore: ['numTopics', 'numPartitions', 'hasComplexTopicConfigs', 'historicalDataMigration', 'acceptableDowntime', 'preferredDataMigrationTool', 'numConsumerGroups', 'offsetMigrationRequired'],
+        kafkaCore: ['numTopics', 'numPartitions', 'hasComplexTopicConfigs', 'historicalDataMigration', 'historicalDataSize', 'acceptableDowntime', 'preferredDataMigrationTool', 'numConsumerGroups', 'offsetMigrationRequired'],
         applications: ['numApplications', 'diverseLanguages', 'mskAuthentication', 'privateConnectivityRequired', 'credentialManagement'],
         ecosystem: ['usesSchemaRegistry', 'schemaRegistryType', 'usesKafkaConnect', 'kafkaConnectType', 'numConnectors', 'usesKsqlDB', 'usesOtherStreamProcessing', 'monitoringTools', 'loggingTools', 'customMskAutomation'],
         security: ['aclManagement', 'numServiceAccounts', 'auditingRequirements', 'complianceRequirements', 'customKeyEncryption'],
@@ -861,12 +757,35 @@ const App = () => {
               <option value="no">No (Mostly defaults)</option>
               <option value="yes">Yes (Several custom configs)</option>
             </Question>
-            <Question label="Is historical data migration required from MSK to Confluent Cloud?" name="historicalDataMigration" type="select" value={formData.historicalDataMigration} onChange={handleChange}>
-              <option value="no">No (Only new data)</option>
-              <option value="partial">Partial (Select topics)</option>
-              <option value="full">Full (All topics)</option>
+
+            <Question
+              label="Historical Data Migration"
+              name="historicalDataMigration"
+              type="select"
+              value={formData.historicalDataMigration}
+              onChange={handleChange}
+            >
+              <option value="no">No</option>
+              <option value="partial">Partial</option>
+              <option value="full">Full</option>
             </Question>
-            <Question label="What is the acceptable downtime during the cutover?" name="acceptableDowntime" type="select" value={formData.acceptableDowntime} onChange={handleChange}>
+            {formData.historicalDataMigration !== 'no' && (
+              <Question
+                label="Amount of Historical Data to Migrate (GB)"
+                name="historicalDataSize"
+                type="number"
+                value={formData.historicalDataSize}
+                onChange={handleChange}
+                min="0"
+              />
+            )}
+            <Question
+              label="Acceptable Downtime"
+              name="acceptableDowntime"
+              type="select"
+              value={formData.acceptableDowntime}
+              onChange={handleChange}
+            >
               <option value="days">Days</option>
               <option value="hours">Hours</option>
               <option value="minutes">Minutes (Near-zero downtime)</option>
@@ -874,6 +793,7 @@ const App = () => {
             <Question label="What is your preferred method for data migration?" name="preferredDataMigrationTool" type="select" value={formData.preferredDataMigrationTool} onChange={handleChange}>
               <option value="mirrormaker2">MirrorMaker 2</option>
               <option value="confluent_replicator">Confluent Replicator</option>
+              <option value="cluster_linking">Cluster Linking</option>
               <option value="application_replay">Application-level Replay</option>
               <option value="custom">Custom/Other</option>
             </Question>
@@ -1099,25 +1019,13 @@ const App = () => {
               <option value="medium">Medium (1-10 MB/s)</option>
               <option value="high">High (&gt; 10 MB/s)</option>
             </Question>
-            <Question label="What is your current latency requirement?" name="performanceLatencyRequirement" type="select" value={formData.performanceLatencyRequirement} onChange={handleChange}>
-              <option value="high">High (&gt; 100ms)</option>
-              <option value="medium">Medium (50-100ms)</option>
-              <option value="low">Low (&lt; 50ms)</option>
-            </Question>
+
             <Question label="What is your current partition count?" name="partitionCount" type="select" value={formData.partitionCount} onChange={handleChange}>
               <option value="low">Low (&lt; 100)</option>
               <option value="medium">Medium (100-1000)</option>
               <option value="high">High (&gt; 1000)</option>
             </Question>
-            <Question label="What is your current broker count?" name="brokerCount" type="select" value={formData.brokerCount} onChange={handleChange}>
-              <option value="low">Low (1-3)</option>
-              <option value="medium">Medium (4-9)</option>
-              <option value="high">High (&gt; 9)</option>
-            </Question>
-            <Question label="Do you require auto-scaling?" name="requiresAutoScaling" type="select" value={formData.requiresAutoScaling} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Question>
+
             <Question label="What is your current message size?" name="messageSize" type="select" value={formData.messageSize} onChange={handleChange}>
               <option value="small">Small (&lt; 1KB)</option>
               <option value="medium">Medium (1KB-10KB)</option>
@@ -1180,7 +1088,7 @@ const App = () => {
 
           {/* Cost Analysis & Optimization */}
           <Section 
-            title="9. Cost Analysis & Optimization" 
+            title="9. Cost Analysis & Optimization(Remove? ask SE)" 
             sectionKey="costAnalysis"
           >
             <Question label="What is your current storage usage?" name="storageUsage" type="select" value={formData.storageUsage} onChange={handleChange}>
@@ -1228,15 +1136,14 @@ const App = () => {
             sectionKey="targetState"
           >
             <Question label="What is your target cluster size?" name="targetClusterSize" type="select" value={formData.targetClusterSize} onChange={handleChange}>
-              <option value="small">Small (1-3 brokers)</option>
-              <option value="medium">Medium (4-9 brokers)</option>
-              <option value="large">Large (&gt; 9 brokers)</option>
+              <option value="small">Small (1-3 CPU)</option>
+              <option value="medium">Medium (4-9 CPU)</option>
+              <option value="large">Large (&gt; 9 CPU)</option>
             </Question>
             <Question label="What is your target region?" name="targetRegion" type="select" value={formData.targetRegion} onChange={handleChange}>
               <option value="us_east_1">US East (N. Virginia)</option>
               <option value="us_west_2">US West (Oregon)</option>
-              <option value="eu_west_1">EU (Ireland)</option>
-              <option value="ap_southeast_1">Asia Pacific (Singapore)</option>
+              <option value="us_central_1">US Central (Ohio)</option>
               <option value="custom">Custom</option>
             </Question>
             <Question label="What is your target environment?" name="targetEnvironment" type="select" value={formData.targetEnvironment} onChange={handleChange}>
@@ -1563,6 +1470,10 @@ const Question = ({ label, name, type, value, onChange, children, min }) => (
     )}
   </div>
 );
+
+console.log('Registering App component globally...');
+window.App = App;
+console.log('MSK Migration Estimator loaded successfully');
 
 console.log('Registering App component globally...');
 window.App = App;
