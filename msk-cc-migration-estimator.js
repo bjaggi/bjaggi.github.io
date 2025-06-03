@@ -44,8 +44,9 @@ const App = () => {
 
     // Applications & Connectivity
     numApplications: 5,
+    applicationTypes: [], // Initialize empty array for application types
     diverseLanguages: 'no',
-    mskAuthentication: 'iam', // Default to IAM as it's a common MSK auth
+    mskAuthentication: 'iam',
     privateConnectivityRequired: 'yes',
     credentialManagement: 'secrets_manager',
 
@@ -175,6 +176,7 @@ const App = () => {
   });
 
   const [localDataSize, setLocalDataSize] = useState('');
+  const scrollRef = useRef(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -204,12 +206,17 @@ const App = () => {
 
   // Add function to handle multiple selections
   const handleMultiSelect = (name, value) => {
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: prevData[name].includes(value)
-        ? prevData[name].filter(item => item !== value)
-        : [...prevData[name], value]
-    }));
+    setFormData(prevData => {
+      const currentValues = prevData[name] || [];
+      const newValues = currentValues.includes(value)
+        ? currentValues.filter(item => item !== value)
+        : [...currentValues, value];
+      
+      return {
+        ...prevData,
+        [name]: newValues
+      };
+    });
   };
 
   const calculateComplexity = useMemo(() => {
@@ -458,7 +465,7 @@ const App = () => {
       const sectionMap = {
         general: ['numMskClusters', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam'],
         kafkaCore: ['numTopics', 'numPartitions', 'hasComplexTopicConfigs', 'historicalDataMigration', 'historicalDataSize', 'acceptableDowntime', 'preferredDataMigrationTool', 'numConsumerGroups', 'offsetMigrationRequired'],
-        applications: ['numApplications', 'diverseLanguages', 'mskAuthentication', 'privateConnectivityRequired', 'credentialManagement'],
+        applications: ['numApplications', 'applicationTypes', 'diverseLanguages', 'mskAuthentication', 'privateConnectivityRequired', 'credentialManagement'],
         ecosystem: ['usesSchemaRegistry', 'schemaRegistryType', 'usesKafkaConnect', 'kafkaConnectType', 'numConnectors', 'usesKsqlDB', 'usesOtherStreamProcessing', 'monitoringTools', 'loggingTools', 'customMskAutomation'],
         security: ['aclManagement', 'numServiceAccounts', 'auditingRequirements', 'complianceRequirements', 'customKeyEncryption'],
         network: ['networkType', 'vpcPeeringRequired', 'privateLinkRequired', 'crossRegionReplication', 'networkBandwidth', 'networkLatency', 'networkSecurityGroups'],
@@ -571,8 +578,31 @@ const App = () => {
               const fields = getSectionFields(section);
               const entries = fields.map(field => {
                 const value = formData[field];
+                let displayValue = value;
+                
+                // Special handling for application types
+                if (field === 'applicationTypes') {
+                  if (!value || value.length === 0) {
+                    displayValue = 'None specified';
+                  } else {
+                    const labels = {
+                      'customApps': 'Custom Applications',
+                      'kafkaConnect': 'Kafka Connect Connectors',
+                      'kstreams': 'Kafka Streams Applications',
+                      'ksqlDb': 'ksqlDB Applications',
+                      'flink': 'Apache Flink Applications',
+                      'spark': 'Apache Spark Applications',
+
+                      'other': 'Other Applications'
+                    };
+                    displayValue = value.map(type => labels[type] || type).join(', ');
+                  }
+                } else if (Array.isArray(value)) {
+                  displayValue = value.join(', ');
+                }
+                
                 const label = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                return `<li><strong>${label}:</strong> ${Array.isArray(value) ? value.join(', ') : value}</li>`;
+                return `<li><strong>${label}:</strong> ${displayValue}</li>`;
               }).join('');
 
               const notes = formData.sectionNotes && formData.sectionNotes[section];
@@ -676,11 +706,37 @@ const App = () => {
     );
   };
 
+  // Add this function near the top of the App component
+  const preventDefault = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  };
+
+  const ControlledCheckbox = ({ checked, onChange, label }) => {
+    const handleClick = (e) => {
+      e.preventDefault();
+      onChange(!checked);
+    };
+
+    return (
+      <label className="inline-flex items-center">
+        <input
+          type="checkbox"
+          checked={checked}
+          onClick={handleClick}
+          className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        />
+        <span className="ml-2 text-sm text-gray-700">{label}</span>
+      </label>
+    );
+  };
+
   // Update the form sections to pass the required props
   return (
     <div className="min-h-screen p-4 sm:p-8 font-sans text-[#0A3D62]">
       <div className="max-w-4xl mx-auto shadow-lg rounded-xl p-6 sm:p-8">
-        <form className="space-y-8">
+        <div className="space-y-8" ref={scrollRef}>
           {/* General & Scope */}
           <Section 
             title="1. General & Scope" 
@@ -820,21 +876,15 @@ const App = () => {
                   { id: 'ksqlDb', label: 'ksqlDB Applications' },
                   { id: 'flink', label: 'Apache Flink Applications' },
                   { id: 'spark', label: 'Apache Spark Applications' },
-                  { id: 'other', label: 'Other Applications add in notes' }
+                  { id: 'other', label: 'Other Applications' }
                 ].map(app => (
                   <label key={app.id} className="inline-flex items-center">
                     <input
                       type="checkbox"
                       checked={formData.applicationTypes?.includes(app.id) || false}
-                      onChange={() => {
-                        const newTypes = formData.applicationTypes || [];
-                        const updatedTypes = newTypes.includes(app.id)
-                          ? newTypes.filter(type => type !== app.id)
-                          : [...newTypes, app.id];
-                        setFormData(prev => ({
-                          ...prev,
-                          applicationTypes: updatedTypes
-                        }));
+                      onChange={(e) => {
+                        e.preventDefault();
+                        handleMultiSelect('applicationTypes', app.id);
                       }}
                       className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                     />
@@ -1061,14 +1111,14 @@ const App = () => {
             </Question>
 
             <Question label="What is your current message size?" name="messageSize" type="select" value={formData.messageSize} onChange={handleChange}>
-              <option value="small">Small (&lt; 1KB)</option>
-              <option value="medium">Medium (1KB-10KB)</option>
-              <option value="large">Large (&gt; 10KB)</option>
+              <option value="small">Small (&lt; 10KB)</option>
+              <option value="medium">Medium (10KB-100KB)</option>
+              <option value="large">Large (&gt; 100KB)</option>
             </Question>
             <Question label="What is your current retention period?" name="retentionPeriod" type="select" value={formData.retentionPeriod} onChange={handleChange}>
               <option value="short">Short (&lt; 1 day)</option>
               <option value="medium">Medium (1-7 days)</option>
-              <option value="long">Long (&gt; 7 days)</option>
+              <option value="long">Long (&gt; infinite)</option>
             </Question>
             <Question label="Do you have any specific performance requirements?" name="hasSpecificPerformanceRequirements" type="select" value={formData.hasSpecificPerformanceRequirements} onChange={handleChange}>
               <option value="no">No</option>
@@ -1170,9 +1220,9 @@ const App = () => {
             sectionKey="targetState"
           >
             <Question label="What is your target cluster size?" name="targetClusterSize" type="select" value={formData.targetClusterSize} onChange={handleChange}>
-              <option value="small">Small (1-3 CPU)</option>
-              <option value="medium">Medium (4-9 CPU)</option>
-              <option value="large">Large (&gt; 9 CPU)</option>
+              <option value="small">Small (1-3 CKU)</option>
+              <option value="medium">Medium (4-9 CKU)</option>
+              <option value="large">Large (&gt; 9 CKU)</option>
             </Question>
             <Question label="What is your target region?" name="targetRegion" type="select" value={formData.targetRegion} onChange={handleChange}>
               <option value="us_east_1">US East (N. Virginia)</option>
@@ -1211,7 +1261,7 @@ const App = () => {
 
           {/* Migration Goals */}
           <Section title="11. Migration Goals" sectionKey="goals">
-            <Question label="What is your primary migration goal?" name="primaryGoal" type="select" value={formData.primaryGoal} onChange={handleChange}>
+            <Question label="What is your primary migration goal?" name="primaryGoal" type="select" value={formData.primaryGoal} onChange={handleChange} min="1">
               <option value="cost_reduction">Cost Reduction</option>
               <option value="simplified_ops">Simplified Operations</option>
               <option value="better_features">Better Features</option>
@@ -1219,23 +1269,31 @@ const App = () => {
               <option value="reliability">Enhanced Reliability</option>
               <option value="security">Improved Security</option>
             </Question>
-            <div className="space-y-2">
+            <div 
+              className="space-y-2"
+              onMouseDown={preventDefault}
+              onKeyDown={preventDefault}
+              onClick={preventDefault}
+            >
               <label className="block text-md font-medium text-gray-700 mb-2">
                 Select secondary goals (multiple):
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {['cost_reduction', 'simplified_ops', 'better_features', 'scalability', 'reliability', 'security'].map(goal => (
-                  <label key={goal} className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.secondaryGoals.includes(goal)}
-                      onChange={() => handleMultiSelect('secondaryGoals', goal)}
-                      className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">
-                      {goal.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                    </span>
-                  </label>
+                  <ControlledCheckbox
+                    key={goal}
+                    checked={formData.secondaryGoals.includes(goal)}
+                    onChange={(isChecked) => {
+                      const newGoals = isChecked
+                        ? [...formData.secondaryGoals, goal]
+                        : formData.secondaryGoals.filter(g => g !== goal);
+                      setFormData(prev => ({
+                        ...prev,
+                        secondaryGoals: newGoals
+                      }));
+                    }}
+                    label={goal.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  />
                 ))}
               </div>
             </div>
@@ -1260,7 +1318,7 @@ const App = () => {
               <option value="comprehensive">Comprehensive (Full Optimization)</option>
             </Question>
           </Section>
-        </form>
+        </div>
 
         {/* Results Section */}
         <div className="mt-10 p-6 bg-indigo-50 rounded-xl shadow-inner border border-indigo-200">
@@ -1327,6 +1385,30 @@ const App = () => {
                 <h4 className="font-bold text-[#0A3D62] mb-2">3. Applications & Connectivity</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Number of Applications:</span> {formData.numApplications}</li>
+                  <li>
+                    <span className="font-medium">Application Types:</span>{' '}
+                    {formData.applicationTypes && formData.applicationTypes.length > 0 ? (
+                      formData.applicationTypes.map(type => {
+                        const labels = {
+                          'customApps': 'Custom Applications',
+                          'kafkaConnect': 'Kafka Connect Connectors',
+                          'kstreams': 'Kafka Streams Applications',
+                          'ksqlDb': 'ksqlDB Applications',
+                          'flink': 'Apache Flink Applications',
+                          'spark': 'Apache Spark Applications',
+                          'storm': 'Apache Storm Applications',
+                          'samza': 'Apache Samza Applications',
+                          'nifi': 'Apache NiFi Flows',
+                          'logstash': 'Logstash Pipelines',
+                          'beats': 'Elastic Beats',
+                          'other': 'Other Applications'
+                        };
+                        return labels[type] || type;
+                      }).join(', ')
+                    ) : (
+                      'None specified'
+                    )}
+                  </li>
                   <li><span className="font-medium">Diverse Languages:</span> {formData.diverseLanguages === 'yes' ? 'Yes' : 'No'}</li>
                   <li><span className="font-medium">MSK Authentication:</span> {formData.mskAuthentication.toUpperCase()}</li>
                   <li><span className="font-medium">Private Connectivity Required:</span> {formData.privateConnectivityRequired === 'yes' ? 'Yes' : 'No'}</li>
@@ -1476,36 +1558,49 @@ const App = () => {
 };
 
 // Helper Components for better readability
-const Question = ({ label, name, type, value, onChange, children, min, step, placeholder, className }) => (
-  <div>
-    <label htmlFor={name} className="block text-md font-medium text-[#0A3D62] mb-2">
-      {label}
-    </label>
-    {type === 'select' ? (
-      <select
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
-      >
-        {children}
-      </select>
-    ) : (
-      <input
-        type={type}
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        min={min}
-        step={step}
-        placeholder={placeholder}
-        className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 ${className || ''}`}
-      />
-    )}
-  </div>
-);
+const Question = ({ label, name, type, value, onChange, children, min, step, placeholder, className }) => {
+  const handleSelectChange = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const select = e.target;
+    const currentValue = select.value;
+    onChange({ target: { name, value: currentValue } });
+    // Maintain focus after selection
+    setTimeout(() => select.focus(), 0);
+  };
+
+  return (
+    <div>
+      <label htmlFor={name} className="block text-md font-medium text-[#0A3D62] mb-2">
+        {label}
+      </label>
+      {type === 'select' ? (
+        <select
+          id={name}
+          name={name}
+          value={value}
+          onChange={handleSelectChange}
+          onBlur={(e) => e.preventDefault()}
+          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+        >
+          {children}
+        </select>
+      ) : (
+        <input
+          type={type}
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          min={min}
+          step={step}
+          placeholder={placeholder}
+          className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 ${className || ''}`}
+        />
+      )}
+    </div>
+  );
+};
 
 console.log('Registering App component globally...');
 window.App = App;
