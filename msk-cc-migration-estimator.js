@@ -1032,6 +1032,7 @@ const App = () => {
               <option value="basic">Basic</option>
               <option value="basic">Enterprise</option>
               <option value="basic">Freight</option>
+              <option value="basic">Warpstream</option>
               <option value="custom">Custom</option>
             </Question>
             <Question label="Where will your target Confluent Cloud cluster be located?" name="targetRegion" type="select" value={formData.targetRegion} onChange={handleChange}>
