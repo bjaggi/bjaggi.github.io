@@ -807,6 +807,43 @@ const App = () => {
             sectionKey="applications"
           >
             <Question label="How many applications are currently connected to MSK?" name="numApplications" type="number" value={formData.numApplications} onChange={handleChange} min="1" />
+            
+            <div className="mt-4">
+              <label className="block text-md font-medium text-[#0A3D62] mb-2">
+                Types of Applications (Select all that apply):
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {[
+                  { id: 'customApps', label: 'Custom Applications' },
+                  { id: 'kafkaConnect', label: 'Kafka Connect Connectors' },
+                  { id: 'kstreams', label: 'Kafka Streams Applications' },
+                  { id: 'ksqlDb', label: 'ksqlDB Applications' },
+                  { id: 'flink', label: 'Apache Flink Applications' },
+                  { id: 'spark', label: 'Apache Spark Applications' },
+                  { id: 'other', label: 'Other Applications add in notes' }
+                ].map(app => (
+                  <label key={app.id} className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.applicationTypes?.includes(app.id) || false}
+                      onChange={() => {
+                        const newTypes = formData.applicationTypes || [];
+                        const updatedTypes = newTypes.includes(app.id)
+                          ? newTypes.filter(type => type !== app.id)
+                          : [...newTypes, app.id];
+                        setFormData(prev => ({
+                          ...prev,
+                          applicationTypes: updatedTypes
+                        }));
+                      }}
+                      className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{app.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <Question label="What Kafka client versions are currently in use?" name="kafkaClientVersions" type="select" value={formData.kafkaClientVersions} onChange={handleChange}>
               <option value="0.10.x">0.10.x</option>
               <option value="0.11.x">0.11.x</option>
