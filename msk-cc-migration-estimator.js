@@ -174,12 +174,22 @@ const App = () => {
     hasSpecificFeatureRequirements: 'no',
   });
 
+  const [localDataSize, setLocalDataSize] = useState('');
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    if (name === 'historicalDataSize') {
+      setLocalDataSize(value);
+      setFormData(prevData => ({
+        ...prevData,
+        [name]: value === '' ? 0 : parseInt(value, 10)
+      }));
+    } else {
+      setFormData(prevData => ({
+        ...prevData,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
   };
 
   const handleNotesChange = (section, value) => {
@@ -770,14 +780,24 @@ const App = () => {
               <option value="full">Full</option>
             </Question>
             {formData.historicalDataMigration !== 'no' && (
-              <Question
-                label="Amount of Historical Data to Migrate (GB)"
-                name="historicalDataSize"
-                type="number"
-                value={formData.historicalDataSize}
-                onChange={handleChange}
-                min="0"
-              />
+              <div className="mt-4">
+                <label htmlFor="historicalDataSize" className="block text-md font-medium text-[#0A3D62] mb-2">
+                  Amount of Historical Data to Migrate (GB)
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  id="historicalDataSize"
+                  name="historicalDataSize"
+                  value={localDataSize}
+                  onChange={handleChange}
+                  min="0"
+                  step="1"
+                  placeholder="Enter amount in GB"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+                />
+              </div>
             )}
             <Question
               label="Acceptable Downtime"
@@ -791,10 +811,10 @@ const App = () => {
               <option value="minutes">Minutes (Near-zero downtime)</option>
             </Question>
             <Question label="What is your preferred method for data migration?" name="preferredDataMigrationTool" type="select" value={formData.preferredDataMigrationTool} onChange={handleChange}>
-              <option value="mirrormaker2">MirrorMaker 2</option>
               <option value="confluent_replicator">Confluent Replicator</option>
               <option value="cluster_linking">Cluster Linking</option>
-              <option value="application_replay">Application-level Replay</option>
+              <option value="mirrormaker2">MirrorMaker 2</option>
+              <option value="application_replay">Confluent Recommened tool</option>
               <option value="custom">Custom/Other</option>
             </Question>
             <Question label="How many active consumer groups are consuming from MSK?" name="numConsumerGroups" type="number" value={formData.numConsumerGroups} onChange={handleChange} min="1" />
@@ -1442,7 +1462,7 @@ const App = () => {
 };
 
 // Helper Components for better readability
-const Question = ({ label, name, type, value, onChange, children, min }) => (
+const Question = ({ label, name, type, value, onChange, children, min, step, placeholder, className }) => (
   <div>
     <label htmlFor={name} className="block text-md font-medium text-[#0A3D62] mb-2">
       {label}
@@ -1465,7 +1485,9 @@ const Question = ({ label, name, type, value, onChange, children, min }) => (
         value={value}
         onChange={onChange}
         min={min}
-        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
+        step={step}
+        placeholder={placeholder}
+        className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 ${className || ''}`}
       />
     )}
   </div>
