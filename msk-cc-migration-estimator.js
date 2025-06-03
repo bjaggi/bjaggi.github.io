@@ -776,29 +776,10 @@ const App = () => {
               onChange={handleChange}
             >
               <option value="no">No</option>
-              <option value="partial">Partial</option>
-              <option value="full">Full</option>
+              <option value="partial">Partial(Enter size in TB in notes)</option>
+              <option value="full">Full(Enter size in TB in notes)</option>
             </Question>
-            {formData.historicalDataMigration !== 'no' && (
-              <div className="mt-4">
-                <label htmlFor="historicalDataSize" className="block text-md font-medium text-[#0A3D62] mb-2">
-                  Amount of Historical Data to Migrate (GB)
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  id="historicalDataSize"
-                  name="historicalDataSize"
-                  value={localDataSize}
-                  onChange={handleChange}
-                  min="0"
-                  step="1"
-                  placeholder="Enter amount in GB"
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2"
-                />
-              </div>
-            )}
+           
             <Question
               label="Acceptable Downtime"
               name="acceptableDowntime"
