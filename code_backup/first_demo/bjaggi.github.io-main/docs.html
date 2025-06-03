@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS MSK to Confluent Cloud Migration Estimator - Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #F5F9FF;
+            color: #0A3D62;
+        }
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .category {
+            margin-bottom: 2rem;
+        }
+        .category h2 {
+            color: #0A3D62;
+            border-bottom: 2px solid #E5E7EB;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .category h3 {
+            color: #0A3D62;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .points {
+            color: #0A3D62;
+            font-size: 0.9rem;
+        }
+        .effort-level {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #E5E7EB;
+        }
+        .effort-level h3 {
+            color: #0A3D62;
+            margin-top: 0;
+        }
+        a {
+            color: #0A85EA;
+        }
+        a:hover {
+            color: #0A3D62;
+        }
+        .text-primary {
+            color: #0A85EA;
+        }
+        .text-dark {
+            color: #0A3D62;
+        }
+        .text-accent {
+            color: #00A4EF;
+        }
+        .bg-primary {
+            background-color: #0A85EA;
+        }
+        .bg-dark {
+            background-color: #0A3D62;
+        }
+        .bg-accent {
+            background-color: #00A4EF;
+        }
+        .hover\:text-dark:hover {
+            color: #0A3D62;
+        }
+        .hover\:bg-dark:hover {
+            background-color: #0A3D62;
+        }
+        .border-primary {
+            border-color: #0A85EA;
+        }
+        .focus\:ring-primary:focus {
+            --tw-ring-color: #0A85EA;
+        }
+        .focus\:border-primary:focus {
+            border-color: #0A85EA;
+        }
+        .logo-container {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1000;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .logo-container img {
+            height: 40px;
+            width: auto;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #0A3D62;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
+            <img src="assets/image.png" alt="Confluent Logo">
+        </a>
+    </div>
+    <div class="container mx-auto px-4 py-8">
+        <div class="content shadow-lg rounded-lg p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold mb-2 text-dark">AWS MSK to Confluent Cloud Migration Estimator</h1>
+                <p class="text-dark">Documentation and Scoring Guide</p>
+                <a href="index.html" class="text-primary hover:text-dark underline mt-4 inline-block">← Back to Estimator</a>
+            </div>
+
+            <div class="category">
+                <h2>Scoring System</h2>
+                <p class="mb-4">The estimator calculates a total complexity score based on 11 key categories:</p>
+
+                <div class="mb-6">
+                    <h3>1. General & Scope</h3>
+                    <p class="points">5-18 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Number of MSK clusters</li>
+                        <li>Timeline requirements</li>
+                        <li>Non-functional requirements</li>
+                        <li>Team experience</li>
+                        <li>Dedicated migration team availability</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h3>2. Kafka Core & Data Migration</h3>
+                    <p class="points">5-25 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Number of topics and partitions</li>
+                        <li>Topic configuration complexity</li>
+                        <li>Historical data migration requirements</li>
+                        <li>Acceptable downtime</li>
+                        <li>Consumer group migration needs</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h3>3. Applications & Connectivity</h3>
+                    <p class="points">5-20 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Number of applications</li>
+                        <li>Programming language diversity</li>
+                        <li>Authentication mechanisms</li>
+                        <li>Network connectivity requirements</li>
+                        <li>Credential management</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h3>4. Ecosystem & Tools</h3>
+                    <p class="points">5-20 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Schema Registry usage</li>
+                        <li>Kafka Connect deployment</li>
+                        <li>ksqlDB usage</li>
+                        <li>Stream processing requirements</li>
+                        <li>Monitoring and logging tools</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h3>5. Security & Governance</h3>
+                    <p class="points">5-20 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>ACL management</li>
+                        <li>Service account complexity</li>
+                        <li>Auditing requirements</li>
+                        <li>Compliance needs</li>
+                        <li>Encryption requirements</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h3>6. Network & Connectivity</h3>
+                    <p class="points">5-20 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Network type</li>
+                        <li>VPC peering requirements</li>
+                        <li>PrivateLink requirements</li>
+                        <li>Cross-region replication</li>
+                        <li>Bandwidth and latency needs</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h3>7. Performance & Scaling</h3>
+                    <p class="points">5-20 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Throughput requirements</li>
+                        <li>Message size</li>
+                        <li>Retention periods</li>
+                        <li>Auto-scaling needs</li>
+                        <li>Partition and broker scaling</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h3>8. Disaster Recovery & HA</h3>
+                    <p class="points">5-25 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>DR strategy</li>
+                        <li>Backup requirements</li>
+                        <li>Failover time requirements</li>
+                        <li>Multi-region deployment</li>
+                        <li>Replication factor</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h3>9. Cost Analysis & Optimization</h3>
+                    <p class="points">5-15 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Current MSK costs</li>
+                        <li>Cost optimization needs</li>
+                        <li>Reserved pricing requirements</li>
+                        <li>Data retention strategy</li>
+                        <li>Storage type requirements</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h3>10. Target State</h3>
+                    <p class="points">5-25 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Cluster type selection</li>
+                        <li>Region configuration</li>
+                        <li>Environment setup</li>
+                        <li>Security model</li>
+                        <li>Monitoring and logging setup</li>
+                        <li>Automation approach</li>
+                        <li>Compliance requirements</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h3>11. Migration Goals</h3>
+                    <p class="points">5-20 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Primary and secondary goals</li>
+                        <li>Timeline constraints</li>
+                        <li>Budget constraints</li>
+                        <li>Risk tolerance</li>
+                        <li>Success criteria</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="category">
+                <h2>Risk Categorization</h2>
+                <p class="mb-4">The total score determines the migration effort level:</p>
+
+                <div class="effort-level">
+                    <h3>Low Effort (0-25 points)</h3>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Simple migration with minimal complexity</li>
+                        <li>Few custom configurations</li>
+                        <li>Standard security requirements</li>
+                        <li>Basic monitoring needs</li>
+                        <li>Single-region deployment</li>
+                        <li>Limited number of applications</li>
+                        <li>Standard retention periods</li>
+                        <li>Basic disaster recovery needs</li>
+                    </ul>
+                </div>
+
+                <div class="effort-level">
+                    <h3>Medium Effort (26-50 points)</h3>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Moderate complexity</li>
+                        <li>Some custom configurations</li>
+                        <li>Enhanced security requirements</li>
+                        <li>Multiple monitoring tools</li>
+                        <li>Multi-region considerations</li>
+                        <li>Moderate number of applications</li>
+                        <li>Extended retention periods</li>
+                        <li>Standard disaster recovery</li>
+                    </ul>
+                </div>
+
+                <div class="effort-level">
+                    <h3>High Effort (51-75 points)</h3>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Complex migration</li>
+                        <li>Multiple custom configurations</li>
+                        <li>Strict security requirements</li>
+                        <li>Complex monitoring setup</li>
+                        <li>Multi-region deployment</li>
+                        <li>Large number of applications</li>
+                        <li>Custom retention periods</li>
+                        <li>Advanced disaster recovery</li>
+                    </ul>
+                </div>
+
+                <div class="effort-level">
+                    <h3>Very High Effort (76+ points)</h3>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Extremely complex migration</li>
+                        <li>Extensive custom configurations</li>
+                        <li>Enterprise-grade security</li>
+                        <li>Complex monitoring ecosystem</li>
+                        <li>Global deployment</li>
+                        <li>Large application ecosystem</li>
+                        <li>Complex retention policies</li>
+                        <li>Enterprise disaster recovery</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="category">
+                <h2>Best Practices</h2>
+                <ul class="list-disc list-inside ml-4">
+                    <li>Complete all sections accurately</li>
+                    <li>Consider both current state and target requirements</li>
+                    <li>Review recommendations carefully</li>
+                    <li>Plan for the highest complexity areas first</li>
+                    <li>Consider phased migration for complex scenarios</li>
+                    <li>Validate assumptions with Confluent Cloud documentation</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

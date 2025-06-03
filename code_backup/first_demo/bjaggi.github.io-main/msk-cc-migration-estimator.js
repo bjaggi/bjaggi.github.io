@@ -1,5 +1,5 @@
 // Get React from the global scope
-const { useState, useMemo, useEffect, Fragment, useRef } = React;
+const { useState, useMemo, useEffect, Fragment } = React;
 
 console.log('Loading MSK Migration Estimator...');
 
@@ -14,19 +14,6 @@ const App = () => {
     hasStrictNFRs: 'no',
     teamKafkaExperience: 'medium',
     dedicatedMigrationTeam: 'no',
-    sectionNotes: {
-      general: '',
-      kafkaCore: '',
-      applications: '',
-      ecosystem: '',
-      security: '',
-      network: '',
-      performance: '',
-      dr: '',
-      cost: '',
-      targetState: '',
-      goals: ''
-    },
 
     // Kafka Core & Data Migration
     numTopics: 10,
@@ -120,16 +107,6 @@ const App = () => {
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  const handleNotesChange = (section, value) => {
-    setFormData(prevData => ({
-      ...prevData,
-      sectionNotes: {
-        ...prevData.sectionNotes,
-        [section]: value
-      }
     }));
   };
 
@@ -370,12 +347,12 @@ const App = () => {
 
     if (totalScore > 25) { // Only provide detailed recommendations for non-low effort migrations
       recommendations.push(
-        `<div class="font-bold">Overall Estimated Effort: ${effortLevel}</div> (Total Score: ${totalScore}).`
+        `Overall Estimated Effort: **${effortLevel}** (Total Score: ${totalScore}).`
       );
-      recommendations.push('<div class="font-bold">Focus areas for de-risking and acceleration:</div>');
+      recommendations.push("Focus areas for de-risking and acceleration:");
 
       sortedCategories.forEach(([category, score]) => {
-        if (score > 10) { // Increased threshold for significant complexity in a category
+        if (score > 5) { // Threshold for significant complexity in a category
           let categoryName = '';
           let specificRecs = [];
           switch (category) {
@@ -464,13 +441,13 @@ const App = () => {
               break;
           }
           if (specificRecs.length > 0) {
-            recommendations.push(`<div class="font-bold">${categoryName}</div> (Score: ${score}):`);
+            recommendations.push(`- **${categoryName}** (Score: ${score}):`);
             specificRecs.forEach(rec => recommendations.push(`  - ${rec}`));
           }
         }
       });
     } else {
-      recommendations.push('<div class="font-bold">This migration appears to be Low Effort.</div> Focus on standard best practices for connectivity, testing, and phased cutover.');
+      recommendations.push("This migration appears to be **Low Effort**. Focus on standard best practices for connectivity, testing, and phased cutover.");
     }
 
     return recommendations;
@@ -483,30 +460,6 @@ const App = () => {
       console.error('Results section not found');
       return;
     }
-
-    // Helper function to format section titles
-    const formatSectionTitle = (title) => {
-      return title.split(/(?=[A-Z])/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    };
-
-    // Helper function to get section fields
-    const getSectionFields = (section) => {
-      const sectionMap = {
-        general: ['numMskClusters', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam'],
-        kafkaCore: ['numTopics', 'numPartitions', 'hasComplexTopicConfigs', 'historicalDataMigration', 'acceptableDowntime', 'preferredDataMigrationTool', 'numConsumerGroups', 'offsetMigrationRequired'],
-        applications: ['numApplications', 'diverseLanguages', 'mskAuthentication', 'privateConnectivityRequired', 'credentialManagement'],
-        ecosystem: ['usesSchemaRegistry', 'schemaRegistryType', 'usesKafkaConnect', 'kafkaConnectType', 'numConnectors', 'usesKsqlDB', 'usesOtherStreamProcessing', 'monitoringTools', 'loggingTools', 'customMskAutomation'],
-        security: ['aclManagement', 'numServiceAccounts', 'auditingRequirements', 'complianceRequirements', 'customKeyEncryption'],
-        network: ['networkType', 'vpcPeeringRequired', 'privateLinkRequired', 'crossRegionReplication', 'networkBandwidth', 'networkLatency', 'networkSecurityGroups'],
-        performance: ['peakThroughput', 'messageSize', 'retentionPeriod', 'autoScaling', 'partitionScaling', 'brokerScaling'],
-        dr: ['drStrategy', 'backupFrequency', 'backupRetention', 'failoverTime', 'multiRegion', 'replicationFactor'],
-        cost: ['currentMskCost', 'costOptimization', 'reservedPricing', 'dataRetention', 'storageType'],
-        targetState: ['targetClusterType', 'targetRegion', 'targetEnvironment', 'targetSecurityModel', 'targetMonitoring', 'targetLogging', 'targetAutomation', 'targetCompliance'],
-        goals: ['primaryGoal', 'secondaryGoals', 'timelineConstraint', 'budgetConstraint', 'riskTolerance', 'successCriteria']
-      };
-
-      return sectionMap[section] || [];
-    };
 
     // Create a new window for PDF content
     const printWindow = window.open('', '_blank');
@@ -526,129 +479,26 @@ const App = () => {
               font-family: Arial, sans-serif;
               padding: 20px;
               color: #333;
-              line-height: 1.6;
             }
-            h1 { color: #0A3D62; text-align: center; margin-bottom: 30px; }
-            h2 { color: #0A3D62; margin-top: 30px; border-bottom: 2px solid #0A3D62; padding-bottom: 5px; }
+            h2 { color: #0A3D62; }
             h3 { color: #0A3D62; margin-top: 20px; }
-            .section { 
-              margin-bottom: 30px;
-              page-break-inside: avoid;
-            }
-            .grid { 
-              display: grid; 
-              grid-template-columns: repeat(2, 1fr); 
-              gap: 20px;
-              margin-bottom: 20px;
-            }
+            .section { margin-bottom: 20px; }
+            .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
             .card { 
               border: 1px solid #ddd;
               padding: 15px;
               border-radius: 8px;
               background: #fff;
             }
-            .card h4 { 
-              color: #0A3D62; 
-              margin-top: 0;
-              border-bottom: 1px solid #eee;
-              padding-bottom: 5px;
-            }
+            .card h4 { color: #0A3D62; margin-top: 0; }
             ul { margin-left: 20px; }
-            li { margin-bottom: 8px; }
+            li { margin-bottom: 5px; }
             .score { font-weight: bold; }
             .recommendation { margin-bottom: 10px; }
-            .notes {
-              margin-top: 10px;
-              padding: 10px;
-              background-color: #f8f9fa;
-              border-left: 3px solid #0A3D62;
-              font-style: italic;
-            }
-            .effort-level {
-              text-align: center;
-              font-size: 24px;
-              font-weight: bold;
-              padding: 10px;
-              margin: 20px 0;
-              border-radius: 8px;
-            }
-            .low-effort { background-color: #dcfce7; color: #166534; }
-            .medium-effort { background-color: #fef9c3; color: #854d0e; }
-            .high-effort { background-color: #ffedd5; color: #9a3412; }
-            .very-high-effort { background-color: #fee2e2; color: #991b1b; }
           </style>
         </head>
         <body>
-          <h1>MSK Migration Estimate Report</h1>
-          
-          <div class="effort-level ${effortLevel.toLowerCase().replace(' ', '-')}">
-            Overall Estimated Effort: ${effortLevel}
-          </div>
-          
-          <p style="text-align: center; font-size: 18px;">
-            Total Complexity Score: <span class="score">${totalScore}</span>
-          </p>
-
-          <h2>Selected Configuration</h2>
-          <div class="grid">
-            ${Object.entries({
-              general: '1. General & Scope',
-              kafkaCore: '2. Kafka Core & Data Migration',
-              applications: '3. Applications & Connectivity',
-              ecosystem: '4. Ecosystem & Operational Tools',
-              security: '5. Security & Governance',
-              network: '6. Network & Connectivity',
-              performance: '7. Performance & Scaling',
-              dr: '8. Disaster Recovery & High Availability',
-              cost: '9. Cost Analysis & Optimization',
-              targetState: '10. Target State',
-              goals: '11. Migration Goals'
-            }).map(([section, title]) => {
-              const fields = getSectionFields(section);
-              const entries = fields.map(field => {
-                const value = formData[field];
-                const label = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                return `<li><strong>${label}:</strong> ${Array.isArray(value) ? value.join(', ') : value}</li>`;
-              }).join('');
-
-              const notes = formData.sectionNotes && formData.sectionNotes[section];
-              const notesHtml = notes ? `
-                <div class="notes">
-                  <strong>Additional Notes:</strong><br>
-                  ${notes}
-                </div>
-              ` : '';
-
-              return `
-                <div class="card">
-                  <h4>${title}</h4>
-                  <ul>
-                    ${entries}
-                  </ul>
-                  ${notesHtml}
-                </div>
-              `;
-            }).join('')}
-          </div>
-
-          <h2>Complexity Breakdown</h2>
-          <div class="bg-white p-4 rounded-lg shadow">
-            <ul class="space-y-2">
-              ${Object.entries(categoryScores).map(([category, score]) => `
-                <li class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                  <span class="capitalize text-[#0A3D62]">${formatSectionTitle(category)}</span>
-                  <span class="font-bold text-lg text-[#0A3D62]">${score}</span>
-                </li>
-              `).join('')}
-            </ul>
-          </div>
-
-          <h2>Key Recommendations</h2>
-          <div class="recommendations">
-            ${getRecommendations.filter(rec => rec.trim() !== '').map(rec => `
-              <div class="recommendation">${rec}</div>
-            `).join('')}
-          </div>
+          ${element.innerHTML}
         </body>
       </html>
     `);
@@ -664,64 +514,17 @@ const App = () => {
     }, 500);
   };
 
-  // Helper Components for better readability
-  const Section = ({ title, sectionKey, children }) => {
-    const [localNotes, setLocalNotes] = useState(formData.sectionNotes[sectionKey] || '');
-    const textareaRef = useRef(null);
-
-    // Update local state when formData changes
-    useEffect(() => {
-      setLocalNotes(formData.sectionNotes[sectionKey] || '');
-    }, [formData.sectionNotes[sectionKey]]);
-
-    const handleNotesChange = (e) => {
-      setLocalNotes(e.target.value);
-    };
-
-    const handleBlur = () => {
-      setFormData(prevData => ({
-        ...prevData,
-        sectionNotes: {
-          ...prevData.sectionNotes,
-          [sectionKey]: localNotes
-        }
-      }));
-    };
-
-    return (
-      <div className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
-        <h2 className="text-xl font-bold text-[#0A3D62] mb-5">{title}</h2>
-        <div className="space-y-5">
-          {children}
-        </div>
-        <div className="mt-6">
-          <label htmlFor={`notes-${sectionKey}`} className="block text-md font-medium text-[#0A3D62] mb-2">
-            Additional Notes (Optional)
-          </label>
-          <textarea
-            ref={textareaRef}
-            id={`notes-${sectionKey}`}
-            value={localNotes}
-            onChange={handleNotesChange}
-            onBlur={handleBlur}
-            placeholder="Add any additional notes or comments for this section..."
-            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 min-h-[100px]"
-          />
-        </div>
-      </div>
-    );
-  };
-
-  // Update the form sections to pass the required props
   return (
     <div className="min-h-screen p-4 sm:p-8 font-sans text-[#0A3D62]">
       <div className="max-w-4xl mx-auto shadow-lg rounded-xl p-6 sm:p-8">
+
+        <p className="text-center text-[#0A3D62] mb-8">
+          Answer the questions below to get an estimated complexity and level of effort for your migration.
+        </p>
+
         <form className="space-y-8">
           {/* General & Scope */}
-          <Section 
-            title="1. General & Scope" 
-            sectionKey="general"
-          >
+          <Section title="1. General & Scope">
             <Question label="How many AWS MSK clusters do you currently operate?" name="numMskClusters" type="number" value={formData.numMskClusters} onChange={handleChange} min="1" />
             <Question label="What is the desired timeline for the migration?" name="desiredTimeline" type="select" value={formData.desiredTimeline} onChange={handleChange}>
               <option value=">12_months">{'>'} 12 months</option>
@@ -745,10 +548,7 @@ const App = () => {
           </Section>
 
           {/* Kafka Core & Data Migration */}
-          <Section 
-            title="2. Kafka Core & Data Migration" 
-            sectionKey="kafkaCore"
-          >
+          <Section title="2. Kafka Core & Data Migration">
             <Question label="How many active Kafka topics are in use across all MSK clusters?" name="numTopics" type="number" value={formData.numTopics} onChange={handleChange} min="1" />
             <Question label="What is the total number of partitions across all topics?" name="numPartitions" type="number" value={formData.numPartitions} onChange={handleChange} min="1" />
             <Question label="Are there any topics with specific/complex configurations (e.g., custom retention, compaction, replication factor)?" name="hasComplexTopicConfigs" type="select" value={formData.hasComplexTopicConfigs} onChange={handleChange}>
@@ -779,10 +579,7 @@ const App = () => {
           </Section>
 
           {/* Applications & Connectivity */}
-          <Section 
-            title="3. Applications & Connectivity" 
-            sectionKey="applications"
-          >
+          <Section title="3. Applications & Connectivity">
             <Question label="How many distinct applications (producers/consumers) interact with MSK?" name="numApplications" type="number" value={formData.numApplications} onChange={handleChange} min="1" />
             <Question label="Do your applications use a diverse set of programming languages/client libraries (e.g., Java, Python, Go, .NET)?" name="diverseLanguages" type="select" value={formData.diverseLanguages} onChange={handleChange}>
               <option value="no">No (Mostly one language/stack)</option>
@@ -806,10 +603,7 @@ const App = () => {
           </Section>
 
           {/* Ecosystem & Operational Tools */}
-          <Section 
-            title="4. Ecosystem & Operational Tools" 
-            sectionKey="ecosystem"
-          >
+          <Section title="4. Ecosystem & Operational Tools">
             <Question label="Do you use a Schema Registry with MSK?" name="usesSchemaRegistry" type="select" value={formData.usesSchemaRegistry} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
@@ -861,10 +655,7 @@ const App = () => {
           </Section>
 
           {/* Security & Governance */}
-          <Section 
-            title="5. Security & Governance" 
-            sectionKey="security"
-          >
+          <Section title="5. Security & Governance">
             <Question label="How are Kafka ACLs (Access Control Lists) currently managed on MSK?" name="aclManagement" type="select" value={formData.aclManagement} onChange={handleChange}>
               <option value="iam_policies">IAM Policies</option>
               <option value="kafka_cli">Kafka CLI/Admin API</option>
@@ -886,7 +677,7 @@ const App = () => {
           </Section>
 
           {/* Network & Connectivity */}
-          <Section title="6. Network & Connectivity" sectionKey="network">
+          <Section title="6. Network & Connectivity">
             <Question label="What type of network connectivity do you require?" name="networkType" type="select" value={formData.networkType} onChange={handleChange}>
               <option value="public">Public Internet</option>
               <option value="private">Private Network</option>
@@ -922,7 +713,7 @@ const App = () => {
           </Section>
 
           {/* Performance & Scaling */}
-          <Section title="7. Performance & Scaling" sectionKey="performance">
+          <Section title="7. Performance & Scaling">
             <Question label="What is your expected peak throughput?" name="peakThroughput" type="select" value={formData.peakThroughput} onChange={handleChange}>
               <option value="low">Low ({'<'} 1 MB/s)</option>
               <option value="medium">Medium (1-10 MB/s)</option>
@@ -957,7 +748,7 @@ const App = () => {
           </Section>
 
           {/* Disaster Recovery & High Availability */}
-          <Section title="8. Disaster Recovery & High Availability" sectionKey="dr">
+          <Section title="8. Disaster Recovery & High Availability">
             <Question label="What is your DR strategy?" name="drStrategy" type="select" value={formData.drStrategy} onChange={handleChange}>
               <option value="none">None</option>
               <option value="basic">Basic (Backup & Restore)</option>
@@ -996,7 +787,7 @@ const App = () => {
           </Section>
 
           {/* Cost Analysis & Optimization */}
-          <Section title="9. Cost Analysis & Optimization" sectionKey="cost">
+          <Section title="9. Cost Analysis & Optimization">
             <Question label="What is your current MSK cost per month?" name="currentMskCost" type="select" value={formData.currentMskCost} onChange={handleChange}>
               <option value="unknown">Unknown</option>
               <option value="low">{'<'} $1,000</option>
@@ -1025,13 +816,11 @@ const App = () => {
           </Section>
 
           {/* Target State */}
-          <Section title="10. Target State" sectionKey="targetState">
+          <Section title="10. Target State">
             <Question label="What type of Confluent Cloud cluster do you plan to use?" name="targetClusterType" type="select" value={formData.targetClusterType} onChange={handleChange}>
               <option value="dedicated">Dedicated</option>
               <option value="standard">Standard</option>
               <option value="basic">Basic</option>
-              <option value="basic">Enterprise</option>
-              <option value="basic">Freight</option>
               <option value="custom">Custom</option>
             </Question>
             <Question label="Where will your target Confluent Cloud cluster be located?" name="targetRegion" type="select" value={formData.targetRegion} onChange={handleChange}>
@@ -1075,7 +864,7 @@ const App = () => {
           </Section>
 
           {/* Migration Goals */}
-          <Section title="11. Migration Goals" sectionKey="goals">
+          <Section title="11. Migration Goals">
             <Question label="What is your primary migration goal?" name="primaryGoal" type="select" value={formData.primaryGoal} onChange={handleChange}>
               <option value="cost_reduction">Cost Reduction</option>
               <option value="simplified_ops">Simplified Operations</option>
@@ -1130,7 +919,7 @@ const App = () => {
         {/* Results Section */}
         <div className="mt-10 p-6 bg-indigo-50 rounded-xl shadow-inner border border-indigo-200">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-[#0A3D62]">Migration Effort Estimate</h2>
+            <h2 className="text-2xl font-bold text-indigo-800">Migration Effort Estimate</h2>
             <button
               onClick={generatePDF}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 flex items-center gap-2"
@@ -1143,7 +932,7 @@ const App = () => {
           </div>
           <div id="results-section">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-              <p className="text-xl font-semibold text-[#0A3D62]">Overall Estimated Effort:</p>
+              <p className="text-xl font-semibold text-gray-700">Overall Estimated Effort:</p>
               <span className={`text-3xl font-extrabold px-4 py-2 rounded-lg ${
                 effortLevel === 'Low Effort' ? 'bg-green-200 text-green-800' :
                 effortLevel === 'Medium Effort' ? 'bg-yellow-200 text-yellow-800' :
@@ -1153,13 +942,13 @@ const App = () => {
                 {effortLevel}
               </span>
             </div>
-            <p className="text-lg text-[#0A3D62] mb-4">Total Complexity Score: <span className="font-bold">{totalScore}</span></p>
+            <p className="text-lg text-gray-700 mb-4">Total Complexity Score: <span className="font-bold">{totalScore}</span></p>
 
-            <h3 className="text-xl font-semibold text-[#0A3D62] mb-3">Selected Configuration:</h3>
+            <h3 className="text-xl font-semibold text-indigo-700 mb-3">Selected Configuration:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {/* General & Scope */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">1. General & Scope</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">1. General & Scope</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Number of MSK Clusters:</span> {formData.numMskClusters}</li>
                   <li><span className="font-medium">Desired Timeline:</span> {formData.desiredTimeline.replace(/_/g, ' ')}</li>
@@ -1171,7 +960,7 @@ const App = () => {
 
               {/* Kafka Core */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">2. Kafka Core & Data Migration</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">2. Kafka Core & Data Migration</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Number of Topics:</span> {formData.numTopics}</li>
                   <li><span className="font-medium">Number of Partitions:</span> {formData.numPartitions}</li>
@@ -1186,7 +975,7 @@ const App = () => {
 
               {/* Applications */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">3. Applications & Connectivity</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">3. Applications & Connectivity</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Number of Applications:</span> {formData.numApplications}</li>
                   <li><span className="font-medium">Diverse Languages:</span> {formData.diverseLanguages === 'yes' ? 'Yes' : 'No'}</li>
@@ -1198,7 +987,7 @@ const App = () => {
 
               {/* Ecosystem */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">4. Ecosystem & Tools</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">4. Ecosystem & Tools</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Schema Registry:</span> {formData.usesSchemaRegistry === 'yes' ? 'Yes' : 'No'}</li>
                   {formData.usesSchemaRegistry === 'yes' && (
@@ -1221,7 +1010,7 @@ const App = () => {
 
               {/* Security */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">5. Security & Governance</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">5. Security & Governance</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">ACL Management:</span> {formData.aclManagement.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
                   <li><span className="font-medium">Number of Service Accounts:</span> {formData.numServiceAccounts}</li>
@@ -1233,7 +1022,7 @@ const App = () => {
 
               {/* Network */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">6. Network & Connectivity</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">6. Network & Connectivity</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Network Type:</span> {formData.networkType.charAt(0).toUpperCase() + formData.networkType.slice(1)}</li>
                   <li><span className="font-medium">VPC Peering Required:</span> {formData.vpcPeeringRequired === 'yes' ? 'Yes' : 'No'}</li>
@@ -1247,7 +1036,7 @@ const App = () => {
 
               {/* Performance */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">7. Performance & Scaling</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">7. Performance & Scaling</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Peak Throughput:</span> {formData.peakThroughput.charAt(0).toUpperCase() + formData.peakThroughput.slice(1)}</li>
                   <li><span className="font-medium">Message Size:</span> {formData.messageSize.charAt(0).toUpperCase() + formData.messageSize.slice(1)}</li>
@@ -1260,7 +1049,7 @@ const App = () => {
 
               {/* DR & HA */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">8. Disaster Recovery & HA</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">8. Disaster Recovery & HA</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">DR Strategy:</span> {formData.drStrategy.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
                   <li><span className="font-medium">Backup Frequency:</span> {formData.backupFrequency.charAt(0).toUpperCase() + formData.backupFrequency.slice(1)}</li>
@@ -1273,7 +1062,7 @@ const App = () => {
 
               {/* Cost */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">9. Cost Analysis</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">9. Cost Analysis</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Current MSK Cost:</span> {formData.currentMskCost.charAt(0).toUpperCase() + formData.currentMskCost.slice(1)}</li>
                   <li><span className="font-medium">Cost Optimization:</span> {formData.costOptimization === 'yes' ? 'Yes' : 'No'}</li>
@@ -1285,7 +1074,7 @@ const App = () => {
 
               {/* Target State */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">10. Target State</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">10. Target State</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Cluster Type:</span> {formData.targetClusterType.charAt(0).toUpperCase() + formData.targetClusterType.slice(1)}</li>
                   <li><span className="font-medium">Region:</span> {formData.targetRegion.charAt(0).toUpperCase() + formData.targetRegion.slice(1)}</li>
@@ -1300,7 +1089,7 @@ const App = () => {
 
               {/* Migration Goals */}
               <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">11. Migration Goals</h4>
+                <h4 className="font-bold text-indigo-600 mb-2">11. Migration Goals</h4>
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Primary Goal:</span> {formData.primaryGoal.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
                   <li><span className="font-medium">Secondary Goals:</span> {formData.secondaryGoals.length > 0 ? formData.secondaryGoals.map(goal => goal.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')).join(', ') : 'None'}</li>
@@ -1312,24 +1101,22 @@ const App = () => {
               </div>
             </div>
 
-            <h3 className="text-xl font-semibold text-[#0A3D62] mb-3">Complexity Breakdown by Category:</h3>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <ul className="space-y-2">
-                {Object.entries(categoryScores).map(([category, score]) => (
-                  <li key={category} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                    <span className="capitalize text-[#0A3D62]">{category.replace(/([A-Z])/g, ' $1').trim()}</span>
-                    <span className="font-bold text-lg text-[#0A3D62]">{score}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <h3 className="text-xl font-semibold text-[#0A3D62] mt-6 mb-3">Key Recommendations:</h3>
-            <div className="space-y-4 text-[#0A3D62]">
-              {getRecommendations.filter(rec => rec.trim() !== '').map((rec, index) => (
-                <div key={index} dangerouslySetInnerHTML={{ __html: rec }} className="pl-4" />
+            <h3 className="text-xl font-semibold text-indigo-700 mb-3">Complexity Breakdown by Category:</h3>
+            <ul className="list-disc list-inside space-y-2 text-gray-700">
+              {Object.entries(categoryScores).map(([category, score]) => (
+                <li key={category} className="flex justify-between items-center">
+                  <span className="capitalize font-medium">{category.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                  <span className="font-bold text-lg">{score}</span>
+                </li>
               ))}
-            </div>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-indigo-700 mt-6 mb-3">Key Recommendations:</h3>
+            <ul className="list-disc list-inside space-y-2 text-gray-700">
+              {getRecommendations.map((rec, index) => (
+                <li key={index} dangerouslySetInnerHTML={{ __html: rec }} />
+              ))}
+            </ul>
           </div>
         </div>
       </div>
@@ -1338,6 +1125,15 @@ const App = () => {
 };
 
 // Helper Components for better readability
+const Section = ({ title, children }) => (
+  <div className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
+    <h2 className="text-xl font-bold text-[#0A3D62] mb-5">{title}</h2>
+    <div className="space-y-5">
+      {children}
+    </div>
+  </div>
+);
+
 const Question = ({ label, name, type, value, onChange, children, min }) => (
   <div>
     <label htmlFor={name} className="block text-md font-medium text-[#0A3D62] mb-2">
