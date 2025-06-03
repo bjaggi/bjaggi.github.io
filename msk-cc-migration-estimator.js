@@ -776,8 +776,8 @@ const App = () => {
               onChange={handleChange}
             >
               <option value="no">No</option>
-              <option value="partial">Partial(Enter size in TB in notes)</option>
-              <option value="full">Full(Enter size in TB in notes)</option>
+              <option value="partial">Partial(Enter the size in terabytes (TB) in the notes section)</option>
+              <option value="full">Full(Enter the size in terabytes (TB) in the notes sections)</option>
             </Question>
            
             <Question
