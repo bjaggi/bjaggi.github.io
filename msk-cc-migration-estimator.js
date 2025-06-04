@@ -871,7 +871,7 @@ const App = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {[
                   { id: 'customApps', label: 'Custom Applications' },
-                  { id: 'kafkaConnect', label: 'Kafka Connect Connectors' },
+                  { id: 'kafkaConnect', label: 'Kafka Connect Connectors(please specify number & typeof connectors in the notes)' },
                   { id: 'kstreams', label: 'Kafka Streams Applications' },
                   { id: 'ksqlDb', label: 'ksqlDB Applications' },
                   { id: 'flink', label: 'Apache Flink Applications' },
@@ -1391,7 +1391,7 @@ const App = () => {
                       formData.applicationTypes.map(type => {
                         const labels = {
                           'customApps': 'Custom Applications',
-                          'kafkaConnect': 'Kafka Connect Connectors(please specify number & typeof connectors in the notes)',
+                          'kafkaConnect': 'Kafka Connect Connectors',
                           'kstreams': 'Kafka Streams Applications',
                           'ksqlDb': 'ksqlDB Applications',
                           'flink': 'Apache Flink Applications',
