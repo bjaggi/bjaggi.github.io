@@ -1391,7 +1391,7 @@ const App = () => {
                       formData.applicationTypes.map(type => {
                         const labels = {
                           'customApps': 'Custom Applications',
-                          'kafkaConnect': 'Kafka Connect Connectors',
+                          'kafkaConnect': 'Kafka Connect Connectors(please specify number & typeof connectors in the notes)',
                           'kstreams': 'Kafka Streams Applications',
                           'ksqlDb': 'ksqlDB Applications',
                           'flink': 'Apache Flink Applications',
