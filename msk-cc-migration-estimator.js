@@ -862,6 +862,8 @@ const App = () => {
             title="3. Applications & Connectivity" 
             sectionKey="applications"
           >
+          <div>Please provide details of all apps in the notes section</div>
+
             <Question label="How many applications are currently connected to MSK?" name="numApplications" type="number" value={formData.numApplications} onChange={handleChange} min="1" />
             
             <div className="mt-4">
@@ -1383,6 +1385,7 @@ const App = () => {
               {/* Applications */}
               <div className="bg-white p-4 rounded-lg shadow">
                 <h4 className="font-bold text-[#0A3D62] mb-2">3. Applications & Connectivity</h4>
+
                 <ul className="space-y-1 text-sm">
                   <li><span className="font-medium">Number of Applications:</span> {formData.numApplications}</li>
                   <li>
