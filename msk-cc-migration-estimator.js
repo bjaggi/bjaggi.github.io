@@ -1174,7 +1174,7 @@ const App = () => {
 
           {/* Cost Analysis & Optimization */}
           <Section 
-            title="9. Cost Analysis & Optimization(Remove? ask SE)" 
+            title="9. Cost Analysis & Optimization" 
             sectionKey="costAnalysis"
           >
             <Question label="What is your current storage usage?" name="storageUsage" type="select" value={formData.storageUsage} onChange={handleChange}>
