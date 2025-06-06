@@ -1041,18 +1041,11 @@ const App = () => {
               <option value="no">No</option>
               <option value="yes">Yes</option>
             </Question>
-            <Question label="Do you have any applications using custom interceptors?" name="hasCustomInterceptors" type="select" value={formData.hasCustomInterceptors} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Question>
             <Question label="Are there any applications using custom error handling?" name="hasCustomErrorHandling" type="select" value={formData.hasCustomErrorHandling} onChange={handleChange}>
               <option value="no">No (Standard error handling)</option>
               <option value="yes">Yes (Custom error handling)</option>
             </Question>
-            <Question label="Do you have any applications using custom retry logic?" name="hasCustomRetryLogic" type="select" value={formData.hasCustomRetryLogic} onChange={handleChange}>
-              <option value="no">No (Standard retry)</option>
-              <option value="yes">Yes (Custom retry)</option>
-            </Question>
+
           </Section>
 
           {/* Ecosystem & Operational Tools */}
