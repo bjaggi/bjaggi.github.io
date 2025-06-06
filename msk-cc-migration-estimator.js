@@ -1,5 +1,5 @@
 // Get React from the global scope
-const { useState, useMemo, useEffect, Fragment, useRef } = React;
+const { useState, useMemo, useEffect, Fragment, useRef, useCallback } = React;
 
 console.log('Loading MSK Migration Estimator...');
 
@@ -17,6 +17,13 @@ const App = () => {
     hasStrictNFRs: 'no',
     teamKafkaExperience: 'medium',
     dedicatedMigrationTeam: 'no',
+    
+    // Current Cluster Load
+    maxIngress: '',
+    maxEgress: '',
+    maxConnections: '',
+    maxPartitions: '',
+    
     sectionNotes: {
       general: '',
       kafkaCore: '',
@@ -178,23 +185,58 @@ const App = () => {
   const [localDataSize, setLocalDataSize] = useState('');
   const scrollRef = useRef(null);
 
-  const handleChange = (e) => {
+  // Create a ref to store timeouts for debouncing
+  const timeoutRefs = useRef({});
+  
+  const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
-    if (name === 'historicalDataSize') {
-      setLocalDataSize(value);
-      setFormData(prevData => ({
-        ...prevData,
-        [name]: value === '' ? 0 : parseInt(value, 10)
-      }));
-    } else {
-      setFormData(prevData => ({
-        ...prevData,
-        [name]: type === 'checkbox' ? checked : value
-      }));
+    const fieldValue = type === 'checkbox' ? checked : value;
+    
+    // For immediate UI feedback, update certain fields right away
+    if (type === 'checkbox' || type === 'select-one') {
+      if (name === 'historicalDataSize') {
+        setLocalDataSize(value);
+        setFormData(prevData => ({
+          ...prevData,
+          [name]: value === '' ? 0 : parseInt(value, 10)
+        }));
+      } else {
+        setFormData(prevData => ({
+          ...prevData,
+          [name]: fieldValue
+        }));
+      }
+      return;
     }
-  };
+    
+    // For text inputs, debounce the state update to prevent focus loss
+    if (timeoutRefs.current[name]) {
+      clearTimeout(timeoutRefs.current[name]);
+    }
+    
+    // Store the value immediately in a ref for instant UI feedback
+    if (!e.target.dataset.currentValue) {
+      e.target.dataset.currentValue = value;
+    }
+    
+    timeoutRefs.current[name] = setTimeout(() => {
+      if (name === 'historicalDataSize') {
+        setLocalDataSize(value);
+        setFormData(prevData => ({
+          ...prevData,
+          [name]: value === '' ? 0 : parseInt(value, 10)
+        }));
+      } else {
+        setFormData(prevData => ({
+          ...prevData,
+          [name]: fieldValue
+        }));
+      }
+      delete timeoutRefs.current[name];
+    }, 300); // 300ms debounce
+  }, []);
 
-  const handleNotesChange = (section, value) => {
+  const handleNotesChange = useCallback((section, value) => {
     setFormData(prevData => ({
       ...prevData,
       sectionNotes: {
@@ -202,10 +244,10 @@ const App = () => {
         [section]: value
       }
     }));
-  };
+  }, []);
 
   // Add function to handle multiple selections
-  const handleMultiSelect = (name, value) => {
+  const handleMultiSelect = useCallback((name, value) => {
     setFormData(prevData => {
       const currentValues = prevData[name] || [];
       const newValues = currentValues.includes(value)
@@ -217,7 +259,7 @@ const App = () => {
         [name]: newValues
       };
     });
-  };
+  }, []);
 
   const calculateComplexity = useMemo(() => {
     let totalScore = 0;
@@ -235,16 +277,18 @@ const App = () => {
       goals: 0
     };
 
-    // --- General & Scope ---
+    // --- General & Scope (based on T-Shirt sizing guidelines) ---
+    // Clusters: 1-2=Small(1), 2-5=Medium(3), >5=Large(5)
     if (formData.numMskClusters > 5) categoryScores.general += 5;
-    else if (formData.numMskClusters > 2) categoryScores.general += 3;
+    else if (formData.numMskClusters >= 3) categoryScores.general += 3;
     else categoryScores.general += 1;
 
-    if (formData.currentMskVersion === '1.1.1' || formData.currentMskVersion === '2.0.1') categoryScores.general += 5;
-    else if (formData.currentMskVersion === '2.1.1' || formData.currentMskVersion === '2.2.1') categoryScores.general += 4;
-    else if (formData.currentMskVersion === '2.3.1' || formData.currentMskVersion === '2.4.1') categoryScores.general += 3;
-    else if (formData.currentMskVersion === '2.5.1' || formData.currentMskVersion === '2.6.2') categoryScores.general += 2;
-    else categoryScores.general += 1;
+    // Team Composite: 1-2 individuals=Small(1), Small core team=Medium(3), Large distributed team=Large(5)
+    if (formData.teamKafkaExperience === 'low') categoryScores.general += 5; // Large distributed team likely
+    else if (formData.teamKafkaExperience === 'medium') categoryScores.general += 3; // Small core team
+    else categoryScores.general += 1; // 1-2 individuals
+
+    if (formData.dedicatedMigrationTeam === 'no') categoryScores.general += 2;
 
     if (formData.numEnvironments === '4+') categoryScores.general += 5;
     else if (formData.numEnvironments === '3') categoryScores.general += 3;
@@ -256,40 +300,75 @@ const App = () => {
     else if (formData.desiredTimeline === '6-12_months') categoryScores.general += 2;
     else categoryScores.general += 1;
 
-    if (formData.hasStrictNFRs === 'yes') categoryScores.general += 4;
+    if (formData.hasStrictNFRs === 'yes') categoryScores.general += 3;
 
-    if (formData.teamKafkaExperience === 'low') categoryScores.general += 4;
-    else if (formData.teamKafkaExperience === 'medium') categoryScores.general += 2;
-
-    if (formData.dedicatedMigrationTeam === 'no') categoryScores.general += 3;
-
-    // --- Kafka Core & Data Migration ---
-    if (formData.numTopics > 100) categoryScores.kafkaCore += 5;
-    else if (formData.numTopics > 50) categoryScores.kafkaCore += 3;
+    // --- Kafka Core & Data Migration (based on T-Shirt sizing guidelines) ---
+    // Topics & Partitions: <50 topics/<1000 partitions=Small(1), 50-200 topics/1000-2000 partitions=Medium(3), >200 topics/>2000 partitions=Large(5)
+    if (formData.numTopics > 200) categoryScores.kafkaCore += 5;
+    else if (formData.numTopics >= 50) categoryScores.kafkaCore += 3;
     else categoryScores.kafkaCore += 1;
 
-    if (formData.numPartitions > 1000) categoryScores.kafkaCore += 5;
-    else if (formData.numPartitions > 500) categoryScores.kafkaCore += 3;
+    if (formData.numPartitions > 2000) categoryScores.kafkaCore += 5;
+    else if (formData.numPartitions >= 1000) categoryScores.kafkaCore += 3;
     else categoryScores.kafkaCore += 1;
 
-    if (formData.hasComplexTopicConfigs === 'yes') categoryScores.kafkaCore += 3;
-
-    if (formData.historicalDataMigration === 'full') categoryScores.kafkaCore += 5;
-    else if (formData.historicalDataMigration === 'partial') {
-      categoryScores.kafkaCore += 3;
-      if (formData.historicalDataSize > 1000) categoryScores.kafkaCore += 2;
-      else if (formData.historicalDataSize > 100) categoryScores.kafkaCore += 1;
+    // Data Migration: No historical=Small(1), Full data migration higher RPO=Medium(3), Full data migration Low RPO/RTO=Large(5)
+    if (formData.historicalDataMigration === 'full') {
+      if (formData.acceptableDowntime === 'minutes') categoryScores.kafkaCore += 5; // Low RPO/RTO requirements
+      else categoryScores.kafkaCore += 3; // Higher RPO acceptable
+    } else if (formData.historicalDataMigration === 'partial') {
+      categoryScores.kafkaCore += 2;
+    } else {
+      categoryScores.kafkaCore += 1; // No historical data required
     }
 
+    // Downtime Tolerance: Hours/days=Small(1), Minutes to few hours=Medium(3), Near 0 downtime=Large(5)
     if (formData.acceptableDowntime === 'minutes') categoryScores.kafkaCore += 5;
     else if (formData.acceptableDowntime === 'hours') categoryScores.kafkaCore += 3;
+    else categoryScores.kafkaCore += 1;
 
-    if (formData.preferredDataMigrationTool === 'custom') categoryScores.kafkaCore += 4;
+    if (formData.hasComplexTopicConfigs === 'yes') categoryScores.kafkaCore += 2;
+    if (formData.preferredDataMigrationTool === 'custom') categoryScores.kafkaCore += 2;
+    if (formData.offsetMigrationRequired === 'yes') categoryScores.kafkaCore += 2;
 
-    if (formData.numConsumerGroups > 50) categoryScores.kafkaCore += 4;
-    else if (formData.numConsumerGroups > 20) categoryScores.kafkaCore += 2;
+    // --- Applications (based on T-Shirt sizing guidelines) ---
+    // Application Profile: <10 apps/1-2 languages/No streams=Small(1), 10-50 apps/2-4 languages/Limited streams=Medium(3), >50 apps/Diverse languages/Extensive streams=Large(5)
+    if (formData.numApplications > 50) categoryScores.applications += 5;
+    else if (formData.numApplications >= 10) categoryScores.applications += 3;
+    else categoryScores.applications += 1;
 
-    if (formData.offsetMigrationRequired === 'yes') categoryScores.kafkaCore += 3;
+    // Programming languages diversity
+    if (formData.diverseLanguages === 'yes') categoryScores.applications += 3; // Highly diverse or 2-4 languages
+    else categoryScores.applications += 1; // 1-2 languages
+
+    // Kafka Streams usage (approximated from application types)
+    if (formData.applicationTypes && formData.applicationTypes.includes('kstreams')) {
+      if (formData.applicationTypes.length > 3) categoryScores.applications += 5; // Extensive use
+      else categoryScores.applications += 3; // Limited use
+    }
+
+    if (formData.mskAuthentication === 'iam') categoryScores.applications += 2;
+    if (formData.privateConnectivityRequired === 'yes') categoryScores.applications += 2;
+
+    // --- Ecosystem Components (based on T-Shirt sizing guidelines) ---
+    // Ecosystem: No schema/connectors=Small(1), AWS Glue/<10 connectors=Medium(3), Self-managed/>10 connectors=Large(5)
+    if (formData.usesSchemaRegistry === 'yes') {
+      if (formData.schemaRegistryType === 'self_managed') categoryScores.ecosystem += 5;
+      else categoryScores.ecosystem += 3; // AWS Glue or other managed
+    } else {
+      categoryScores.ecosystem += 1;
+    }
+
+    if (formData.usesKafkaConnect === 'yes') {
+      if (formData.numConnectors > 10) categoryScores.ecosystem += 5;
+      else if (formData.numConnectors > 0) categoryScores.ecosystem += 3;
+    } else {
+      categoryScores.ecosystem += 1;
+    }
+
+    if (formData.usesKsqlDB === 'yes') categoryScores.ecosystem += 2;
+    if (formData.usesOtherStreamProcessing === 'yes') categoryScores.ecosystem += 2;
+    if (formData.customMskAutomation === 'yes') categoryScores.ecosystem += 2;
 
     // --- Performance & Scaling ---
     if (formData.throughputRequirement === 'high') categoryScores.performance += 4;
@@ -325,10 +404,9 @@ const App = () => {
     }
 
     let effortLevel;
-    if (totalScore <= 25) effortLevel = 'Low Effort';
-    else if (totalScore <= 50) effortLevel = 'Medium Effort';
-    else if (totalScore <= 75) effortLevel = 'High Effort';
-    else effortLevel = 'Very High Effort';
+    if (totalScore <= 30) effortLevel = 'Small';
+    else if (totalScore <= 60) effortLevel = 'Medium';
+    else effortLevel = 'Large';
 
     return { totalScore, categoryScores, effortLevel };
   }, [formData]);
@@ -464,6 +542,7 @@ const App = () => {
     const getSectionFields = (section) => {
       const sectionMap = {
         general: ['numMskClusters', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam'],
+        workload: ['maxIngress', 'maxEgress', 'maxConnections', 'maxPartitions'],
         kafkaCore: ['numTopics', 'numPartitions', 'hasComplexTopicConfigs', 'historicalDataMigration', 'historicalDataSize', 'acceptableDowntime', 'preferredDataMigrationTool', 'numConsumerGroups', 'offsetMigrationRequired'],
         applications: ['numApplications', 'applicationTypes', 'diverseLanguages', 'mskAuthentication', 'privateConnectivityRequired', 'credentialManagement'],
         ecosystem: ['usesSchemaRegistry', 'schemaRegistryType', 'usesKafkaConnect', 'kafkaConnectType', 'numConnectors', 'usesKsqlDB', 'usesOtherStreamProcessing', 'monitoringTools', 'loggingTools', 'customMskAutomation'],
@@ -543,10 +622,9 @@ const App = () => {
               margin: 20px 0;
               border-radius: 8px;
             }
-            .low-effort { background-color: #dcfce7; color: #166534; }
-            .medium-effort { background-color: #fef9c3; color: #854d0e; }
-            .high-effort { background-color: #ffedd5; color: #9a3412; }
-            .very-high-effort { background-color: #fee2e2; color: #991b1b; }
+            .small { background-color: #dcfce7; color: #166534; }
+            .medium { background-color: #fef9c3; color: #854d0e; }
+            .large { background-color: #fee2e2; color: #991b1b; }
           </style>
         </head>
         <body>
@@ -564,6 +642,7 @@ const App = () => {
           <div class="grid">
             ${Object.entries({
               general: '1. General & Scope',
+              workload: 'Maximum Workload on Current MSK Cluster',
               kafkaCore: '2. Kafka Core & Data Migration',
               applications: '3. Applications & Connectivity',
               ecosystem: '4. Ecosystem & Operational Tools',
@@ -601,8 +680,24 @@ const App = () => {
                   displayValue = value.join(', ');
                 }
                 
-                const label = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                return `<li><strong>${label}:</strong> ${displayValue}</li>`;
+                // Custom labels for specific fields
+                const fieldLabels = {
+                  'maxIngress': 'Peak Ingress Rate (MB/s)',
+                  'maxEgress': 'Peak Egress Rate (MB/s)',
+                  'maxConnections': 'Max Concurrent Connections',
+                  'maxPartitions': 'Total Partitions',
+                  'numMskClusters': 'Number of MSK Clusters',
+                  'currentMskVersion': 'Current MSK Version',
+                  'targetConfluentVersion': 'Target Confluent Cloud Version',
+                  'numEnvironments': 'Number of Environments',
+                  'desiredTimeline': 'Desired Timeline',
+                  'hasStrictNFRs': 'Strict NFRs',
+                  'teamKafkaExperience': 'Team Kafka Experience',
+                  'dedicatedMigrationTeam': 'Dedicated Migration Team'
+                };
+                
+                const label = fieldLabels[field] || field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                return `<li><strong>${label}:</strong> ${displayValue || 'Not specified'}</li>`;
               }).join('');
 
               const notes = formData.sectionNotes && formData.sectionNotes[section];
@@ -659,20 +754,22 @@ const App = () => {
   };
 
   // Helper Components for better readability
-  const Section = ({ title, sectionKey, children }) => {
+  const Section = React.memo(({ title, sectionKey, children }) => {
     const [localNotes, setLocalNotes] = useState(formData.sectionNotes[sectionKey] || '');
     const textareaRef = useRef(null);
 
-    // Update local state when formData changes
+    // Update local state when formData changes, but only if textarea is not focused
     useEffect(() => {
-      setLocalNotes(formData.sectionNotes[sectionKey] || '');
-    }, [formData.sectionNotes[sectionKey]]);
+      if (textareaRef.current !== document.activeElement) {
+        setLocalNotes(formData.sectionNotes[sectionKey] || '');
+      }
+    }, [formData.sectionNotes[sectionKey], sectionKey]);
 
-    const handleNotesChange = (e) => {
+    const handleNotesChange = useCallback((e) => {
       setLocalNotes(e.target.value);
-    };
+    }, []);
 
-    const handleBlur = () => {
+    const handleBlur = useCallback(() => {
       setFormData(prevData => ({
         ...prevData,
         sectionNotes: {
@@ -680,7 +777,7 @@ const App = () => {
           [sectionKey]: localNotes
         }
       }));
-    };
+    }, [sectionKey, localNotes]);
 
     return (
       <div className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
@@ -704,7 +801,7 @@ const App = () => {
         </div>
       </div>
     );
-  };
+  });
 
   // Add this function near the top of the App component
   const preventDefault = (e) => {
@@ -781,6 +878,16 @@ const App = () => {
               <option value="yes">Yes</option>
               <option value="no">No (Part-time / Shared resources)</option>
             </Question>
+            
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="text-lg font-semibold text-[#0A3D62] mb-3">Maximum Workload on Current MSK Cluster</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Question label="Peak ingress rate (MB/s)" name="maxIngress" type="text" value={formData.maxIngress} onChange={handleChange} placeholder="e.g., 500" />
+                <Question label="Peak egress rate (MB/s)" name="maxEgress" type="text" value={formData.maxEgress} onChange={handleChange} placeholder="e.g., 1200" />
+                <Question label="Maximum concurrent connections" name="maxConnections" type="text" value={formData.maxConnections} onChange={handleChange} placeholder="e.g., 10000" />
+                <Question label="Total number of partitions" name="maxPartitions" type="text" value={formData.maxPartitions} onChange={handleChange} placeholder="e.g., 5000" />
+              </div>
+            </div>
           </Section>
 
           {/* Kafka Core & Data Migration */}
@@ -835,7 +942,7 @@ const App = () => {
               <option value="partial">Partial(Enter the size in terabytes (TB) in the notes section)</option>
               <option value="full">Full(Enter the size in terabytes (TB) in the notes sections)</option>
             </Question>
-           
+
             <Question
               label="Acceptable Downtime"
               name="acceptableDowntime"
@@ -851,7 +958,7 @@ const App = () => {
               <option value="confluent_replicator">Confluent Replicator</option>
               <option value="cluster_linking">Cluster Linking</option>
               <option value="mirrormaker2">MirrorMaker 2</option>
-              <option value="application_replay">Confluent Recommened tool</option>
+              <option value="application_replay">Confluent Recommended tool</option>
               <option value="custom">Custom/Other</option>
             </Question>
 
@@ -865,7 +972,7 @@ const App = () => {
           <div>Please provide details of all apps in the notes section</div>
 
             <Question label="How many applications are currently connected to MSK?" name="numApplications" type="number" value={formData.numApplications} onChange={handleChange} min="1" />
-            
+
             <div className="mt-4">
               <label className="block text-md font-medium text-[#0A3D62] mb-2">
                 Types of Applications (Select all that apply):
@@ -1127,7 +1234,7 @@ const App = () => {
               <option value="yes">Yes</option>
             </Question>
           </Section>
-
+          
           {/* Disaster Recovery & High Availability */}
           <Section 
             title="8. Disaster Recovery & High Availability" 
@@ -1264,7 +1371,7 @@ const App = () => {
           {/* Migration Goals */}
           <Section title="11. Migration Goals" sectionKey="goals">
             <Question label="What is your primary migration goal?" name="primaryGoal" type="select" value={formData.primaryGoal} onChange={handleChange} min="1">
-              <option value="cost_reduction">Cost Reduction</option>
+                <option value="cost_reduction">Cost Reduction</option>
               <option value="simplified_ops">Simplified Operations</option>
               <option value="better_features">Better Features</option>
               <option value="scalability">Improved Scalability</option>
@@ -1300,25 +1407,25 @@ const App = () => {
               </div>
             </div>
             <Question label="What are your timeline constraints?" name="timelineConstraint" type="select" value={formData.timelineConstraint} onChange={handleChange}>
-              <option value="flexible">Flexible</option>
+                <option value="flexible">Flexible</option>
               <option value="moderate">Moderate (3-6 months)</option>
               <option value="strict">Strict ({'<'} 3 months)</option>
-            </Question>
+              </Question>
             <Question label="What are your budget constraints?" name="budgetConstraint" type="select" value={formData.budgetConstraint} onChange={handleChange}>
-              <option value="flexible">Flexible</option>
+                <option value="flexible">Flexible</option>
               <option value="moderate">Moderate</option>
               <option value="strict">Strict</option>
-            </Question>
-            <Question label="What is your risk tolerance?" name="riskTolerance" type="select" value={formData.riskTolerance} onChange={handleChange}>
+              </Question>
+              <Question label="What is your risk tolerance?" name="riskTolerance" type="select" value={formData.riskTolerance} onChange={handleChange}>
               <option value="low">Low (Minimal Risk)</option>
               <option value="medium">Medium (Balanced)</option>
               <option value="high">High (Aggressive)</option>
-            </Question>
-            <Question label="What are your success criteria?" name="successCriteria" type="select" value={formData.successCriteria} onChange={handleChange}>
+              </Question>
+              <Question label="What are your success criteria?" name="successCriteria" type="select" value={formData.successCriteria} onChange={handleChange}>
               <option value="basic">Basic (Successful Migration)</option>
               <option value="enhanced">Enhanced (Improved Performance)</option>
               <option value="comprehensive">Comprehensive (Full Optimization)</option>
-            </Question>
+              </Question>
           </Section>
         </div>
 
@@ -1340,9 +1447,8 @@ const App = () => {
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
               <p className="text-xl font-semibold text-[#0A3D62]">Overall Estimated Effort:</p>
               <span className={`text-3xl font-extrabold px-4 py-2 rounded-lg ${
-                effortLevel === 'Low Effort' ? 'bg-green-200 text-green-800' :
-                effortLevel === 'Medium Effort' ? 'bg-yellow-200 text-yellow-800' :
-                effortLevel === 'High Effort' ? 'bg-orange-200 text-orange-800' :
+                effortLevel === 'Small' ? 'bg-green-200 text-green-800' :
+                effortLevel === 'Medium' ? 'bg-yellow-200 text-yellow-800' :
                 'bg-red-200 text-red-800'
               }`}>
                 {effortLevel}
@@ -1364,6 +1470,17 @@ const App = () => {
                   <li><span className="font-medium">Strict NFRs:</span> {formData.hasStrictNFRs === 'yes' ? 'Yes' : 'No'}</li>
                   <li><span className="font-medium">Team Kafka Experience:</span> {formData.teamKafkaExperience.charAt(0).toUpperCase() + formData.teamKafkaExperience.slice(1)}</li>
                   <li><span className="font-medium">Dedicated Migration Team:</span> {formData.dedicatedMigrationTeam === 'yes' ? 'Yes' : 'No'}</li>
+                </ul>
+              </div>
+
+              {/* Maximum Workload on Current MSK Cluster */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h4 className="font-bold text-[#0A3D62] mb-2">Maximum Workload on Current MSK Cluster</h4>
+                <ul className="space-y-1 text-sm">
+                  <li><span className="font-medium">Peak Ingress Rate (MB/s):</span> {formData.maxIngress || 'Not specified'}</li>
+                  <li><span className="font-medium">Peak Egress Rate (MB/s):</span> {formData.maxEgress || 'Not specified'}</li>
+                  <li><span className="font-medium">Max Concurrent Connections:</span> {formData.maxConnections || 'Not specified'}</li>
+                  <li><span className="font-medium">Total Partitions:</span> {formData.maxPartitions || 'Not specified'}</li>
                 </ul>
               </div>
 
@@ -1561,16 +1678,23 @@ const App = () => {
 };
 
 // Helper Components for better readability
-const Question = ({ label, name, type, value, onChange, children, min, step, placeholder, className }) => {
-  const handleSelectChange = (e) => {
+const Question = React.memo(({ label, name, type, value, onChange, children, min, step, placeholder, className }) => {
+  const inputRef = useRef(null);
+  
+  const handleSelectChange = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     const select = e.target;
     const currentValue = select.value;
-    onChange({ target: { name, value: currentValue } });
+    onChange({ target: { name, value: currentValue, type: 'select-one' } });
     // Maintain focus after selection
     setTimeout(() => select.focus(), 0);
-  };
+  }, [name, onChange]);
+
+  // For text inputs, use uncontrolled approach with default value
+  const handleInputChange = useCallback((e) => {
+    onChange(e);
+  }, [onChange]);
 
   return (
     <div>
@@ -1583,18 +1707,18 @@ const Question = ({ label, name, type, value, onChange, children, min, step, pla
           name={name}
           value={value}
           onChange={handleSelectChange}
-          onBlur={(e) => e.preventDefault()}
           className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
         >
           {children}
         </select>
       ) : (
         <input
+          ref={inputRef}
           type={type}
           id={name}
           name={name}
-          value={value}
-          onChange={onChange}
+          defaultValue={value}
+          onChange={handleInputChange}
           min={min}
           step={step}
           placeholder={placeholder}
@@ -1603,11 +1727,7 @@ const Question = ({ label, name, type, value, onChange, children, min, step, pla
       )}
     </div>
   );
-};
-
-console.log('Registering App component globally...');
-window.App = App;
-console.log('MSK Migration Estimator loaded successfully');
+});
 
 console.log('Registering App component globally...');
 window.App = App;
