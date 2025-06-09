@@ -56,6 +56,7 @@ const App = () => {
     mskAuthentication: 'iam',
     privateConnectivityRequired: 'yes',
     credentialManagement: 'secrets_manager',
+    hasStatefulApps: 'no',
 
     // Ecosystem & Operational Tools
     usesSchemaRegistry: 'no',
@@ -525,7 +526,26 @@ const App = () => {
     return recommendations;
   }, [totalScore, categoryScores, formData]);
 
-  // Add PDF generation function
+  // Helper function to get section fields - moved to component level for reuse
+  const getSectionFields = useCallback((section) => {
+    const sectionMap = {
+      general: ['numMskClusters', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam'],
+      workload: ['maxIngress', 'maxEgress', 'maxConnections', 'maxPartitions'],
+      kafkaCore: ['numTopics', 'numPartitions', 'currentReplicationFactor', 'currentRetentionPeriod', 'messageFormat', 'messageCompression', 'hasComplexTopicConfigs', 'historicalDataMigration', 'acceptableDowntime', 'preferredDataMigrationTool'],
+      applications: ['numApplications', 'applicationTypes', 'kafkaClientVersions', 'clientLibraries', 'hasCustomClientConfigs', 'hasStatefulApps', 'hasCustomPartitioning', 'hasExactlyOnceSemantics', 'hasTransactions', 'hasCustomErrorHandling'],
+      ecosystem: ['monitoringTools', 'monitoredMetrics', 'alertingSystem', 'loggingSolution', 'automationTools', 'hasCustomOperationalTools', 'backupSolution', 'hasCustomDashboards'],
+      security: ['encryptionAtRest', 'encryptionInTransit', 'clientAuthentication', 'authorizationMethod', 'credentialManagement', 'hasComplianceRequirements', 'auditLogging', 'hasCustomSecurityPolicies'],
+      network: ['networkTopology', 'securityGroups', 'bandwidthUsage', 'usesVpcPeering', 'usesPrivateLink', 'hasCustomNetworkConfigs', 'latencyRequirement', 'hasNetworkSecurityRequirements'],
+      performance: ['throughputRequirement', 'partitionCount', 'messageSize', 'retentionPeriod', 'hasSpecificPerformanceRequirements'],
+      dr: ['backupStrategy', 'rto', 'rpo', 'requiresMultiRegion', 'highAvailabilitySetup', 'hasDisasterRecoveryPlan', 'requiresAutomatedFailover', 'hasSpecificDRRequirements'],
+      cost: ['storageUsage', 'networkUsage', 'computeUsage', 'currentMonthlyCost', 'targetMonthlyCost', 'hasCostOptimizationRequirements', 'requiresCostAllocation', 'hasBudgetConstraints'],
+      targetState: ['targetClusterSize', 'targetRegion', 'targetEnvironment', 'targetTimeline', 'targetBudget', 'hasTargetStateRequirements', 'hasSpecificFeatureRequirements'],
+      goals: ['primaryGoal', 'secondaryGoals', 'timelineConstraint', 'budgetConstraint', 'riskTolerance', 'successCriteria']
+    };
+
+    return sectionMap[section] || [];
+  }, []);
+
   const generatePDF = () => {
     const element = document.getElementById('results-section');
     if (!element) {
@@ -536,26 +556,6 @@ const App = () => {
     // Helper function to format section titles
     const formatSectionTitle = (title) => {
       return title.split(/(?=[A-Z])/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    };
-
-    // Helper function to get section fields
-    const getSectionFields = (section) => {
-      const sectionMap = {
-        general: ['numMskClusters', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam'],
-        workload: ['maxIngress', 'maxEgress', 'maxConnections', 'maxPartitions'],
-        kafkaCore: ['numTopics', 'numPartitions', 'hasComplexTopicConfigs', 'historicalDataMigration', 'historicalDataSize', 'acceptableDowntime', 'preferredDataMigrationTool', 'numConsumerGroups', 'offsetMigrationRequired'],
-        applications: ['numApplications', 'applicationTypes', 'diverseLanguages', 'mskAuthentication', 'privateConnectivityRequired', 'credentialManagement'],
-        ecosystem: ['usesSchemaRegistry', 'schemaRegistryType', 'usesKafkaConnect', 'kafkaConnectType', 'numConnectors', 'usesKsqlDB', 'usesOtherStreamProcessing', 'monitoringTools', 'loggingTools', 'customMskAutomation'],
-        security: ['aclManagement', 'numServiceAccounts', 'auditingRequirements', 'complianceRequirements', 'customKeyEncryption'],
-        network: ['networkType', 'vpcPeeringRequired', 'privateLinkRequired', 'crossRegionReplication', 'networkBandwidth', 'networkLatency', 'networkSecurityGroups'],
-        performance: ['peakThroughput', 'messageSize', 'retentionPeriod', 'autoScaling', 'partitionScaling', 'brokerScaling'],
-        dr: ['drStrategy', 'backupFrequency', 'backupRetention', 'failoverTime', 'multiRegion', 'replicationFactor'],
-        cost: ['currentMskCost', 'costOptimization', 'reservedPricing', 'dataRetention', 'storageType'],
-        targetState: ['targetClusterType', 'targetRegion', 'targetEnvironment', 'targetSecurityModel', 'targetMonitoring', 'targetLogging', 'targetAutomation', 'targetCompliance'],
-        goals: ['primaryGoal', 'secondaryGoals', 'timelineConstraint', 'budgetConstraint', 'riskTolerance', 'successCriteria']
-      };
-
-      return sectionMap[section] || [];
     };
 
     // Create a new window for PDF content
@@ -671,10 +671,15 @@ const App = () => {
                       'ksqlDb': 'ksqlDB Applications',
                       'flink': 'Apache Flink Applications',
                       'spark': 'Apache Spark Applications',
-
                       'other': 'Other Applications'
                     };
                     displayValue = value.map(type => labels[type] || type).join(', ');
+                  }
+                } else if (field === 'secondaryGoals') {
+                  if (!value || value.length === 0) {
+                    displayValue = 'None';
+                  } else {
+                    displayValue = value.map(goal => goal.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')).join(', ');
                   }
                 } else if (Array.isArray(value)) {
                   displayValue = value.join(', ');
@@ -693,7 +698,85 @@ const App = () => {
                   'desiredTimeline': 'Desired Timeline',
                   'hasStrictNFRs': 'Strict NFRs',
                   'teamKafkaExperience': 'Team Kafka Experience',
-                  'dedicatedMigrationTeam': 'Dedicated Migration Team'
+                  'dedicatedMigrationTeam': 'Dedicated Migration Team',
+                  'hasStatefulApps': 'Has Stateful Apps',
+                  'numTopics': 'Number of Active Topics',
+                  'numPartitions': 'Total Number of Partitions',
+                  'currentReplicationFactor': 'Current Replication Factor',
+                  'currentRetentionPeriod': 'Current Retention Period',
+                  'messageFormat': 'Message Format',
+                  'messageCompression': 'Message Compression',
+                  'hasComplexTopicConfigs': 'Has Complex Topic Configurations',
+                  'historicalDataMigration': 'Historical Data Migration',
+                  'acceptableDowntime': 'Acceptable Downtime',
+                  'preferredDataMigrationTool': 'Preferred Data Migration Tool',
+                  'numApplications': 'Number of Applications',
+                  'applicationTypes': 'Application Types',
+                  'kafkaClientVersions': 'Kafka Client Versions',
+                  'clientLibraries': 'Client Libraries',
+                  'hasCustomClientConfigs': 'Has Custom Client Configurations',
+                  'hasCustomPartitioning': 'Has Custom Partitioning Logic',
+                  'hasExactlyOnceSemantics': 'Uses Exactly-Once Semantics',
+                  'hasTransactions': 'Uses Transactions',
+                  'hasCustomErrorHandling': 'Has Custom Error Handling',
+                  'monitoringTools': 'Monitoring Tools',
+                  'monitoredMetrics': 'Monitored Metrics',
+                  'alertingSystem': 'Alerting System',
+                  'loggingSolution': 'Logging Solution',
+                  'automationTools': 'Automation Tools',
+                  'hasCustomOperationalTools': 'Has Custom Operational Tools',
+                  'backupSolution': 'Backup Solution',
+                  'hasCustomDashboards': 'Has Custom Dashboards',
+                  'encryptionAtRest': 'Encryption at Rest',
+                  'encryptionInTransit': 'Encryption in Transit',
+                  'clientAuthentication': 'Client Authentication Method',
+                  'authorizationMethod': 'Authorization Method',
+                  'credentialManagement': 'Credential Management',
+                  'hasComplianceRequirements': 'Has Compliance Requirements',
+                  'auditLogging': 'Audit Logging',
+                  'hasCustomSecurityPolicies': 'Has Custom Security Policies',
+                  'networkTopology': 'Network Topology',
+                  'securityGroups': 'Security Groups',
+                  'bandwidthUsage': 'Bandwidth Usage',
+                  'usesVpcPeering': 'Uses VPC Peering',
+                  'usesPrivateLink': 'Uses AWS PrivateLink',
+                  'hasCustomNetworkConfigs': 'Has Custom Network Configurations',
+                  'latencyRequirement': 'Latency Requirement',
+                  'hasNetworkSecurityRequirements': 'Has Network Security Requirements',
+                  'throughputRequirement': 'Throughput Requirement',
+                  'partitionCount': 'Partition Count',
+                  'messageSize': 'Message Size',
+                  'retentionPeriod': 'Retention Period',
+                  'hasSpecificPerformanceRequirements': 'Has Specific Performance Requirements',
+                  'backupStrategy': 'Backup Strategy',
+                  'rto': 'Recovery Time Objective (RTO)',
+                  'rpo': 'Recovery Point Objective (RPO)',
+                  'requiresMultiRegion': 'Requires Multi-Region Deployment',
+                  'highAvailabilitySetup': 'High Availability Setup',
+                  'hasDisasterRecoveryPlan': 'Has Disaster Recovery Plan',
+                  'requiresAutomatedFailover': 'Requires Automated Failover',
+                  'hasSpecificDRRequirements': 'Has Specific DR Requirements',
+                  'storageUsage': 'Storage Usage',
+                  'networkUsage': 'Network Usage',
+                  'computeUsage': 'Compute Usage',
+                  'currentMonthlyCost': 'Current Monthly Cost',
+                  'targetMonthlyCost': 'Target Monthly Cost',
+                  'hasCostOptimizationRequirements': 'Has Cost Optimization Requirements',
+                  'requiresCostAllocation': 'Requires Cost Allocation',
+                  'hasBudgetConstraints': 'Has Budget Constraints',
+                  'targetClusterSize': 'Target Cluster Size',
+                  'targetRegion': 'Target Region',
+                  'targetEnvironment': 'Target Environment',
+                  'targetTimeline': 'Target Timeline',
+                  'targetBudget': 'Target Budget',
+                  'hasTargetStateRequirements': 'Has Target State Requirements',
+                  'hasSpecificFeatureRequirements': 'Has Specific Feature Requirements',
+                  'primaryGoal': 'Primary Migration Goal',
+                  'secondaryGoals': 'Secondary Goals',
+                  'timelineConstraint': 'Timeline Constraints',
+                  'budgetConstraint': 'Budget Constraints',
+                  'riskTolerance': 'Risk Tolerance',
+                  'successCriteria': 'Success Criteria'
                 };
                 
                 const label = fieldLabels[field] || field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
@@ -1451,198 +1534,186 @@ const App = () => {
 
             <h3 className="text-xl font-semibold text-[#0A3D62] mb-3">Selected Configuration:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {/* General & Scope */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">1. General & Scope</h4>
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Number of MSK Clusters:</span> {formData.numMskClusters}</li>
-                  <li><span className="font-medium">Current MSK Version:</span> {formData.currentMskVersion}</li>
-                  <li><span className="font-medium">Target Confluent Cloud Version:</span> {formData.targetConfluentVersion}</li>
-                  <li><span className="font-medium">Number of Environments:</span> {formData.numEnvironments}</li>
-                  <li><span className="font-medium">Desired Timeline:</span> {formData.desiredTimeline.replace(/_/g, ' ')}</li>
-                  <li><span className="font-medium">Strict NFRs:</span> {formData.hasStrictNFRs === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Team Kafka Experience:</span> {formData.teamKafkaExperience.charAt(0).toUpperCase() + formData.teamKafkaExperience.slice(1)}</li>
-                  <li><span className="font-medium">Dedicated Migration Team:</span> {formData.dedicatedMigrationTeam === 'yes' ? 'Yes' : 'No'}</li>
-                </ul>
-              </div>
-
-              {/* Maximum Workload on Current MSK Cluster */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">Maximum Workload on Current MSK Cluster</h4>
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Peak Ingress Rate (MB/s):</span> {formData.maxIngress || 'Not specified'}</li>
-                  <li><span className="font-medium">Peak Egress Rate (MB/s):</span> {formData.maxEgress || 'Not specified'}</li>
-                  <li><span className="font-medium">Max Concurrent Connections:</span> {formData.maxConnections || 'Not specified'}</li>
-                  <li><span className="font-medium">Total Partitions:</span> {formData.maxPartitions || 'Not specified'}</li>
-                </ul>
-              </div>
-
-              {/* Kafka Core */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">2. Kafka Core & Data Migration</h4>
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Number of Topics:</span> {formData.numTopics}</li>
-                  <li><span className="font-medium">Number of Partitions:</span> {formData.numPartitions}</li>
-                  <li><span className="font-medium">Complex Topic Configs:</span> {formData.hasComplexTopicConfigs === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Historical Data Migration:</span> {formData.historicalDataMigration.charAt(0).toUpperCase() + formData.historicalDataMigration.slice(1)}</li>
-                  <li><span className="font-medium">Acceptable Downtime:</span> {formData.acceptableDowntime.charAt(0).toUpperCase() + formData.acceptableDowntime.slice(1)}</li>
-                  <li><span className="font-medium">Data Migration Tool:</span> {formData.preferredDataMigrationTool.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
-                  <li><span className="font-medium">Number of Consumer Groups:</span> {formData.numConsumerGroups}</li>
-                  <li><span className="font-medium">Offset Migration Required:</span> {formData.offsetMigrationRequired === 'yes' ? 'Yes' : 'No'}</li>
-                </ul>
-              </div>
-
-              {/* Applications */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">3. Applications & Connectivity</h4>
-
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Number of Applications:</span> {formData.numApplications}</li>
-                  <li>
-                    <span className="font-medium">Application Types:</span>{' '}
-                    {formData.applicationTypes && formData.applicationTypes.length > 0 ? (
-                      formData.applicationTypes.map(type => {
-                        const labels = {
-                          'customApps': 'Custom Applications',
-                          'kafkaConnect': 'Kafka Connect Connectors',
-                          'kstreams': 'Kafka Streams Applications',
-                          'ksqlDb': 'ksqlDB Applications',
-                          'flink': 'Apache Flink Applications',
-                          'spark': 'Apache Spark Applications',
-                          'storm': 'Apache Storm Applications',
-                          'samza': 'Apache Samza Applications',
-                          'nifi': 'Apache NiFi Flows',
-                          'logstash': 'Logstash Pipelines',
-                          'beats': 'Elastic Beats',
-                          'other': 'Other Applications'
+              {Object.entries({
+                general: '1. General & Scope',
+                workload: 'Maximum Workload on Current MSK Cluster',
+                kafkaCore: '2. Kafka Core & Data Migration',
+                applications: '3. Applications & Connectivity',
+                ecosystem: '4. Ecosystem & Operational Tools',
+                security: '5. Security & Governance',
+                network: '6. Network & Connectivity',
+                performance: '7. Performance & Scaling',
+                dr: '8. Disaster Recovery & High Availability',
+                cost: '9. Cost Analysis & Optimization',
+                targetState: '10. Target State',
+                goals: '11. Migration Goals'
+              }).map(([sectionKey, title]) => {
+                // Get fields for this section using the same function as PDF
+                const fields = getSectionFields(sectionKey);
+                
+                return (
+                  <div key={sectionKey} className="bg-white p-4 rounded-lg shadow">
+                    <h4 className="font-bold text-[#0A3D62] mb-2">{title}</h4>
+                    <ul className="space-y-1 text-sm">
+                      {fields.map(field => {
+                        const value = formData[field];
+                        let displayValue = value;
+                        
+                        // Special handling for application types
+                        if (field === 'applicationTypes') {
+                          if (!value || value.length === 0) {
+                            displayValue = 'None specified';
+                          } else {
+                            const labels = {
+                              'customApps': 'Custom Applications',
+                              'kafkaConnect': 'Kafka Connect Connectors',
+                              'kstreams': 'Kafka Streams Applications',
+                              'ksqlDb': 'ksqlDB Applications',
+                              'flink': 'Apache Flink Applications',
+                              'spark': 'Apache Spark Applications',
+                              'other': 'Other Applications'
+                            };
+                            displayValue = value.map(type => labels[type] || type).join(', ');
+                          }
+                        } else if (field === 'secondaryGoals') {
+                          if (!value || value.length === 0) {
+                            displayValue = 'None';
+                          } else {
+                            displayValue = value.map(goal => goal.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')).join(', ');
+                          }
+                        } else if (Array.isArray(value)) {
+                          displayValue = value.join(', ');
+                        }
+                        
+                        // Custom labels for specific fields (same as PDF)
+                        const fieldLabels = {
+                          // General & Scope
+                          'numMskClusters': 'Number of MSK Clusters',
+                          'currentMskVersion': 'Current MSK Version',
+                          'targetConfluentVersion': 'Target Confluent Cloud Version',
+                          'numEnvironments': 'Number of Environments',
+                          'desiredTimeline': 'Desired Timeline',
+                          'hasStrictNFRs': 'Has Strict NFRs',
+                          'teamKafkaExperience': 'Team Kafka Experience',
+                          'dedicatedMigrationTeam': 'Dedicated Migration Team',
+                          
+                          // Workload
+                          'maxIngress': 'Peak Ingress Rate (MB/s)',
+                          'maxEgress': 'Peak Egress Rate (MB/s)',
+                          'maxConnections': 'Max Concurrent Connections',
+                          'maxPartitions': 'Total Partitions',
+                          
+                          // Kafka Core & Data Migration
+                          'numTopics': 'Number of Active Topics',
+                          'numPartitions': 'Total Number of Partitions',
+                          'currentReplicationFactor': 'Current Replication Factor',
+                          'currentRetentionPeriod': 'Current Retention Period',
+                          'messageFormat': 'Message Format',
+                          'messageCompression': 'Message Compression',
+                          'hasComplexTopicConfigs': 'Has Complex Topic Configurations',
+                          'historicalDataMigration': 'Historical Data Migration',
+                          'acceptableDowntime': 'Acceptable Downtime',
+                          'preferredDataMigrationTool': 'Preferred Data Migration Tool',
+                          
+                          // Applications & Connectivity
+                          'numApplications': 'Number of Applications',
+                          'applicationTypes': 'Application Types',
+                          'kafkaClientVersions': 'Kafka Client Versions',
+                          'clientLibraries': 'Client Libraries',
+                          'hasCustomClientConfigs': 'Has Custom Client Configurations',
+                          'hasStatefulApps': 'Has Stateful Apps',
+                          'hasCustomPartitioning': 'Has Custom Partitioning Logic',
+                          'hasExactlyOnceSemantics': 'Uses Exactly-Once Semantics',
+                          'hasTransactions': 'Uses Transactions',
+                          'hasCustomErrorHandling': 'Has Custom Error Handling',
+                          
+                          // Ecosystem & Operational Tools
+                          'monitoringTools': 'Monitoring Tools',
+                          'monitoredMetrics': 'Monitored Metrics',
+                          'alertingSystem': 'Alerting System',
+                          'loggingSolution': 'Logging Solution',
+                          'automationTools': 'Automation Tools',
+                          'hasCustomOperationalTools': 'Has Custom Operational Tools',
+                          'backupSolution': 'Backup Solution',
+                          'hasCustomDashboards': 'Has Custom Dashboards',
+                          
+                          // Security & Governance
+                          'encryptionAtRest': 'Encryption at Rest',
+                          'encryptionInTransit': 'Encryption in Transit',
+                          'clientAuthentication': 'Client Authentication Method',
+                          'authorizationMethod': 'Authorization Method',
+                          'credentialManagement': 'Credential Management',
+                          'hasComplianceRequirements': 'Has Compliance Requirements',
+                          'auditLogging': 'Audit Logging',
+                          'hasCustomSecurityPolicies': 'Has Custom Security Policies',
+                          
+                          // Network & Connectivity
+                          'networkTopology': 'Network Topology',
+                          'securityGroups': 'Security Groups',
+                          'bandwidthUsage': 'Bandwidth Usage',
+                          'usesVpcPeering': 'Uses VPC Peering',
+                          'usesPrivateLink': 'Uses AWS PrivateLink',
+                          'hasCustomNetworkConfigs': 'Has Custom Network Configurations',
+                          'latencyRequirement': 'Latency Requirement',
+                          'hasNetworkSecurityRequirements': 'Has Network Security Requirements',
+                          
+                          // Performance & Scaling
+                          'throughputRequirement': 'Throughput Requirement',
+                          'partitionCount': 'Partition Count',
+                          'messageSize': 'Message Size',
+                          'retentionPeriod': 'Retention Period',
+                          'hasSpecificPerformanceRequirements': 'Has Specific Performance Requirements',
+                          
+                          // Disaster Recovery & High Availability
+                          'backupStrategy': 'Backup Strategy',
+                          'rto': 'Recovery Time Objective (RTO)',
+                          'rpo': 'Recovery Point Objective (RPO)',
+                          'requiresMultiRegion': 'Requires Multi-Region Deployment',
+                          'highAvailabilitySetup': 'High Availability Setup',
+                          'hasDisasterRecoveryPlan': 'Has Disaster Recovery Plan',
+                          'requiresAutomatedFailover': 'Requires Automated Failover',
+                          'hasSpecificDRRequirements': 'Has Specific DR Requirements',
+                          
+                          // Cost Analysis & Optimization
+                          'storageUsage': 'Storage Usage',
+                          'networkUsage': 'Network Usage',
+                          'computeUsage': 'Compute Usage',
+                          'currentMonthlyCost': 'Current Monthly Cost',
+                          'targetMonthlyCost': 'Target Monthly Cost',
+                          'hasCostOptimizationRequirements': 'Has Cost Optimization Requirements',
+                          'requiresCostAllocation': 'Requires Cost Allocation',
+                          'hasBudgetConstraints': 'Has Budget Constraints',
+                          
+                          // Target State
+                          'targetClusterSize': 'Target Cluster Size',
+                          'targetRegion': 'Target Region',
+                          'targetEnvironment': 'Target Environment',
+                          'targetTimeline': 'Target Timeline',
+                          'targetBudget': 'Target Budget',
+                          'hasTargetStateRequirements': 'Has Target State Requirements',
+                          'hasSpecificFeatureRequirements': 'Has Specific Feature Requirements',
+                          
+                          // Migration Goals
+                          'primaryGoal': 'Primary Migration Goal',
+                          'secondaryGoals': 'Secondary Goals',
+                          'timelineConstraint': 'Timeline Constraints',
+                          'budgetConstraint': 'Budget Constraints',
+                          'riskTolerance': 'Risk Tolerance',
+                          'successCriteria': 'Success Criteria'
                         };
-                        return labels[type] || type;
-                      }).join(', ')
-                    ) : (
-                      'None specified'
-                    )}
-                  </li>
-                  <li><span className="font-medium">Diverse Languages:</span> {formData.diverseLanguages === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">MSK Authentication:</span> {formData.mskAuthentication.toUpperCase()}</li>
-                  <li><span className="font-medium">Private Connectivity Required:</span> {formData.privateConnectivityRequired === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Credential Management:</span> {formData.credentialManagement.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
-                </ul>
-              </div>
-
-              {/* Ecosystem */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">4. Ecosystem & Tools</h4>
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Schema Registry:</span> {formData.usesSchemaRegistry === 'yes' ? 'Yes' : 'No'}</li>
-                  {formData.usesSchemaRegistry === 'yes' && (
-                    <li><span className="font-medium">Schema Registry Type:</span> {formData.schemaRegistryType.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
-                  )}
-                  <li><span className="font-medium">Kafka Connect:</span> {formData.usesKafkaConnect === 'yes' ? 'Yes' : 'No'}</li>
-                  {formData.usesKafkaConnect === 'yes' && (
-                    <>
-                      <li><span className="font-medium">Connect Type:</span> {formData.kafkaConnectType.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
-                      <li><span className="font-medium">Number of Connectors:</span> {formData.numConnectors}</li>
-                    </>
-                  )}
-                  <li><span className="font-medium">ksqlDB:</span> {formData.usesKsqlDB === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Other Stream Processing:</span> {formData.usesOtherStreamProcessing === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Monitoring Tools:</span> {formData.monitoringTools.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
-                  <li><span className="font-medium">Logging Tools:</span> {formData.loggingTools.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
-                  <li><span className="font-medium">Custom MSK Automation:</span> {formData.customMskAutomation === 'yes' ? 'Yes' : 'No'}</li>
-                </ul>
-              </div>
-
-              {/* Security */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">5. Security & Governance</h4>
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">ACL Management:</span> {formData.aclManagement.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
-                  <li><span className="font-medium">Number of Service Accounts:</span> {formData.numServiceAccounts}</li>
-                  <li><span className="font-medium">Auditing Requirements:</span> {formData.auditingRequirements.charAt(0).toUpperCase() + formData.auditingRequirements.slice(1)}</li>
-                  <li><span className="font-medium">Compliance Requirements:</span> {formData.complianceRequirements === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Custom Key Encryption:</span> {formData.customKeyEncryption === 'yes' ? 'Yes' : 'No'}</li>
-                </ul>
-              </div>
-
-              {/* Network */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">6. Network & Connectivity</h4>
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Network Type:</span> {formData.networkType.charAt(0).toUpperCase() + formData.networkType.slice(1)}</li>
-                  <li><span className="font-medium">VPC Peering Required:</span> {formData.vpcPeeringRequired === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">PrivateLink Required:</span> {formData.privateLinkRequired === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Cross-Region Replication:</span> {formData.crossRegionReplication === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Network Bandwidth:</span> {formData.networkBandwidth.charAt(0).toUpperCase() + formData.networkBandwidth.slice(1)}</li>
-                  <li><span className="font-medium">Network Latency:</span> {formData.networkLatency.charAt(0).toUpperCase() + formData.networkLatency.slice(1)}</li>
-                  <li><span className="font-medium">Network Security Groups:</span> {formData.networkSecurityGroups.charAt(0).toUpperCase() + formData.networkSecurityGroups.slice(1)}</li>
-                </ul>
-              </div>
-
-              {/* Performance */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">7. Performance & Scaling</h4>
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Peak Throughput:</span> {formData.peakThroughput.charAt(0).toUpperCase() + formData.peakThroughput.slice(1)}</li>
-                  <li><span className="font-medium">Message Size:</span> {formData.messageSize.charAt(0).toUpperCase() + formData.messageSize.slice(1)}</li>
-                  <li><span className="font-medium">Retention Period:</span> {formData.retentionPeriod.replace(/_/g, ' ')}</li>
-                  <li><span className="font-medium">Auto Scaling:</span> {formData.autoScaling === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Partition Scaling:</span> {formData.partitionScaling.charAt(0).toUpperCase() + formData.partitionScaling.slice(1)}</li>
-                  <li><span className="font-medium">Broker Scaling:</span> {formData.brokerScaling.charAt(0).toUpperCase() + formData.brokerScaling.slice(1)}</li>
-                </ul>
-              </div>
-
-              {/* DR & HA */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">8. Disaster Recovery & HA</h4>
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">DR Strategy:</span> {formData.drStrategy.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
-                  <li><span className="font-medium">Backup Frequency:</span> {formData.backupFrequency.charAt(0).toUpperCase() + formData.backupFrequency.slice(1)}</li>
-                  <li><span className="font-medium">Backup Retention:</span> {formData.backupRetention.replace(/_/g, ' ')}</li>
-                  <li><span className="font-medium">Failover Time:</span> {formData.failoverTime.charAt(0).toUpperCase() + formData.failoverTime.slice(1)}</li>
-                  <li><span className="font-medium">Multi-Region:</span> {formData.multiRegion === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Replication Factor:</span> {formData.replicationFactor}</li>
-                </ul>
-              </div>
-
-              {/* Cost */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">9. Cost Analysis</h4>
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Current MSK Cost:</span> {formData.currentMskCost.charAt(0).toUpperCase() + formData.currentMskCost.slice(1)}</li>
-                  <li><span className="font-medium">Cost Optimization:</span> {formData.costOptimization === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Reserved Pricing:</span> {formData.reservedPricing === 'yes' ? 'Yes' : 'No'}</li>
-                  <li><span className="font-medium">Data Retention:</span> {formData.dataRetention.charAt(0).toUpperCase() + formData.dataRetention.slice(1)}</li>
-                  <li><span className="font-medium">Storage Type:</span> {formData.storageType.charAt(0).toUpperCase() + formData.storageType.slice(1)}</li>
-                </ul>
-              </div>
-
-              {/* Target State */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">10. Target State</h4>
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Cluster Type:</span> {formData.targetClusterType.charAt(0).toUpperCase() + formData.targetClusterType.slice(1)}</li>
-                  <li><span className="font-medium">Region:</span> {formData.targetRegion.charAt(0).toUpperCase() + formData.targetRegion.slice(1)}</li>
-                  <li><span className="font-medium">Environment:</span> {formData.targetEnvironment.charAt(0).toUpperCase() + formData.targetEnvironment.slice(1)}</li>
-                  <li><span className="font-medium">Security Model:</span> {formData.targetSecurityModel.toUpperCase()}</li>
-                  <li><span className="font-medium">Monitoring:</span> {formData.targetMonitoring.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
-                  <li><span className="font-medium">Logging:</span> {formData.targetLogging.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
-                  <li><span className="font-medium">Automation:</span> {formData.targetAutomation.charAt(0).toUpperCase() + formData.targetAutomation.slice(1)}</li>
-                  <li><span className="font-medium">Compliance:</span> {formData.targetCompliance.charAt(0).toUpperCase() + formData.targetCompliance.slice(1)}</li>
-                </ul>
-              </div>
-
-              {/* Migration Goals */}
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-bold text-[#0A3D62] mb-2">11. Migration Goals</h4>
-                <ul className="space-y-1 text-sm">
-                  <li><span className="font-medium">Primary Goal:</span> {formData.primaryGoal.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</li>
-                  <li><span className="font-medium">Secondary Goals:</span> {formData.secondaryGoals.length > 0 ? formData.secondaryGoals.map(goal => goal.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')).join(', ') : 'None'}</li>
-                  <li><span className="font-medium">Timeline Constraint:</span> {formData.timelineConstraint.charAt(0).toUpperCase() + formData.timelineConstraint.slice(1)}</li>
-                  <li><span className="font-medium">Budget Constraint:</span> {formData.budgetConstraint.charAt(0).toUpperCase() + formData.budgetConstraint.slice(1)}</li>
-                  <li><span className="font-medium">Risk Tolerance:</span> {formData.riskTolerance.charAt(0).toUpperCase() + formData.riskTolerance.slice(1)}</li>
-                  <li><span className="font-medium">Success Criteria:</span> {formData.successCriteria.charAt(0).toUpperCase() + formData.successCriteria.slice(1)}</li>
-                </ul>
-              </div>
+                        
+                        const label = fieldLabels[field] || field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        
+                        return (
+                          <li key={field}>
+                            <span className="font-medium">{label}:</span> {displayValue || 'Not specified'}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })}
             </div>
 
             <h3 className="text-xl font-semibold text-[#0A3D62] mb-3">Complexity Breakdown by Category:</h3>
