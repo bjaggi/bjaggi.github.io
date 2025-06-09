@@ -1025,9 +1025,9 @@ const App = () => {
               <option value="no">No (Mostly defaults)</option>
               <option value="yes">Yes (Custom configs)</option>
             </Question>
-            <Question label="Do you use any custom serializers/deserializers?" name="hasCustomSerializers" type="select" value={formData.hasCustomSerializers} onChange={handleChange}>
-              <option value="no">No (Standard serializers)</option>
-              <option value="yes">Yes (Custom serializers)</option>
+            <Question label="Do you have stateful apps ? (eg: count/max/aggregate )?" name="hasStatefulApps" type="select" value={formData.hasStatefulApps} onChange={handleChange}>
+              <option value="no">No </option>
+              <option value="yes">Yes </option>
             </Question>
             <Question label="Are there any applications using custom partitioning logic?" name="hasCustomPartitioning" type="select" value={formData.hasCustomPartitioning} onChange={handleChange}>
               <option value="no">No (Default partitioning)</option>
