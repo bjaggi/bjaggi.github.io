@@ -17,6 +17,7 @@ const App = () => {
     hasStrictNFRs: 'no',
     teamKafkaExperience: 'medium',
     dedicatedMigrationTeam: 'no',
+    stakeholdersAndApprovals: '',
     
     // Current Cluster Load
     maxIngress: '',
@@ -136,6 +137,7 @@ const App = () => {
     hasComplianceRequirements: 'no',
     auditLogging: 'cloudtrail',
     hasCustomSecurityPolicies: 'no',
+    usesIdpOAuth: 'no',
 
     // Network & Connectivity
     networkTopology: 'single_vpc',
@@ -529,12 +531,12 @@ const App = () => {
   // Helper function to get section fields - moved to component level for reuse
   const getSectionFields = useCallback((section) => {
     const sectionMap = {
-      general: ['numMskClusters', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam'],
+              general: ['numMskClusters', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam', 'stakeholdersAndApprovals'],
       workload: ['maxIngress', 'maxEgress', 'maxConnections', 'maxPartitions'],
       kafkaCore: ['numTopics', 'numPartitions', 'currentReplicationFactor', 'currentRetentionPeriod', 'messageFormat', 'messageCompression', 'hasComplexTopicConfigs', 'historicalDataMigration', 'acceptableDowntime', 'preferredDataMigrationTool'],
       applications: ['numApplications', 'applicationTypes', 'kafkaClientVersions', 'clientLibraries', 'hasCustomClientConfigs', 'hasStatefulApps', 'hasCustomPartitioning', 'hasExactlyOnceSemantics', 'hasTransactions', 'hasCustomErrorHandling'],
       ecosystem: ['monitoringTools', 'monitoredMetrics', 'alertingSystem', 'loggingSolution', 'automationTools', 'hasCustomOperationalTools', 'backupSolution', 'hasCustomDashboards'],
-      security: ['encryptionAtRest', 'encryptionInTransit', 'clientAuthentication', 'authorizationMethod', 'credentialManagement', 'hasComplianceRequirements', 'auditLogging', 'hasCustomSecurityPolicies'],
+      security: ['encryptionAtRest', 'encryptionInTransit', 'clientAuthentication', 'authorizationMethod', 'credentialManagement', 'hasComplianceRequirements', 'auditLogging', 'hasCustomSecurityPolicies', 'usesIdpOAuth'],
       network: ['networkTopology', 'securityGroups', 'bandwidthUsage', 'usesVpcPeering', 'usesPrivateLink', 'hasCustomNetworkConfigs', 'latencyRequirement', 'hasNetworkSecurityRequirements'],
       performance: ['throughputRequirement', 'partitionCount', 'messageSize', 'retentionPeriod', 'hasSpecificPerformanceRequirements'],
       dr: ['backupStrategy', 'rto', 'rpo', 'requiresMultiRegion', 'highAvailabilitySetup', 'hasDisasterRecoveryPlan', 'requiresAutomatedFailover', 'hasSpecificDRRequirements'],
@@ -699,6 +701,7 @@ const App = () => {
                   'hasStrictNFRs': 'Strict NFRs',
                   'teamKafkaExperience': 'Team Kafka Experience',
                   'dedicatedMigrationTeam': 'Dedicated Migration Team',
+                  'stakeholdersAndApprovals': 'Stakeholders and Approval Processes',
                   'hasStatefulApps': 'Has Stateful Apps',
                   'numTopics': 'Number of Active Topics',
                   'numPartitions': 'Total Number of Partitions',
@@ -735,6 +738,7 @@ const App = () => {
                   'hasComplianceRequirements': 'Has Compliance Requirements',
                   'auditLogging': 'Audit Logging',
                   'hasCustomSecurityPolicies': 'Has Custom Security Policies',
+                  'usesIdpOAuth': 'Uses IDP or OAuth Provider',
                   'networkTopology': 'Network Topology',
                   'securityGroups': 'Security Groups',
                   'bandwidthUsage': 'Bandwidth Usage',
@@ -912,6 +916,47 @@ const App = () => {
     );
   };
 
+  const StakeholdersTextarea = React.memo(({ formData, setFormData }) => {
+    const [localValue, setLocalValue] = useState(formData.stakeholdersAndApprovals || '');
+    const textareaRef = useRef(null);
+
+    // Update local state when formData changes, but only if textarea is not focused
+    useEffect(() => {
+      if (textareaRef.current !== document.activeElement) {
+        setLocalValue(formData.stakeholdersAndApprovals || '');
+      }
+    }, [formData.stakeholdersAndApprovals]);
+
+    const handleChange = useCallback((e) => {
+      setLocalValue(e.target.value);
+    }, []);
+
+    const handleBlur = useCallback(() => {
+      setFormData(prevData => ({
+        ...prevData,
+        stakeholdersAndApprovals: localValue
+      }));
+    }, [localValue, setFormData]);
+
+    return (
+      <div>
+        <label htmlFor="stakeholdersAndApprovals" className="block text-md font-medium text-[#0A3D62] mb-2">
+          List stakeholders in the migration. And outline any internal approval processes that may be needed.
+        </label>
+        <textarea
+          ref={textareaRef}
+          id="stakeholdersAndApprovals"
+          name="stakeholdersAndApprovals"
+          value={localValue}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="e.g., Stakeholders: Platform team, Data engineering team, Application owners, Security team, Compliance team...&#10;&#10;Approval processes: Architecture review board, Security review, Change management process..."
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 min-h-[120px]"
+        />
+      </div>
+    );
+  });
+
   // Update the form sections to pass the required props
   return (
     <div className="min-h-screen p-4 sm:p-8 font-sans text-[#0A3D62]">
@@ -961,6 +1006,10 @@ const App = () => {
               <option value="yes">Yes</option>
               <option value="no">No (Part-time / Shared resources)</option>
             </Question>
+            <StakeholdersTextarea 
+              formData={formData}
+              setFormData={setFormData}
+            />
             
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <h4 className="text-lg font-semibold text-[#0A3D62] mb-3">Maximum Workload on Current MSK Cluster</h4>
@@ -1232,6 +1281,12 @@ const App = () => {
             <Question label="Do you have any custom security policies?" name="hasCustomSecurityPolicies" type="select" value={formData.hasCustomSecurityPolicies} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
+            </Question>
+            <Question label="Do you use an IDP or an OAuth provider today? If yes, will this be used for both the existing Kafka deployment and Confluent Cloud?" name="usesIdpOAuth" type="select" value={formData.usesIdpOAuth} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes_existing_only">Yes, existing Kafka only</option>
+              <option value="yes_both">Yes, both existing and Confluent Cloud</option>
+              <option value="yes_cc_only">Yes, Confluent Cloud only</option>
             </Question>
           </Section>
 
@@ -1596,6 +1651,7 @@ const App = () => {
                           'hasStrictNFRs': 'Has Strict NFRs',
                           'teamKafkaExperience': 'Team Kafka Experience',
                           'dedicatedMigrationTeam': 'Dedicated Migration Team',
+                          'stakeholdersAndApprovals': 'Stakeholders and Approval Processes',
                           
                           // Workload
                           'maxIngress': 'Peak Ingress Rate (MB/s)',
@@ -1646,6 +1702,7 @@ const App = () => {
                           'hasComplianceRequirements': 'Has Compliance Requirements',
                           'auditLogging': 'Audit Logging',
                           'hasCustomSecurityPolicies': 'Has Custom Security Policies',
+                          'usesIdpOAuth': 'Uses IDP or OAuth Provider',
                           
                           // Network & Connectivity
                           'networkTopology': 'Network Topology',
