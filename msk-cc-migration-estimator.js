@@ -10,6 +10,7 @@ const App = () => {
   const [formData, setFormData] = useState({
     // General & Scope
     numMskClusters: 1,
+    mskType: 'PROVISIONED',
     currentMskVersion: '2.8.1',
     targetConfluentVersion: '7.5.0',
     numEnvironments: '1',
@@ -531,7 +532,7 @@ const App = () => {
   // Helper function to get section fields - moved to component level for reuse
   const getSectionFields = useCallback((section) => {
     const sectionMap = {
-              general: ['numMskClusters', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam', 'stakeholdersAndApprovals'],
+              general: ['numMskClusters', 'mskType', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam', 'stakeholdersAndApprovals'],
       workload: ['maxIngress', 'maxEgress', 'maxConnections', 'maxPartitions'],
       kafkaCore: ['numTopics', 'numPartitions', 'currentReplicationFactor', 'currentRetentionPeriod', 'messageFormat', 'messageCompression', 'hasComplexTopicConfigs', 'historicalDataMigration', 'acceptableDowntime', 'preferredDataMigrationTool'],
       applications: ['numApplications', 'applicationTypes', 'kafkaClientVersions', 'clientLibraries', 'hasCustomClientConfigs', 'hasStatefulApps', 'hasCustomPartitioning', 'hasExactlyOnceSemantics', 'hasTransactions', 'hasCustomErrorHandling'],
@@ -694,6 +695,7 @@ const App = () => {
                   'maxConnections': 'Max Concurrent Connections',
                   'maxPartitions': 'Total Partitions',
                   'numMskClusters': 'Number of MSK Clusters',
+                  'mskType': 'MSK Type',
                   'currentMskVersion': 'Current MSK Version',
                   'targetConfluentVersion': 'Target Confluent Cloud Version',
                   'numEnvironments': 'Number of Environments',
@@ -968,6 +970,10 @@ const App = () => {
             sectionKey="general"
           >
             <Question label="How many AWS MSK clusters do you currently operate?" name="numMskClusters" type="number" value={formData.numMskClusters} onChange={handleChange} min="1" />
+            <Question label="What type of MSK are you currently using?" name="mskType" type="select" value={formData.mskType} onChange={handleChange}>
+              <option value="PROVISIONED">PROVISIONED</option>
+              <option value="SERVERLESS">SERVERLESS</option>
+            </Question>
             <Question label="What is your current MSK version?" name="currentMskVersion" type="select" value={formData.currentMskVersion} onChange={handleChange}>
               <option value="2.8.1">2.8.1</option>
               <option value="2.7.0">2.7.0</option>
@@ -1644,6 +1650,7 @@ const App = () => {
                         const fieldLabels = {
                           // General & Scope
                           'numMskClusters': 'Number of MSK Clusters',
+                          'mskType': 'MSK Type',
                           'currentMskVersion': 'Current MSK Version',
                           'targetConfluentVersion': 'Target Confluent Cloud Version',
                           'numEnvironments': 'Number of Environments',
