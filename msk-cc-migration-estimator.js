@@ -1092,7 +1092,7 @@ const App = () => {
             </Question>
 
             <Question
-              label="Acceptable Downtime"
+              label="Acceptable Downtime(During migration)"
               name="acceptableDowntime"
               type="select"
               value={formData.acceptableDowntime}
