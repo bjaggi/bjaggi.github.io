@@ -50,6 +50,7 @@ const App = () => {
     preferredDataMigrationTool: 'replicator',
     numConsumerGroups: 10,
     offsetMigrationRequired: 'no',
+    offsetSensitivity: 'resume_last_committed',
 
     // Applications & Connectivity
     numApplications: 5,
@@ -335,6 +336,12 @@ const App = () => {
     if (formData.preferredDataMigrationTool === 'custom') categoryScores.kafkaCore += 2;
     if (formData.offsetMigrationRequired === 'yes') categoryScores.kafkaCore += 2;
 
+    // Offset sensitivity scoring
+    if (formData.offsetSensitivity === 'retain_exact_offsets') categoryScores.kafkaCore += 4; // High complexity
+    else if (formData.offsetSensitivity === 'mixed_requirements') categoryScores.kafkaCore += 3; // Medium-high complexity
+    else if (formData.offsetSensitivity === 'resume_last_committed') categoryScores.kafkaCore += 1; // Standard complexity
+    // replay_from_beginning adds no complexity (0 points)
+
     // --- Applications (based on T-Shirt sizing guidelines) ---
     // Application Profile: <10 apps/1-2 languages/No streams=Small(1), 10-50 apps/2-4 languages/Limited streams=Medium(3), >50 apps/Diverse languages/Extensive streams=Large(5)
     if (formData.numApplications > 50) categoryScores.applications += 5;
@@ -444,6 +451,8 @@ const App = () => {
               if (formData.acceptableDowntime === 'minutes') specificRecs.push("Implement a robust dual-write and phased cutover strategy with extensive testing to minimize downtime.");
               if (formData.numTopics > 100 || formData.numPartitions > 1000) specificRecs.push("Automate topic creation and configuration on Confluent Cloud.");
               if (formData.offsetMigrationRequired === 'yes') specificRecs.push("Ensure consumer offset migration is thoroughly planned and tested, especially for critical consumer groups.");
+              if (formData.offsetSensitivity === 'retain_exact_offsets') specificRecs.push("Applications requiring exact offset retention will need careful planning and potentially custom migration tooling to ensure offset consistency.");
+              if (formData.offsetSensitivity === 'mixed_requirements') specificRecs.push("Mixed offset requirements across applications will require a segmented migration approach with different strategies per application type.");
               break;
             case 'applications':
               categoryName = 'Application & Connectivity';
@@ -534,7 +543,7 @@ const App = () => {
     const sectionMap = {
               general: ['numMskClusters', 'mskType', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam', 'stakeholdersAndApprovals'],
       workload: ['maxIngress', 'maxEgress', 'maxConnections', 'maxPartitions'],
-      kafkaCore: ['numTopics', 'numPartitions', 'currentReplicationFactor', 'currentRetentionPeriod', 'messageFormat', 'messageCompression', 'hasComplexTopicConfigs', 'historicalDataMigration', 'acceptableDowntime', 'preferredDataMigrationTool'],
+      kafkaCore: ['numTopics', 'numPartitions', 'currentReplicationFactor', 'currentRetentionPeriod', 'messageFormat', 'messageCompression', 'hasComplexTopicConfigs', 'historicalDataMigration', 'acceptableDowntime', 'preferredDataMigrationTool', 'offsetSensitivity'],
       applications: ['numApplications', 'applicationTypes', 'kafkaClientVersions', 'clientLibraries', 'hasCustomClientConfigs', 'hasStatefulApps', 'hasCustomPartitioning', 'hasExactlyOnceSemantics', 'hasTransactions', 'hasCustomErrorHandling'],
       ecosystem: ['monitoringTools', 'monitoredMetrics', 'alertingSystem', 'loggingSolution', 'automationTools', 'hasCustomOperationalTools', 'backupSolution', 'hasCustomDashboards'],
       security: ['encryptionAtRest', 'encryptionInTransit', 'clientAuthentication', 'authorizationMethod', 'credentialManagement', 'hasComplianceRequirements', 'auditLogging', 'hasCustomSecurityPolicies', 'usesIdpOAuth'],
@@ -715,6 +724,7 @@ const App = () => {
                   'historicalDataMigration': 'Historical Data Migration',
                   'acceptableDowntime': 'Acceptable Downtime',
                   'preferredDataMigrationTool': 'Preferred Data Migration Tool',
+                  'offsetSensitivity': 'Consumer Offset Sensitivity',
                   'numApplications': 'Number of Applications',
                   'applicationTypes': 'Application Types',
                   'kafkaClientVersions': 'Kafka Client Versions',
@@ -1098,6 +1108,13 @@ const App = () => {
               <option value="mirrormaker2">MirrorMaker 2</option>
               <option value="application_replay">Confluent Recommended tool</option>
               <option value="custom">Custom/Other</option>
+            </Question>
+
+            <Question label="Are your applications sensitive to consumer offsets during migration?" name="offsetSensitivity" type="select" value={formData.offsetSensitivity} onChange={handleChange}>
+              <option value="resume_last_committed">Resume from last committed offset (standard)</option>
+              <option value="retain_exact_offsets">Must retain exact offsets from source</option>
+              <option value="replay_from_beginning">Can replay from beginning</option>
+              <option value="mixed_requirements">Mixed requirements across applications</option>
             </Question>
 
           </Section>
@@ -1677,6 +1694,7 @@ const App = () => {
                           'historicalDataMigration': 'Historical Data Migration',
                           'acceptableDowntime': 'Acceptable Downtime',
                           'preferredDataMigrationTool': 'Preferred Data Migration Tool',
+                          'offsetSensitivity': 'Consumer Offset Sensitivity',
                           
                           // Applications & Connectivity
                           'numApplications': 'Number of Applications',
