@@ -1,6 +1,6 @@
 # AWS MSK to Confluent Cloud Migration Estimator
 
-This tool helps estimate the complexity and effort required for migrating from AWS MSK to Confluent Cloud. It provides a detailed assessment based on your current MSK setup and migration requirements.
+This tool(http://bjaggi.github.io/) helps estimate the complexity and effort required for migrating from AWS MSK to Confluent Cloud. It provides a detailed assessment based on your current MSK setup and migration requirements.
 
 ## Scoring System
 
