@@ -55,6 +55,7 @@ const App = () => {
     // Applications & Connectivity
     numApplications: 5,
     applicationTypes: [], // Initialize empty array for application types
+    applicationHosting: 'vm',
     diverseLanguages: 'no',
     mskAuthentication: 'iam',
     privateConnectivityRequired: 'yes',
@@ -64,6 +65,7 @@ const App = () => {
     // Ecosystem & Operational Tools
     usesSchemaRegistry: 'no',
     schemaRegistryType: 'aws_glue',
+    usesSelfManagedSchemaRegistry: 'no',
     usesKafkaConnect: 'no',
     kafkaConnectType: 'msk_connect',
     numConnectors: 0,
@@ -84,6 +86,7 @@ const App = () => {
     networkType: 'public',
     vpcPeeringRequired: 'no',
     privateLinkRequired: 'no',
+    privateNetworkingChoice: 'none',
     crossRegionReplication: 'no',
     networkBandwidth: 'medium',
     networkLatency: 'medium',
@@ -544,10 +547,10 @@ const App = () => {
               general: ['numMskClusters', 'mskType', 'currentMskVersion', 'targetConfluentVersion', 'numEnvironments', 'desiredTimeline', 'hasStrictNFRs', 'teamKafkaExperience', 'dedicatedMigrationTeam', 'stakeholdersAndApprovals'],
       workload: ['maxIngress', 'maxEgress', 'maxConnections', 'maxPartitions'],
       kafkaCore: ['numTopics', 'numPartitions', 'currentReplicationFactor', 'currentRetentionPeriod', 'messageFormat', 'messageCompression', 'hasComplexTopicConfigs', 'historicalDataMigration', 'acceptableDowntime', 'preferredDataMigrationTool', 'offsetSensitivity'],
-      applications: ['numApplications', 'applicationTypes', 'kafkaClientVersions', 'clientLibraries', 'hasCustomClientConfigs', 'hasStatefulApps', 'hasCustomPartitioning', 'hasExactlyOnceSemantics', 'hasTransactions', 'hasCustomErrorHandling'],
-      ecosystem: ['monitoringTools', 'monitoredMetrics', 'alertingSystem', 'loggingSolution', 'automationTools', 'hasCustomOperationalTools', 'backupSolution', 'hasCustomDashboards'],
+      applications: ['numApplications', 'applicationTypes', 'applicationHosting', 'kafkaClientVersions', 'clientLibraries', 'hasCustomClientConfigs', 'hasStatefulApps', 'hasCustomPartitioning', 'hasExactlyOnceSemantics', 'hasTransactions', 'hasCustomErrorHandling'],
+      ecosystem: ['monitoringTools', 'monitoredMetrics', 'alertingSystem', 'loggingSolution', 'automationTools', 'hasCustomOperationalTools', 'backupSolution', 'hasCustomDashboards', 'usesSelfManagedSchemaRegistry'],
       security: ['encryptionAtRest', 'encryptionInTransit', 'clientAuthentication', 'authorizationMethod', 'credentialManagement', 'hasComplianceRequirements', 'auditLogging', 'hasCustomSecurityPolicies', 'usesIdpOAuth'],
-      network: ['networkTopology', 'securityGroups', 'bandwidthUsage', 'usesVpcPeering', 'usesPrivateLink', 'hasCustomNetworkConfigs', 'latencyRequirement', 'hasNetworkSecurityRequirements'],
+      network: ['networkTopology', 'securityGroups', 'bandwidthUsage', 'usesVpcPeering', 'usesPrivateLink', 'privateNetworkingChoice', 'hasCustomNetworkConfigs', 'latencyRequirement', 'hasNetworkSecurityRequirements'],
       performance: ['throughputRequirement', 'partitionCount', 'messageSize', 'retentionPeriod', 'hasSpecificPerformanceRequirements'],
       dr: ['backupStrategy', 'rto', 'rpo', 'requiresMultiRegion', 'highAvailabilitySetup', 'hasDisasterRecoveryPlan', 'requiresAutomatedFailover', 'hasSpecificDRRequirements'],
       cost: ['storageUsage', 'networkUsage', 'computeUsage', 'currentMonthlyCost', 'targetMonthlyCost', 'hasCostOptimizationRequirements', 'requiresCostAllocation', 'hasBudgetConstraints'],
@@ -727,6 +730,7 @@ const App = () => {
                   'offsetSensitivity': 'Consumer Offset Sensitivity',
                   'numApplications': 'Number of Applications',
                   'applicationTypes': 'Application Types',
+                  'applicationHosting': 'Application Hosting',
                   'kafkaClientVersions': 'Kafka Client Versions',
                   'clientLibraries': 'Client Libraries',
                   'hasCustomClientConfigs': 'Has Custom Client Configurations',
@@ -742,6 +746,7 @@ const App = () => {
                   'hasCustomOperationalTools': 'Has Custom Operational Tools',
                   'backupSolution': 'Backup Solution',
                   'hasCustomDashboards': 'Has Custom Dashboards',
+                  'usesSelfManagedSchemaRegistry': 'Uses Self-Managed Schema Registry',
                   'encryptionAtRest': 'Encryption at Rest',
                   'encryptionInTransit': 'Encryption in Transit',
                   'clientAuthentication': 'Client Authentication Method',
@@ -756,6 +761,7 @@ const App = () => {
                   'bandwidthUsage': 'Bandwidth Usage',
                   'usesVpcPeering': 'Uses VPC Peering',
                   'usesPrivateLink': 'Uses AWS PrivateLink',
+                  'privateNetworkingChoice': 'Private Networking Choice',
                   'hasCustomNetworkConfigs': 'Has Custom Network Configurations',
                   'latencyRequirement': 'Latency Requirement',
                   'hasNetworkSecurityRequirements': 'Has Network Security Requirements',
@@ -1158,6 +1164,16 @@ const App = () => {
               </div>
             </div>
 
+            <Question label="Where are your applications currently hosted?" name="applicationHosting" type="select" value={formData.applicationHosting} onChange={handleChange}>
+              <option value="vm">Virtual Machines (VMs)</option>
+              <option value="kubernetes">Kubernetes (K8s)</option>
+              <option value="ecs">AWS ECS</option>
+              <option value="lambda">AWS Lambda</option>
+              <option value="ec2">AWS EC2</option>
+              <option value="mixed">Mixed hosting environments</option>
+              <option value="other">Other</option>
+            </Question>
+
             <Question label="What Kafka client versions are currently in use?" name="kafkaClientVersions" type="select" value={formData.kafkaClientVersions} onChange={handleChange}>
               <option value="0.10.x">0.10.x</option>
               <option value="0.11.x">0.11.x</option>
@@ -1256,6 +1272,10 @@ const App = () => {
               <option value="no">No</option>
               <option value="yes">Yes</option>
             </Question>
+            <Question label="Do you use a self-managed Schema Registry?" name="usesSelfManagedSchemaRegistry" type="select" value={formData.usesSelfManagedSchemaRegistry} onChange={handleChange}>
+              <option value="no">No (Using AWS Glue or Confluent Cloud)</option>
+              <option value="yes">Yes (Self-managed)</option>
+            </Question>
           </Section>
 
           {/* Security & Governance */}
@@ -1340,6 +1360,13 @@ const App = () => {
             <Question label="Do you use AWS PrivateLink?" name="usesPrivateLink" type="select" value={formData.usesPrivateLink} onChange={handleChange}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
+            </Question>
+            <Question label="What is your preferred choice for private networking with Confluent Cloud?" name="privateNetworkingChoice" type="select" value={formData.privateNetworkingChoice} onChange={handleChange}>
+              <option value="none">No private networking required</option>
+              <option value="pni">Private Network Integration (PNI)</option>
+              <option value="privatelink">AWS PrivateLink</option>
+              <option value="peering">VPC Peering</option>
+              <option value="mixed">Mixed approach</option>
             </Question>
             <Question label="Do you have any custom network configurations?" name="hasCustomNetworkConfigs" type="select" value={formData.hasCustomNetworkConfigs} onChange={handleChange}>
               <option value="no">No</option>
@@ -1699,6 +1726,7 @@ const App = () => {
                           // Applications & Connectivity
                           'numApplications': 'Number of Applications',
                           'applicationTypes': 'Application Types',
+                          'applicationHosting': 'Application Hosting',
                           'kafkaClientVersions': 'Kafka Client Versions',
                           'clientLibraries': 'Client Libraries',
                           'hasCustomClientConfigs': 'Has Custom Client Configurations',
@@ -1717,6 +1745,7 @@ const App = () => {
                           'hasCustomOperationalTools': 'Has Custom Operational Tools',
                           'backupSolution': 'Backup Solution',
                           'hasCustomDashboards': 'Has Custom Dashboards',
+                          'usesSelfManagedSchemaRegistry': 'Uses Self-Managed Schema Registry',
                           
                           // Security & Governance
                           'encryptionAtRest': 'Encryption at Rest',
@@ -1735,6 +1764,7 @@ const App = () => {
                           'bandwidthUsage': 'Bandwidth Usage',
                           'usesVpcPeering': 'Uses VPC Peering',
                           'usesPrivateLink': 'Uses AWS PrivateLink',
+                          'privateNetworkingChoice': 'Private Networking Choice',
                           'hasCustomNetworkConfigs': 'Has Custom Network Configurations',
                           'latencyRequirement': 'Latency Requirement',
                           'hasNetworkSecurityRequirements': 'Has Network Security Requirements',
