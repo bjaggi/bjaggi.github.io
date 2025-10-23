@@ -11,7 +11,7 @@ const App = () => {
     // General & Scope
     numMskClusters: 1,
     mskType: 'PROVISIONED',
-    currentMskVersion: '2.8.1',
+    currentMskVersion: '2.x',
     targetConfluentVersion: '7.5.0',
     numEnvironments: '1',
     desiredTimeline: '6-12_months',
@@ -991,16 +991,10 @@ const App = () => {
               <option value="SERVERLESS">SERVERLESS</option>
             </Question>
             <Question label="What is your current MSK version?" name="currentMskVersion" type="select" value={formData.currentMskVersion} onChange={handleChange}>
-              <option value="2.8.1">2.8.1</option>
-              <option value="2.7.0">2.7.0</option>
-              <option value="2.6.2">2.6.2</option>
-              <option value="2.5.1">2.5.1</option>
-              <option value="2.4.1">2.4.1</option>
-              <option value="2.3.1">2.3.1</option>
-              <option value="2.2.1">2.2.1</option>
-              <option value="2.1.1">2.1.1</option>
-              <option value="2.0.1">2.0.1</option>
-              <option value="1.1.1">1.1.1</option>
+              <option value="1.x">1.x</option>
+              <option value="2.x">2.x</option>
+              <option value="3.x">3.x</option>
+              <option value="LATEST">LATEST</option>
             </Question>
 
             <Question label="How many environments do you need to migrate?" name="numEnvironments" type="select" value={formData.numEnvironments} onChange={handleChange}>
@@ -1114,6 +1108,7 @@ const App = () => {
               <option value="mirrormaker2">MirrorMaker 2</option>
               <option value="application_replay">Confluent Recommended tool</option>
               <option value="custom">Custom/Other</option>
+              <option value="not_applicable">Not Applicable</option>
             </Question>
 
             <Question label="Are your applications sensitive to consumer offsets during migration?" name="offsetSensitivity" type="select" value={formData.offsetSensitivity} onChange={handleChange}>
