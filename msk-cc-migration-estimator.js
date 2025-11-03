@@ -696,6 +696,34 @@ const App = () => {
                   } else {
                     displayValue = value.map(goal => goal.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')).join(', ');
                   }
+                } else if (field === 'messageFormat') {
+                  if (!value) {
+                    displayValue = 'Not specified';
+                  } else {
+                    const formatLabels = {
+                      'json': 'JSON',
+                      'avro': 'Avro',
+                      'protobuf': 'Protobuf',
+                      'string': 'String',
+                      'binary': 'Binary',
+                      'mixed': 'Mixed formats'
+                    };
+                    displayValue = formatLabels[value] || value;
+                  }
+                } else if (field === 'messageCompression') {
+                  if (!value) {
+                    displayValue = 'Not specified';
+                  } else {
+                    const compressionLabels = {
+                      'none': 'No compression',
+                      'gzip': 'Gzip',
+                      'snappy': 'Snappy',
+                      'lz4': 'LZ4',
+                      'zstd': 'ZSTD',
+                      'mixed': 'Mixed compression'
+                    };
+                    displayValue = compressionLabels[value] || value;
+                  }
                 } else if (Array.isArray(value)) {
                   displayValue = value.join(', ');
                 }
@@ -1680,6 +1708,34 @@ const App = () => {
                             displayValue = 'None';
                           } else {
                             displayValue = value.map(goal => goal.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')).join(', ');
+                          }
+                        } else if (field === 'messageFormat') {
+                          if (!value) {
+                            displayValue = 'Not specified';
+                          } else {
+                            const formatLabels = {
+                              'json': 'JSON',
+                              'avro': 'Avro',
+                              'protobuf': 'Protobuf',
+                              'string': 'String',
+                              'binary': 'Binary',
+                              'mixed': 'Mixed formats'
+                            };
+                            displayValue = formatLabels[value] || value;
+                          }
+                        } else if (field === 'messageCompression') {
+                          if (!value) {
+                            displayValue = 'Not specified';
+                          } else {
+                            const compressionLabels = {
+                              'none': 'No compression',
+                              'gzip': 'Gzip',
+                              'snappy': 'Snappy',
+                              'lz4': 'LZ4',
+                              'zstd': 'ZSTD',
+                              'mixed': 'Mixed compression'
+                            };
+                            displayValue = compressionLabels[value] || value;
                           }
                         } else if (Array.isArray(value)) {
                           displayValue = value.join(', ');
