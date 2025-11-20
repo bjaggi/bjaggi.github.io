@@ -76,7 +76,7 @@ const App = () => {
     alertingSystem: 'none',
     loggingSolution: 'cloudwatch',
     automationTools: 'none',
-    hasCustomOperationalTools: 'no',
+    hasCustomOperationalTools: 'none',
     backupSolution: 'none',
     hasCustomDashboards: 'no',
     loggingTools: 'cloudwatch_logs',
@@ -792,6 +792,25 @@ const App = () => {
                     };
                     displayValue = backupLabels[value] || value;
                   }
+                } else if (field === 'hasCustomOperationalTools') {
+                  if (!value) {
+                    displayValue = 'Not specified';
+                  } else {
+                    const cicdToolsLabels = {
+                      'none': 'None',
+                      'jenkins': 'Jenkins',
+                      'gitops': 'GitOps (ArgoCD, Flux, etc.)',
+                      'github_actions': 'GitHub Actions',
+                      'gitlab_ci': 'GitLab CI/CD',
+                      'circleci': 'CircleCI',
+                      'aws_codepipeline': 'AWS CodePipeline',
+                      'azure_devops': 'Azure DevOps',
+                      'terraform_cloud': 'Terraform Cloud',
+                      'custom': 'Custom CI/CD solution',
+                      'multiple': 'Multiple CI/CD tools'
+                    };
+                    displayValue = cicdToolsLabels[value] || value;
+                  }
                 } else if (Array.isArray(value)) {
                   displayValue = value.join(', ');
                 }
@@ -839,7 +858,7 @@ const App = () => {
                   'alertingSystem': 'Alerting System',
                   'loggingSolution': 'Logging Solution',
                   'automationTools': 'Automation Tools',
-                  'hasCustomOperationalTools': 'Has Custom Operational Tools',
+                  'hasCustomOperationalTools': 'CI/CD Tools',
                   'backupSolution': 'Backup Solution',
                   'hasCustomDashboards': 'Has Custom Dashboards',
                   'usesSelfManagedSchemaRegistry': 'Uses Self-Managed Schema Registry',
@@ -1350,9 +1369,18 @@ const App = () => {
               <option value="custom">Custom scripts</option>
               <option value="none">No automation</option>
             </Question>
-            <Question label="Do you use any custom operational tools?" name="hasCustomOperationalTools" type="select" value={formData.hasCustomOperationalTools} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
+            <Question label="What CI/CD tools are used?" name="hasCustomOperationalTools" type="select" value={formData.hasCustomOperationalTools} onChange={handleChange}>
+              <option value="none">None</option>
+              <option value="jenkins">Jenkins</option>
+              <option value="gitops">GitOps (ArgoCD, Flux, etc.)</option>
+              <option value="github_actions">GitHub Actions</option>
+              <option value="gitlab_ci">GitLab CI/CD</option>
+              <option value="circleci">CircleCI</option>
+              <option value="aws_codepipeline">AWS CodePipeline</option>
+              <option value="azure_devops">Azure DevOps</option>
+              <option value="terraform_cloud">Terraform Cloud</option>
+              <option value="custom">Custom CI/CD solution</option>
+              <option value="multiple">Multiple CI/CD tools</option>
             </Question>
             <Question label="What backup solution is currently in use?" name="backupSolution" type="select" value={formData.backupSolution} onChange={handleChange}>
               <option value="s3">AWS S3</option>
@@ -1866,6 +1894,25 @@ const App = () => {
                             };
                             displayValue = backupLabels[value] || value;
                           }
+                        } else if (field === 'hasCustomOperationalTools') {
+                          if (!value) {
+                            displayValue = 'Not specified';
+                          } else {
+                            const cicdToolsLabels = {
+                              'none': 'None',
+                              'jenkins': 'Jenkins',
+                              'gitops': 'GitOps (ArgoCD, Flux, etc.)',
+                              'github_actions': 'GitHub Actions',
+                              'gitlab_ci': 'GitLab CI/CD',
+                              'circleci': 'CircleCI',
+                              'aws_codepipeline': 'AWS CodePipeline',
+                              'azure_devops': 'Azure DevOps',
+                              'terraform_cloud': 'Terraform Cloud',
+                              'custom': 'Custom CI/CD solution',
+                              'multiple': 'Multiple CI/CD tools'
+                            };
+                            displayValue = cicdToolsLabels[value] || value;
+                          }
                         } else if (Array.isArray(value)) {
                           displayValue = value.join(', ');
                         }
@@ -1922,7 +1969,7 @@ const App = () => {
                           'alertingSystem': 'Alerting System',
                           'loggingSolution': 'Logging Solution',
                           'automationTools': 'Automation Tools',
-                          'hasCustomOperationalTools': 'Has Custom Operational Tools',
+                          'hasCustomOperationalTools': 'CI/CD Tools',
                           'backupSolution': 'Backup Solution',
                           'hasCustomDashboards': 'Has Custom Dashboards',
                           'usesSelfManagedSchemaRegistry': 'Uses Self-Managed Schema Registry',
