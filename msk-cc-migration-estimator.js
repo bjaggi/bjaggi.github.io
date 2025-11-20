@@ -72,6 +72,13 @@ const App = () => {
     usesKsqlDB: 'no',
     usesOtherStreamProcessing: 'no',
     monitoringTools: 'cloudwatch',
+    monitoredMetrics: 'basic',
+    alertingSystem: 'none',
+    loggingSolution: 'cloudwatch',
+    automationTools: 'none',
+    hasCustomOperationalTools: 'no',
+    backupSolution: 'none',
+    hasCustomDashboards: 'no',
     loggingTools: 'cloudwatch_logs',
     customMskAutomation: 'no',
 
@@ -723,6 +730,67 @@ const App = () => {
                       'mixed': 'Mixed compression'
                     };
                     displayValue = compressionLabels[value] || value;
+                  }
+                } else if (field === 'automationTools') {
+                  if (!value) {
+                    displayValue = 'Not specified';
+                  } else {
+                    const automationLabels = {
+                      'terraform': 'Terraform',
+                      'cloudformation': 'CloudFormation',
+                      'ansible': 'Ansible',
+                      'custom': 'Custom scripts',
+                      'none': 'No automation'
+                    };
+                    displayValue = automationLabels[value] || value;
+                  }
+                } else if (field === 'alertingSystem') {
+                  if (!value) {
+                    displayValue = 'Not specified';
+                  } else {
+                    const alertingLabels = {
+                      'cloudwatch': 'AWS CloudWatch Alarms',
+                      'pagerduty': 'PagerDuty',
+                      'opsgenie': 'OpsGenie',
+                      'custom': 'Custom solution',
+                      'none': 'No alerting'
+                    };
+                    displayValue = alertingLabels[value] || value;
+                  }
+                } else if (field === 'loggingSolution') {
+                  if (!value) {
+                    displayValue = 'Not specified';
+                  } else {
+                    const loggingLabels = {
+                      'cloudwatch': 'AWS CloudWatch Logs',
+                      'elasticsearch': 'Elasticsearch',
+                      'splunk': 'Splunk',
+                      'datadog': 'Datadog',
+                      'custom': 'Custom solution'
+                    };
+                    displayValue = loggingLabels[value] || value;
+                  }
+                } else if (field === 'monitoredMetrics') {
+                  if (!value) {
+                    displayValue = 'Not specified';
+                  } else {
+                    const metricsLabels = {
+                      'basic': 'Basic (CPU, Memory, Disk)',
+                      'standard': 'Standard (Basic + Kafka metrics)',
+                      'advanced': 'Advanced (Standard + Custom metrics)'
+                    };
+                    displayValue = metricsLabels[value] || value;
+                  }
+                } else if (field === 'backupSolution') {
+                  if (!value) {
+                    displayValue = 'Not specified';
+                  } else {
+                    const backupLabels = {
+                      's3': 'AWS S3',
+                      'custom': 'Custom solution',
+                      'none': 'No backup solution'
+                    };
+                    displayValue = backupLabels[value] || value;
                   }
                 } else if (Array.isArray(value)) {
                   displayValue = value.join(', ');
@@ -1736,6 +1804,67 @@ const App = () => {
                               'mixed': 'Mixed compression'
                             };
                             displayValue = compressionLabels[value] || value;
+                          }
+                        } else if (field === 'automationTools') {
+                          if (!value) {
+                            displayValue = 'Not specified';
+                          } else {
+                            const automationLabels = {
+                              'terraform': 'Terraform',
+                              'cloudformation': 'CloudFormation',
+                              'ansible': 'Ansible',
+                              'custom': 'Custom scripts',
+                              'none': 'No automation'
+                            };
+                            displayValue = automationLabels[value] || value;
+                          }
+                        } else if (field === 'alertingSystem') {
+                          if (!value) {
+                            displayValue = 'Not specified';
+                          } else {
+                            const alertingLabels = {
+                              'cloudwatch': 'AWS CloudWatch Alarms',
+                              'pagerduty': 'PagerDuty',
+                              'opsgenie': 'OpsGenie',
+                              'custom': 'Custom solution',
+                              'none': 'No alerting'
+                            };
+                            displayValue = alertingLabels[value] || value;
+                          }
+                        } else if (field === 'loggingSolution') {
+                          if (!value) {
+                            displayValue = 'Not specified';
+                          } else {
+                            const loggingLabels = {
+                              'cloudwatch': 'AWS CloudWatch Logs',
+                              'elasticsearch': 'Elasticsearch',
+                              'splunk': 'Splunk',
+                              'datadog': 'Datadog',
+                              'custom': 'Custom solution'
+                            };
+                            displayValue = loggingLabels[value] || value;
+                          }
+                        } else if (field === 'monitoredMetrics') {
+                          if (!value) {
+                            displayValue = 'Not specified';
+                          } else {
+                            const metricsLabels = {
+                              'basic': 'Basic (CPU, Memory, Disk)',
+                              'standard': 'Standard (Basic + Kafka metrics)',
+                              'advanced': 'Advanced (Standard + Custom metrics)'
+                            };
+                            displayValue = metricsLabels[value] || value;
+                          }
+                        } else if (field === 'backupSolution') {
+                          if (!value) {
+                            displayValue = 'Not specified';
+                          } else {
+                            const backupLabels = {
+                              's3': 'AWS S3',
+                              'custom': 'Custom solution',
+                              'none': 'No backup solution'
+                            };
+                            displayValue = backupLabels[value] || value;
                           }
                         } else if (Array.isArray(value)) {
                           displayValue = value.join(', ');
