@@ -114,6 +114,9 @@
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold mb-2 text-dark">AWS MSK to Confluent Cloud Migration Estimator</h1>
                 <p class="text-dark">Documentation and Scoring Guide</p>
+                <div id="visit-counter" class="mt-2 text-sm text-dark opacity-75">
+                    <span id="visit-count">Loading visit count since Jan 22, 2026...</span>
+                </div>
                 <a href="index.html" class="text-primary hover:text-dark underline mt-4 inline-block">← Back to Estimator</a>
             </div>
 
@@ -330,5 +333,44 @@
             </div>
         </div>
     </div>
+    <!-- Visit Counter Script -->
+    <script>
+        // Track page visits using countapi.xyz (free service)
+        (function() {
+            const visitCountElement = document.getElementById('visit-count');
+            if (!visitCountElement) return;
+
+            const namespace = 'bjaggi-github-io';
+            const key = 'docs-page-visits';
+            const counterUrl = `https://api.countapi.xyz/hit/${namespace}/${key}`;
+            const getUrl = `https://api.countapi.xyz/get/${namespace}/${key}`;
+
+            fetch(counterUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.value !== undefined) {
+                        const count = data.value;
+                        visitCountElement.textContent = `Visit count since Jan 22, 2026: ${count.toLocaleString()}`;
+                    } else {
+                        fetch(getUrl)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.value !== undefined) {
+                                    visitCountElement.textContent = `Visit count since Jan 22, 2026: ${data.value.toLocaleString()}`;
+                                } else {
+                                    visitCountElement.textContent = 'Visit tracking enabled';
+                                }
+                            })
+                            .catch(() => {
+                                visitCountElement.textContent = 'Visit tracking enabled';
+                            });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error tracking visits:', error);
+                    visitCountElement.textContent = 'Visit tracking enabled';
+                });
+        })();
+    </script>
 </body>
-</html> 
+</html>
