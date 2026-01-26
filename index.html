@@ -96,41 +96,29 @@
 
     <!-- Visit Counter Script -->
     <script>
-        // Track page visits using countapi.xyz (free service)
+        // Track visits locally per browser (no external service)
         (function() {
             const visitCountElement = document.getElementById('visit-count');
             if (!visitCountElement) return;
 
-            const namespace = 'bjaggi-github-io';
-            const key = 'main-page-visits';
-            const counterUrl = `https://api.countapi.xyz/hit/${namespace}/${key}`;
-            const getUrl = `https://api.countapi.xyz/get/${namespace}/${key}`;
+            const storageKey = 'bjaggi-visit-count-main';
+            let count = 0;
 
-            fetch(counterUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.value !== undefined) {
-                        const count = data.value;
-                        visitCountElement.textContent = `Visit count since Jan 22, 2026: ${count.toLocaleString()}`;
-                    } else {
-                        fetch(getUrl)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.value !== undefined) {
-                                    visitCountElement.textContent = `Visit count since Jan 22, 2026: ${data.value.toLocaleString()}`;
-                                } else {
-                                    visitCountElement.textContent = 'Visit tracking enabled';
-                                }
-                            })
-                            .catch(() => {
-                                visitCountElement.textContent = 'Visit tracking enabled';
-                            });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error tracking visits:', error);
-                    visitCountElement.textContent = 'Visit tracking enabled';
-                });
+            try {
+                const stored = window.localStorage.getItem(storageKey);
+                count = stored ? parseInt(stored, 10) : 0;
+                if (Number.isNaN(count)) count = 0;
+                count += 1;
+                window.localStorage.setItem(storageKey, String(count));
+            } catch (error) {
+                console.warn('Local visit tracking unavailable:', error);
+            }
+
+            if (count > 0) {
+                visitCountElement.textContent = `Visit count since Jan 22, 2026 (this device): ${count.toLocaleString()}`;
+            } else {
+                visitCountElement.textContent = 'Visit count since Jan 22, 2026 (this device)';
+            }
         })();
     </script>
 
