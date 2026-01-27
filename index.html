@@ -92,6 +92,28 @@
                 Loading...
             </div>
         </div>
+        <div class="mt-10 bg-white shadow-lg rounded-lg p-6">
+            <h2 class="text-xl font-semibold text-dark mb-2">Feedback</h2>
+            <p class="text-dark mb-4">Share your thoughts or questions.</p>
+            <form action="mailto:bjaggi@confluent.io" method="post" enctype="text/plain" class="space-y-4">
+                <div>
+                    <label for="feedback-name" class="block text-sm text-dark mb-1">Name</label>
+                    <input id="feedback-name" name="name" type="text" class="w-full border border-primary rounded px-3 py-2 focus:ring-primary focus:border-primary" placeholder="Your name">
+                </div>
+                <div>
+                    <label for="feedback-email" class="block text-sm text-dark mb-1">Email</label>
+                    <input id="feedback-email" name="email" type="email" class="w-full border border-primary rounded px-3 py-2 focus:ring-primary focus:border-primary" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label for="feedback-message" class="block text-sm text-dark mb-1">Message</label>
+                    <textarea id="feedback-message" name="message" rows="4" class="w-full border border-primary rounded px-3 py-2 focus:ring-primary focus:border-primary" placeholder="Your feedback..."></textarea>
+                </div>
+                <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-dark">Send Feedback</button>
+            </form>
+        </div>
+        <div class="mt-6 text-sm text-dark">
+            <p><strong>Contact:</strong> Brijesh Jaggi · <a class="text-primary hover:text-dark" href="mailto:bjaggi@confluent.io">bjaggi@confluent.io</a> · <a class="text-primary hover:text-dark" href="https://www.linkedin.com/in/brijeshjaggi/" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
+        </div>
     </div>
 
     <!-- Visit Counter Script -->
