@@ -663,18 +663,18 @@ const App = () => {
           <h2>Selected Configuration</h2>
           <div class="grid">
             ${Object.entries({
-              general: '1. General & Scope',
+              goals: '1. Migration Goals',
+              general: '2. General & Scope',
               workload: 'Maximum Workload on Current MSK Cluster',
-              kafkaCore: '2. Kafka Core & Data Migration',
-              applications: '3. Applications & Connectivity',
-              ecosystem: '4. Ecosystem & Operational Tools',
-              security: '5. Security & Governance',
-              network: '6. Network & Connectivity',
-              performance: '7. Performance & Scaling',
-              dr: '8. Disaster Recovery & High Availability',
-              cost: '9. Cost Analysis & Optimization',
-              targetState: '10. Target State',
-              goals: '11. Migration Goals'
+              kafkaCore: '3. Kafka Core & Data Migration',
+              applications: '4. Applications & Connectivity',
+              ecosystem: '5. Ecosystem & Operational Tools',
+              security: '6. Security & Governance',
+              network: '7. Network & Connectivity',
+              performance: '8. Performance & Scaling',
+              dr: '9. Disaster Recovery & High Availability',
+              cost: '10. Cost Analysis & Optimization',
+              targetState: '11. Target State'
             }).map(([section, title]) => {
               const fields = getSectionFields(section);
               const entries = fields.map(field => {
@@ -1095,9 +1095,69 @@ const App = () => {
     <div className="min-h-screen p-4 sm:p-8 font-sans text-[#0A3D62]">
       <div className="max-w-4xl mx-auto shadow-lg rounded-xl p-6 sm:p-8">
         <div className="space-y-8" ref={scrollRef}>
+          {/* Migration Goals */}
+          <Section title="1. Migration Goals" sectionKey="goals">
+            <Question label="What is your primary migration goal?" name="primaryGoal" type="select" value={formData.primaryGoal} onChange={handleChange} min="1">
+                <option value="cost_reduction">Cost Reduction</option>
+              <option value="simplified_ops">Simplified Operations</option>
+              <option value="better_features">Better Features</option>
+              <option value="scalability">Improved Scalability</option>
+              <option value="reliability">Enhanced Reliability</option>
+              <option value="security">Improved Security</option>
+            </Question>
+            <div 
+              className="space-y-2"
+              onMouseDown={preventDefault}
+              onKeyDown={preventDefault}
+              onClick={preventDefault}
+            >
+              <label className="block text-md font-medium text-gray-700 mb-2">
+                Select secondary goals (multiple):
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {['cost_reduction', 'simplified_ops', 'better_features', 'scalability', 'reliability', 'security'].map(goal => (
+                  <ControlledCheckbox
+                    key={goal}
+                    checked={formData.secondaryGoals.includes(goal)}
+                    onChange={(isChecked) => {
+                      const newGoals = isChecked
+                        ? [...formData.secondaryGoals, goal]
+                        : formData.secondaryGoals.filter(g => g !== goal);
+                      setFormData(prev => ({
+                        ...prev,
+                        secondaryGoals: newGoals
+                      }));
+                    }}
+                    label={goal.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  />
+                ))}
+              </div>
+            </div>
+            <Question label="What are your timeline constraints?" name="timelineConstraint" type="select" value={formData.timelineConstraint} onChange={handleChange}>
+                <option value="flexible">Flexible</option>
+              <option value="moderate">Moderate (3-6 months)</option>
+              <option value="strict">Strict ({'<'} 3 months)</option>
+              </Question>
+            <Question label="What are your budget constraints?" name="budgetConstraint" type="select" value={formData.budgetConstraint} onChange={handleChange}>
+                <option value="flexible">Flexible</option>
+              <option value="moderate">Moderate</option>
+              <option value="strict">Strict</option>
+              </Question>
+              <Question label="What is your risk tolerance?" name="riskTolerance" type="select" value={formData.riskTolerance} onChange={handleChange}>
+              <option value="low">Low (Minimal Risk)</option>
+              <option value="medium">Medium (Balanced)</option>
+              <option value="high">High (Aggressive)</option>
+              </Question>
+              <Question label="What are your success criteria?" name="successCriteria" type="select" value={formData.successCriteria} onChange={handleChange}>
+              <option value="basic">Basic (Successful Migration)</option>
+              <option value="enhanced">Enhanced (Improved Performance)</option>
+              <option value="comprehensive">Comprehensive (Full Optimization)</option>
+              </Question>
+          </Section>
+
           {/* General & Scope */}
           <Section 
-            title="1. General & Scope" 
+            title="2. General & Scope" 
             sectionKey="general"
           >
             <Question label="How many AWS MSK clusters do you currently operate?" name="numMskClusters" type="number" value={formData.numMskClusters} onChange={handleChange} min="1" />
@@ -1155,7 +1215,7 @@ const App = () => {
 
           {/* Kafka Core & Data Migration */}
           <Section 
-            title="2. Kafka Core & Data Migration" 
+            title="3. Kafka Core & Data Migration" 
             sectionKey="kafkaCore"
           >
             <Question label="How many active Kafka topics are in use across all MSK clusters?" name="numTopics" type="number" value={formData.numTopics} onChange={handleChange} min="1" />
@@ -1237,7 +1297,7 @@ const App = () => {
 
           {/* Applications & Connectivity */}
           <Section 
-            title="3. Applications & Connectivity" 
+            title="4. Applications & Connectivity" 
             sectionKey="applications"
           >
           <div>Please provide details of all apps in the notes section</div>
@@ -1331,7 +1391,7 @@ const App = () => {
 
           {/* Ecosystem & Operational Tools */}
           <Section 
-            title="4. Ecosystem & Operational Tools" 
+            title="5. Ecosystem & Operational Tools" 
             sectionKey="ecosystem"
           >
             <Question label="What monitoring tools are currently in use?" name="monitoringTools" type="select" value={formData.monitoringTools} onChange={handleChange}>
@@ -1399,7 +1459,7 @@ const App = () => {
 
           {/* Security & Governance */}
           <Section 
-            title="5. Security & Governance" 
+            title="6. Security & Governance" 
             sectionKey="security"
           >
             <Question label="What encryption method is used for data at rest?" name="encryptionAtRest" type="select" value={formData.encryptionAtRest} onChange={handleChange}>
@@ -1454,7 +1514,7 @@ const App = () => {
 
           {/* Network & Connectivity */}
           <Section 
-            title="6. Network & Connectivity" 
+            title="7. Network & Connectivity" 
             sectionKey="network"
           >
             <Question label="What is your current network topology?" name="networkTopology" type="select" value={formData.networkTopology} onChange={handleChange}>
@@ -1504,7 +1564,7 @@ const App = () => {
 
           {/* Performance & Scaling */}
           <Section 
-            title="7. Performance & Scaling" 
+            title="8. Performance & Scaling" 
             sectionKey="performance"
           >
             <Question label="What is your current throughput requirement?" name="throughputRequirement" type="select" value={formData.throughputRequirement} onChange={handleChange}>
@@ -1537,7 +1597,7 @@ const App = () => {
           
           {/* Disaster Recovery & High Availability */}
           <Section 
-            title="8. Disaster Recovery & High Availability" 
+            title="9. Disaster Recovery & High Availability" 
             sectionKey="disasterRecovery"
           >
             <Question label="What is your current backup strategy?" name="backupStrategy" type="select" value={formData.backupStrategy} onChange={handleChange}>
@@ -1581,7 +1641,7 @@ const App = () => {
 
           {/* Cost Analysis & Optimization */}
           <Section 
-            title="9. Cost Analysis & Optimization" 
+            title="10. Cost Analysis & Optimization" 
             sectionKey="costAnalysis"
           >
             <Question label="What is your current storage usage?" name="storageUsage" type="select" value={formData.storageUsage} onChange={handleChange}>
@@ -1625,7 +1685,7 @@ const App = () => {
 
           {/* Target State */}
           <Section 
-            title="10. Target State" 
+            title="11. Target State" 
             sectionKey="targetState"
           >
             <Question label="What is your target cluster size?" name="targetClusterSize" type="select" value={formData.targetClusterSize} onChange={handleChange}>
@@ -1668,65 +1728,6 @@ const App = () => {
             </Question>
           </Section>
 
-          {/* Migration Goals */}
-          <Section title="11. Migration Goals" sectionKey="goals">
-            <Question label="What is your primary migration goal?" name="primaryGoal" type="select" value={formData.primaryGoal} onChange={handleChange} min="1">
-                <option value="cost_reduction">Cost Reduction</option>
-              <option value="simplified_ops">Simplified Operations</option>
-              <option value="better_features">Better Features</option>
-              <option value="scalability">Improved Scalability</option>
-              <option value="reliability">Enhanced Reliability</option>
-              <option value="security">Improved Security</option>
-            </Question>
-            <div 
-              className="space-y-2"
-              onMouseDown={preventDefault}
-              onKeyDown={preventDefault}
-              onClick={preventDefault}
-            >
-              <label className="block text-md font-medium text-gray-700 mb-2">
-                Select secondary goals (multiple):
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {['cost_reduction', 'simplified_ops', 'better_features', 'scalability', 'reliability', 'security'].map(goal => (
-                  <ControlledCheckbox
-                    key={goal}
-                    checked={formData.secondaryGoals.includes(goal)}
-                    onChange={(isChecked) => {
-                      const newGoals = isChecked
-                        ? [...formData.secondaryGoals, goal]
-                        : formData.secondaryGoals.filter(g => g !== goal);
-                      setFormData(prev => ({
-                        ...prev,
-                        secondaryGoals: newGoals
-                      }));
-                    }}
-                    label={goal.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                  />
-                ))}
-              </div>
-            </div>
-            <Question label="What are your timeline constraints?" name="timelineConstraint" type="select" value={formData.timelineConstraint} onChange={handleChange}>
-                <option value="flexible">Flexible</option>
-              <option value="moderate">Moderate (3-6 months)</option>
-              <option value="strict">Strict ({'<'} 3 months)</option>
-              </Question>
-            <Question label="What are your budget constraints?" name="budgetConstraint" type="select" value={formData.budgetConstraint} onChange={handleChange}>
-                <option value="flexible">Flexible</option>
-              <option value="moderate">Moderate</option>
-              <option value="strict">Strict</option>
-              </Question>
-              <Question label="What is your risk tolerance?" name="riskTolerance" type="select" value={formData.riskTolerance} onChange={handleChange}>
-              <option value="low">Low (Minimal Risk)</option>
-              <option value="medium">Medium (Balanced)</option>
-              <option value="high">High (Aggressive)</option>
-              </Question>
-              <Question label="What are your success criteria?" name="successCriteria" type="select" value={formData.successCriteria} onChange={handleChange}>
-              <option value="basic">Basic (Successful Migration)</option>
-              <option value="enhanced">Enhanced (Improved Performance)</option>
-              <option value="comprehensive">Comprehensive (Full Optimization)</option>
-              </Question>
-          </Section>
         </div>
 
         {/* Results Section */}
@@ -1759,18 +1760,18 @@ const App = () => {
             <h3 className="text-xl font-semibold text-[#0A3D62] mb-3">Selected Configuration:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {Object.entries({
-                general: '1. General & Scope',
+                goals: '1. Migration Goals',
+                general: '2. General & Scope',
                 workload: 'Maximum Workload on Current MSK Cluster',
-                kafkaCore: '2. Kafka Core & Data Migration',
-                applications: '3. Applications & Connectivity',
-                ecosystem: '4. Ecosystem & Operational Tools',
-                security: '5. Security & Governance',
-                network: '6. Network & Connectivity',
-                performance: '7. Performance & Scaling',
-                dr: '8. Disaster Recovery & High Availability',
-                cost: '9. Cost Analysis & Optimization',
-                targetState: '10. Target State',
-                goals: '11. Migration Goals'
+                kafkaCore: '3. Kafka Core & Data Migration',
+                applications: '4. Applications & Connectivity',
+                ecosystem: '5. Ecosystem & Operational Tools',
+                security: '6. Security & Governance',
+                network: '7. Network & Connectivity',
+                performance: '8. Performance & Scaling',
+                dr: '9. Disaster Recovery & High Availability',
+                cost: '10. Cost Analysis & Optimization',
+                targetState: '11. Target State'
               }).map(([sectionKey, title]) => {
                 // Get fields for this section using the same function as PDF
                 const fields = getSectionFields(sectionKey);
