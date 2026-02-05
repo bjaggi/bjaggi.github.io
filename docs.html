@@ -125,7 +125,7 @@
                 <p class="mb-4">The estimator calculates a total complexity score based on 11 key categories:</p>
 
                 <div class="mb-6">
-                    <h3>11. Migration Goals</h3>
+                    <h3>1. Migration Goals</h3>
                     <p class="points">5-20 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Primary and secondary goals</li>
@@ -137,7 +137,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>1. General & Scope</h3>
+                    <h3>2. General & Scope</h3>
                     <p class="points">5-18 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Number of MSK clusters</li>
@@ -149,7 +149,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>2. Kafka Core & Data Migration</h3>
+                    <h3>3. Kafka Core & Data Migration</h3>
                     <p class="points">5-25 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Number of topics and partitions</li>
@@ -161,7 +161,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>3. Applications & Connectivity</h3>
+                    <h3>4. Applications & Connectivity</h3>
                     <p class="points">5-20 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Number of applications</li>
@@ -173,7 +173,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>4. Ecosystem & Tools</h3>
+                    <h3>5. Ecosystem & Tools</h3>
                     <p class="points">5-20 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Schema Registry usage</li>
@@ -185,7 +185,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>5. Security & Governance</h3>
+                    <h3>6. Security & Governance</h3>
                     <p class="points">5-20 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>ACL management</li>
@@ -197,7 +197,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>6. Network & Connectivity</h3>
+                    <h3>7. Network & Connectivity</h3>
                     <p class="points">5-20 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Network type</li>
@@ -209,7 +209,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>7. Performance & Scaling</h3>
+                    <h3>8. Performance & Scaling</h3>
                     <p class="points">5-20 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Throughput requirements</li>
@@ -221,7 +221,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>8. Disaster Recovery & HA</h3>
+                    <h3>9. Disaster Recovery & HA</h3>
                     <p class="points">5-25 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>DR strategy</li>
@@ -233,7 +233,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>9. Cost Analysis & Optimization</h3>
+                    <h3>10. Cost Analysis & Optimization</h3>
                     <p class="points">5-15 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Current MSK costs</li>
@@ -245,7 +245,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>10. Target State</h3>
+                    <h3>11. Target State</h3>
                     <p class="points">5-25 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Cluster type selection</li>
@@ -336,29 +336,26 @@
     </div>
     <!-- Visit Counter Script -->
     <script>
-        // Track visits locally per browser (no external service)
+        // Track visits via Cloud Function backed by GCS
         (function() {
             const visitCountElement = document.getElementById('visit-count');
             if (!visitCountElement) return;
 
-            const storageKey = 'bjaggi-visit-count-docs';
-            let count = 0;
+            const counterUrl = 'https://us-central1-solutionsarchitect-01.cloudfunctions.net/visit-counter?page=docs';
 
-            try {
-                const stored = window.localStorage.getItem(storageKey);
-                count = stored ? parseInt(stored, 10) : 0;
-                if (Number.isNaN(count)) count = 0;
-                count += 1;
-                window.localStorage.setItem(storageKey, String(count));
-            } catch (error) {
-                console.warn('Local visit tracking unavailable:', error);
-            }
-
-            if (count > 0) {
-                visitCountElement.textContent = `Visit count since Jan 22, 2026 (this device): ${count.toLocaleString()}`;
-            } else {
-                visitCountElement.textContent = 'Visit count since Jan 22, 2026 (this device)';
-            }
+            fetch(counterUrl, { method: 'GET' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data && typeof data.count === 'number') {
+                        visitCountElement.textContent = `Visit count since Jan 22, 2026: ${data.count.toLocaleString()}`;
+                    } else {
+                        visitCountElement.textContent = 'Visit count since Jan 22, 2026';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error tracking visits:', error);
+                    visitCountElement.textContent = 'Visit count since Jan 22, 2026';
+                });
         })();
     </script>
 </body>

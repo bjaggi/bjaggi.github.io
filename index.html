@@ -90,25 +90,6 @@
                 <p><strong>Contact:</strong> Brijesh Jaggi · <a class="text-primary hover:text-dark" href="mailto:bjaggi@confluent.io">bjaggi@confluent.io</a> · <a class="text-primary hover:text-dark" href="https://www.linkedin.com/in/brijeshjaggi/" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
             </div>
         </div>
-        <div class="mb-10 bg-white shadow-lg rounded-lg p-6">
-            <h2 class="text-xl font-semibold text-dark mb-2">Feedback</h2>
-            <p class="text-dark mb-4">Share your thoughts or questions.</p>
-            <form action="mailto:bjaggi@confluent.io" method="post" enctype="text/plain" class="space-y-4">
-                <div>
-                    <label for="feedback-name" class="block text-sm text-dark mb-1">Name</label>
-                    <input id="feedback-name" name="name" type="text" class="w-full border border-primary rounded px-3 py-2 focus:ring-primary focus:border-primary" placeholder="Your name">
-                </div>
-                <div>
-                    <label for="feedback-email" class="block text-sm text-dark mb-1">Email</label>
-                    <input id="feedback-email" name="email" type="email" class="w-full border border-primary rounded px-3 py-2 focus:ring-primary focus:border-primary" placeholder="you@example.com">
-                </div>
-                <div>
-                    <label for="feedback-message" class="block text-sm text-dark mb-1">Message</label>
-                    <textarea id="feedback-message" name="message" rows="4" class="w-full border border-primary rounded px-3 py-2 focus:ring-primary focus:border-primary" placeholder="Your feedback..."></textarea>
-                </div>
-                <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-dark">Send Feedback</button>
-            </form>
-        </div>
         <div id="root">
             <div class="p-4 bg-yellow-100 text-yellow-700">
                 Loading...
@@ -123,24 +104,21 @@
             const visitCountElement = document.getElementById('visit-count');
             if (!visitCountElement) return;
 
-            const storageKey = 'bjaggi-visit-count-main';
-            let count = 0;
+            const counterUrl = 'https://us-central1-solutionsarchitect-01.cloudfunctions.net/visit-counter?page=main';
 
-            try {
-                const stored = window.localStorage.getItem(storageKey);
-                count = stored ? parseInt(stored, 10) : 0;
-                if (Number.isNaN(count)) count = 0;
-                count += 1;
-                window.localStorage.setItem(storageKey, String(count));
-            } catch (error) {
-                console.warn('Local visit tracking unavailable:', error);
-            }
-
-            if (count > 0) {
-                visitCountElement.textContent = `Visit count since Jan 22, 2026 (this device): ${count.toLocaleString()}`;
-            } else {
-                visitCountElement.textContent = 'Visit count since Jan 22, 2026 (this device)';
-            }
+            fetch(counterUrl, { method: 'GET' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data && typeof data.count === 'number') {
+                        visitCountElement.textContent = `Visit count since Jan 22, 2026: ${data.count.toLocaleString()}`;
+                    } else {
+                        visitCountElement.textContent = 'Visit count since Jan 22, 2026';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error tracking visits:', error);
+                    visitCountElement.textContent = 'Visit count since Jan 22, 2026';
+                });
         })();
     </script>
 
