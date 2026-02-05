@@ -86,9 +86,6 @@
                 <span id="visit-count">Loading visit count since Jan 22, 2026...</span>
             </div>
             <a href="docs.html" class="text-primary hover:text-dark underline mt-4 inline-block" target="_blank">View Documentation</a>
-            <div class="mt-2 text-sm text-dark">
-                <p><strong>Contact:</strong> Brijesh Jaggi · <a class="text-primary hover:text-dark" href="mailto:bjaggi@confluent.io">bjaggi@confluent.io</a> · <a class="text-primary hover:text-dark" href="https://www.linkedin.com/in/brijeshjaggi/" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
-            </div>
         </div>
         <div id="root">
             <div class="p-4 bg-yellow-100 text-yellow-700">
@@ -123,21 +120,24 @@
             const visitCountElement = document.getElementById('visit-count');
             if (!visitCountElement) return;
 
-            const counterUrl = 'https://us-central1-solutionsarchitect-01.cloudfunctions.net/visit-counter?page=main';
+            const storageKey = 'bjaggi-visit-count-main';
+            let count = 0;
 
-            fetch(counterUrl, { method: 'GET' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data && typeof data.count === 'number') {
-                        visitCountElement.textContent = `Visit count since Jan 22, 2026: ${data.count.toLocaleString()}`;
-                    } else {
-                        visitCountElement.textContent = 'Visit count since Jan 22, 2026';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error tracking visits:', error);
-                    visitCountElement.textContent = 'Visit count since Jan 22, 2026';
-                });
+            try {
+                const stored = window.localStorage.getItem(storageKey);
+                count = stored ? parseInt(stored, 10) : 0;
+                if (Number.isNaN(count)) count = 0;
+                count += 1;
+                window.localStorage.setItem(storageKey, String(count));
+            } catch (error) {
+                console.warn('Local visit tracking unavailable:', error);
+            }
+
+            if (count > 0) {
+                visitCountElement.textContent = `Visit count since Jan 22, 2026 (this device): ${count.toLocaleString()}`;
+            } else {
+                visitCountElement.textContent = 'Visit count since Jan 22, 2026 (this device)';
+            }
         })();
     </script>
 

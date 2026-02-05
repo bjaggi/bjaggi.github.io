@@ -125,6 +125,18 @@
                 <p class="mb-4">The estimator calculates a total complexity score based on 11 key categories:</p>
 
                 <div class="mb-6">
+                    <h3>11. Migration Goals</h3>
+                    <p class="points">5-20 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Primary and secondary goals</li>
+                        <li>Timeline constraints</li>
+                        <li>Budget constraints</li>
+                        <li>Risk tolerance</li>
+                        <li>Success criteria</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
                     <h3>1. General & Scope</h3>
                     <p class="points">5-18 points</p>
                     <ul class="list-disc list-inside ml-4">
@@ -246,17 +258,6 @@
                     </ul>
                 </div>
 
-                <div class="mb-6">
-                    <h3>11. Migration Goals</h3>
-                    <p class="points">5-20 points</p>
-                    <ul class="list-disc list-inside ml-4">
-                        <li>Primary and secondary goals</li>
-                        <li>Timeline constraints</li>
-                        <li>Budget constraints</li>
-                        <li>Risk tolerance</li>
-                        <li>Success criteria</li>
-                    </ul>
-                </div>
             </div>
 
             <div class="category">
@@ -331,52 +332,33 @@
                     <li>Validate assumptions with Confluent Cloud documentation</li>
                 </ul>
             </div>
-            <div class="category">
-                <h2>Feedback</h2>
-                <p class="mb-4">Share your thoughts or questions.</p>
-                <form action="mailto:bjaggi@confluent.io" method="post" enctype="text/plain" class="space-y-4">
-                    <div>
-                        <label for="docs-feedback-name" class="block text-sm text-dark mb-1">Name</label>
-                        <input id="docs-feedback-name" name="name" type="text" class="w-full border border-primary rounded px-3 py-2 focus:ring-primary focus:border-primary" placeholder="Your name">
-                    </div>
-                    <div>
-                        <label for="docs-feedback-email" class="block text-sm text-dark mb-1">Email</label>
-                        <input id="docs-feedback-email" name="email" type="email" class="w-full border border-primary rounded px-3 py-2 focus:ring-primary focus:border-primary" placeholder="you@example.com">
-                    </div>
-                    <div>
-                        <label for="docs-feedback-message" class="block text-sm text-dark mb-1">Message</label>
-                        <textarea id="docs-feedback-message" name="message" rows="4" class="w-full border border-primary rounded px-3 py-2 focus:ring-primary focus:border-primary" placeholder="Your feedback..."></textarea>
-                    </div>
-                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-dark">Send Feedback</button>
-                </form>
-            </div>
-            <div class="category text-sm text-dark">
-                <p><strong>Contact:</strong> Brijesh Jaggi · <a class="text-primary hover:text-dark" href="mailto:bjaggi@confluent.io">bjaggi@confluent.io</a> · <a class="text-primary hover:text-dark" href="https://www.linkedin.com/in/brijeshjaggi/" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
-            </div>
         </div>
     </div>
     <!-- Visit Counter Script -->
     <script>
-        // Track visits via Cloud Function backed by GCS
+        // Track visits locally per browser (no external service)
         (function() {
             const visitCountElement = document.getElementById('visit-count');
             if (!visitCountElement) return;
 
-            const counterUrl = 'https://us-central1-solutionsarchitect-01.cloudfunctions.net/visit-counter?page=docs';
+            const storageKey = 'bjaggi-visit-count-docs';
+            let count = 0;
 
-            fetch(counterUrl, { method: 'GET' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data && typeof data.count === 'number') {
-                        visitCountElement.textContent = `Visit count since Jan 22, 2026: ${data.count.toLocaleString()}`;
-                    } else {
-                        visitCountElement.textContent = 'Visit count since Jan 22, 2026';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error tracking visits:', error);
-                    visitCountElement.textContent = 'Visit count since Jan 22, 2026';
-                });
+            try {
+                const stored = window.localStorage.getItem(storageKey);
+                count = stored ? parseInt(stored, 10) : 0;
+                if (Number.isNaN(count)) count = 0;
+                count += 1;
+                window.localStorage.setItem(storageKey, String(count));
+            } catch (error) {
+                console.warn('Local visit tracking unavailable:', error);
+            }
+
+            if (count > 0) {
+                visitCountElement.textContent = `Visit count since Jan 22, 2026 (this device): ${count.toLocaleString()}`;
+            } else {
+                visitCountElement.textContent = 'Visit count since Jan 22, 2026 (this device)';
+            }
         })();
     </script>
 </body>
