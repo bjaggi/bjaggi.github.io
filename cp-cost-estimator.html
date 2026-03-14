@@ -84,6 +84,18 @@
                         <div id="summary-prod" class="text-xl">0</div>
                     </div>
                 </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark mt-4">
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-nonprod">Price per node in Non Production ($)</label>
+                        <input id="price-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Non Prod Cost: <span id="total-nonprod-cost" class="font-semibold">$0.00</span></div>
+                    </div>
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-prod">Price per node in Production ($)</label>
+                        <input id="price-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Prod Cost: <span id="total-prod-cost" class="font-semibold">$0.00</span></div>
+                    </div>
+                </div>
             </div>
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <a href="index.html" class="text-primary underline">← Back to Landing Page</a>
@@ -97,10 +109,14 @@
         const clustersContainer = document.getElementById('clusters-container');
         const tablesContainer = document.getElementById('tables-container');
         const downloadPdfButton = document.getElementById('download-pdf');
+        const priceNonProdInput = document.getElementById('price-nonprod');
+        const priceProdInput = document.getElementById('price-prod');
+        const totalNonProdCostEl = document.getElementById('total-nonprod-cost');
+        const totalProdCostEl = document.getElementById('total-prod-cost');
         const STORAGE_KEY = 'cp-cost-estimator-state';
         const services = [
             { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, billedNonProd: 0, billedProd: 0, defaultEnabled: true },
-            { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 5, prod: 6, billedNonProd: 0, billedProd: 0 },
+            { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 5, prod: 5, billedNonProd: 0, billedProd: 0, note: '5th node in the third DC' },
             { name: 'Kafka Broker', nonProd: 3, prod: 4, defaultEnabled: true },
             { name: 'Kafka Broker - Across 2 DC', nonProd: 3, prod: 6 },
             { name: 'Schema Registry', nonProd: 1, prod: 2 },
@@ -209,6 +225,13 @@
 
             if (summaryNonProdEl) summaryNonProdEl.textContent = summaryNonProd.toString();
             if (summaryProdEl) summaryProdEl.textContent = summaryProd.toString();
+
+            const nonProdRate = Number(priceNonProdInput?.value || 0);
+            const prodRate = Number(priceProdInput?.value || 0);
+            const nonProdCost = (Number.isNaN(nonProdRate) ? 0 : nonProdRate) * summaryNonProd;
+            const prodCost = (Number.isNaN(prodRate) ? 0 : prodRate) * summaryProd;
+            if (totalNonProdCostEl) totalNonProdCostEl.textContent = `$${nonProdCost.toFixed(2)}`;
+            if (totalProdCostEl) totalProdCostEl.textContent = `$${prodCost.toFixed(2)}`;
         };
 
         const renderClusters = () => {
@@ -269,7 +292,10 @@
                                     const enabled = typeof saved.enabled === 'boolean' ? saved.enabled : !!service.defaultEnabled;
                                     return `
                                     <tr>
-                                        <td class="px-4 py-2 border">${service.name}</td>
+                                        <td class="px-4 py-2 border">
+                                            <div>${service.name}</div>
+                                            ${service.note ? `<div class="text-xs text-gray-500 mt-1">${service.note}</div>` : ''}
+                                        </td>
                                         <td class="px-4 py-2 border nonprod-col">
                                             <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${nonProdValue}">
                                         </td>
@@ -405,6 +431,8 @@
         downloadPdfButton.addEventListener('click', () => {
             window.print();
         });
+        priceNonProdInput.addEventListener('input', updateSummary);
+        priceProdInput.addEventListener('input', updateSummary);
 
         renderClusters();
     </script>
