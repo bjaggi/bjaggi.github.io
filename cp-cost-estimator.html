@@ -67,7 +67,6 @@
                         <label class="block text-sm text-dark mb-1" for="cluster-count">Number of clusters</label>
                         <input id="cluster-count" type="number" min="1" value="1" class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
-                    <button id="generate-clusters" class="bg-primary text-white px-4 py-2 rounded hover:bg-dark">Generate</button>
                 </div>
                 <div id="clusters-container" class="mt-4 space-y-4"></div>
             </div>
@@ -95,7 +94,6 @@
 
     <script>
         const clusterCountInput = document.getElementById('cluster-count');
-        const generateButton = document.getElementById('generate-clusters');
         const clustersContainer = document.getElementById('clusters-container');
         const tablesContainer = document.getElementById('tables-container');
         const downloadPdfButton = document.getElementById('download-pdf');
@@ -393,7 +391,6 @@
             updateSummary();
         };
 
-        generateButton.addEventListener('click', renderClusters);
         clusterCountInput.addEventListener('change', renderClusters);
         clusterCountInput.addEventListener('input', renderClusters);
 
