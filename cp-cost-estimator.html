@@ -98,8 +98,8 @@
                             <thead class="bg-gray-50 text-dark">
                                 <tr>
                                     <th class="px-4 py-2 border">Services</th>
-                                    <th class="px-4 py-2 border value-col">Non Prod</th>
-                                    <th class="px-4 py-2 border value-col">PROD</th>
+                                    <th class="px-4 py-2 border value-col">Number of Nodes</th>
+                                    <th class="px-4 py-2 border value-col">Number of Nodes</th>
                                     <th class="px-4 py-2 border">Enable</th>
                                 </tr>
                             </thead>
@@ -107,13 +107,23 @@
                                 ${services.map(service => `
                                     <tr>
                                         <td class="px-4 py-2 border">${service.name}</td>
-                                        <td class="px-4 py-2 border nonprod-col">${service.nonProd}</td>
-                                        <td class="px-4 py-2 border prod-col">${service.prod}</td>
+                                        <td class="px-4 py-2 border nonprod-col">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${service.nonProd}">
+                                        </td>
+                                        <td class="px-4 py-2 border prod-col">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${service.prod}">
+                                        </td>
                                         <td class="px-4 py-2 border text-center">
                                             <input type="checkbox" class="service-toggle">
                                         </td>
                                     </tr>
                                 `).join('')}
+                                <tr class="font-semibold bg-gray-50">
+                                    <td class="px-4 py-2 border">Total Nodes</td>
+                                    <td class="px-4 py-2 border text-center total-col">0</td>
+                                    <td class="px-4 py-2 border text-center total-col">0</td>
+                                    <td class="px-4 py-2 border"></td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -123,13 +133,33 @@
                 const envSelect = wrapper.querySelector('.env-select');
                 const nameInput = wrapper.querySelector('input[type="text"]');
                 const titleEl = tableWrapper.querySelector('.cluster-title');
-                const nonProdCols = tableWrapper.querySelectorAll('.nonprod-col, .value-col:nth-child(2)');
-                const prodCols = tableWrapper.querySelectorAll('.prod-col, .value-col:nth-child(3)');
+                const nonProdCols = tableWrapper.querySelectorAll('.nonprod-col, .value-col:nth-child(2), .total-col:nth-child(2)');
+                const prodCols = tableWrapper.querySelectorAll('.prod-col, .value-col:nth-child(3), .total-col:nth-child(3)');
+                const toggleInputs = tableWrapper.querySelectorAll('.service-toggle');
+                const nodeInputs = tableWrapper.querySelectorAll('.node-input');
+                const totalCols = tableWrapper.querySelectorAll('.total-col');
 
                 const updateColumns = () => {
                     const isProd = envSelect.value === 'prod';
                     nonProdCols.forEach(col => col.style.display = isProd ? 'none' : '');
                     prodCols.forEach(col => col.style.display = isProd ? '' : 'none');
+                };
+
+                const updateTotal = () => {
+                    const isProd = envSelect.value === 'prod';
+                    let total = 0;
+
+                    toggleInputs.forEach((toggle) => {
+                        if (!toggle.checked) return;
+                        const row = toggle.closest('tr');
+                        const input = row.querySelector(isProd ? '.prod-col .node-input' : '.nonprod-col .node-input');
+                        const value = Number(input?.value || 0);
+                        total += Number.isNaN(value) ? 0 : value;
+                    });
+
+                    totalCols.forEach(col => {
+                        col.textContent = total.toString();
+                    });
                 };
 
                 const updateTitle = () => {
@@ -138,9 +168,13 @@
                 };
 
                 envSelect.addEventListener('change', updateColumns);
+                envSelect.addEventListener('change', updateTotal);
                 nameInput.addEventListener('input', updateTitle);
+                toggleInputs.forEach(toggle => toggle.addEventListener('change', updateTotal));
+                nodeInputs.forEach(input => input.addEventListener('input', updateTotal));
                 updateColumns();
                 updateTitle();
+                updateTotal();
             }
         };
 
