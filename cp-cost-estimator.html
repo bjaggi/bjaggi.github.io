@@ -65,7 +65,7 @@
                 <div class="flex flex-col sm:flex-row gap-4 items-end">
                     <div class="flex-1">
                         <label class="block text-sm text-dark mb-1" for="cluster-count">Number of clusters</label>
-                        <input id="cluster-count" type="number" min="1" value="1" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <input id="cluster-count" type="number" min="1" value="3" class="w-full border border-gray-300 rounded px-3 py-2">
                     </div>
                 </div>
                 <div id="clusters-container" class="mt-4 space-y-4"></div>
@@ -111,6 +111,12 @@
             { name: 'Control Center', nonProd: 1, prod: 1 },
             { name: 'Confluent Operator', nonProd: 1, prod: 1 },
             { name: 'CP Flink Nodes', nonProd: 3, prod: 3 }
+        ];
+
+        const defaultClusters = [
+            { name: 'prod', env: 'prod' },
+            { name: 'dev', env: 'nonprod' },
+            { name: 'uat', env: 'nonprod' }
         ];
 
         const loadState = () => {
@@ -206,13 +212,15 @@
         };
 
         const renderClusters = () => {
-            const existingState = collectState().clusters.length ? collectState() : (loadState() || { clusters: [], count: 1 });
-            const count = Math.max(1, Number(clusterCountInput.value) || existingState.count || 1);
+            const storedState = loadState();
+            const initialState = storedState || { clusters: defaultClusters, count: defaultClusters.length };
+            const existingState = collectState().clusters.length ? collectState() : initialState;
+            const count = Math.max(1, Number(clusterCountInput.value) || existingState.count || defaultClusters.length);
             clustersContainer.innerHTML = '';
             tablesContainer.innerHTML = '';
 
             for (let i = 0; i < count; i += 1) {
-                const clusterState = existingState.clusters[i] || {};
+                const clusterState = existingState.clusters[i] || defaultClusters[i] || {};
                 const servicesState = clusterState.services || {};
                 const wrapper = document.createElement('div');
                 wrapper.className = 'border border-gray-100 rounded-lg p-4 bg-gray-50';
