@@ -99,7 +99,9 @@
                                 <tr>
                                     <th class="px-4 py-2 border">Services</th>
                                     <th class="px-4 py-2 border value-col">Number of Nodes</th>
+                                    <th class="px-4 py-2 border value-col">Number of Billed Nodes</th>
                                     <th class="px-4 py-2 border value-col">Number of Nodes</th>
+                                    <th class="px-4 py-2 border value-col">Number of Billed Nodes</th>
                                     <th class="px-4 py-2 border">Enable</th>
                                 </tr>
                             </thead>
@@ -110,8 +112,14 @@
                                         <td class="px-4 py-2 border nonprod-col">
                                             <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${service.nonProd}">
                                         </td>
+                                        <td class="px-4 py-2 border nonprod-col">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center billed-input" value="${service.nonProd}">
+                                        </td>
                                         <td class="px-4 py-2 border prod-col">
                                             <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${service.prod}">
+                                        </td>
+                                        <td class="px-4 py-2 border prod-col">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center billed-input" value="${service.prod}">
                                         </td>
                                         <td class="px-4 py-2 border text-center">
                                             <input type="checkbox" class="service-toggle" ${service.defaultEnabled ? 'checked' : ''}>
@@ -120,6 +128,8 @@
                                 `).join('')}
                                 <tr class="font-semibold bg-gray-50">
                                     <td class="px-4 py-2 border">Total Nodes</td>
+                                    <td class="px-4 py-2 border text-center total-col">0</td>
+                                    <td class="px-4 py-2 border text-center total-col">0</td>
                                     <td class="px-4 py-2 border text-center total-col">0</td>
                                     <td class="px-4 py-2 border text-center total-col">0</td>
                                     <td class="px-4 py-2 border"></td>
@@ -133,9 +143,10 @@
                 const envSelect = wrapper.querySelector('.env-select');
                 const nameInput = wrapper.querySelector('input[type="text"]');
                 const titleEl = tableWrapper.querySelector('.cluster-title');
-                const nonProdCols = tableWrapper.querySelectorAll('.nonprod-col, .value-col:nth-child(2), .total-col:nth-child(2)');
-                const prodCols = tableWrapper.querySelectorAll('.prod-col, .value-col:nth-child(3), .total-col:nth-child(3)');
+                const nonProdCols = tableWrapper.querySelectorAll('.nonprod-col, .value-col:nth-child(2), .value-col:nth-child(3), .total-col:nth-child(2), .total-col:nth-child(3)');
+                const prodCols = tableWrapper.querySelectorAll('.prod-col, .value-col:nth-child(4), .value-col:nth-child(5), .total-col:nth-child(4), .total-col:nth-child(5)');
                 const nodeInputs = tableWrapper.querySelectorAll('.node-input');
+                const billedInputs = tableWrapper.querySelectorAll('.billed-input');
                 const toggleInputs = tableWrapper.querySelectorAll('.service-toggle');
                 const totalCols = tableWrapper.querySelectorAll('.total-col');
 
@@ -147,7 +158,8 @@
 
                 const updateTotal = () => {
                     const isProd = envSelect.value === 'prod';
-                    let total = 0;
+                    let nodeTotal = 0;
+                    let billedTotal = 0;
 
                     nodeInputs.forEach((input) => {
                         const cell = input.closest('td');
@@ -163,11 +175,29 @@
                         }
                         const rawValue = input.value;
                         const value = Number(rawValue === '' ? 0 : rawValue);
-                        total += Number.isNaN(value) ? 0 : value;
+                        nodeTotal += Number.isNaN(value) ? 0 : value;
                     });
 
-                    totalCols.forEach(col => {
-                        col.textContent = total.toString();
+                    billedInputs.forEach((input) => {
+                        const cell = input.closest('td');
+                        const isProdCell = cell?.classList.contains('prod-col');
+                        const isNonProdCell = cell?.classList.contains('nonprod-col');
+                        if ((isProd && !isProdCell) || (!isProd && !isNonProdCell)) {
+                            return;
+                        }
+                        const row = input.closest('tr');
+                        const toggle = row?.querySelector('.service-toggle');
+                        if (toggle && !toggle.checked) {
+                            return;
+                        }
+                        const rawValue = input.value;
+                        const value = Number(rawValue === '' ? 0 : rawValue);
+                        billedTotal += Number.isNaN(value) ? 0 : value;
+                    });
+
+                    totalCols.forEach((col, idx) => {
+                        const isBilled = idx % 2 === 1;
+                        col.textContent = (isBilled ? billedTotal : nodeTotal).toString();
                     });
                 };
 
@@ -182,6 +212,11 @@
                 });
                 nameInput.addEventListener('input', updateTitle);
                 nodeInputs.forEach(input => {
+                    input.addEventListener('input', updateTotal);
+                    input.addEventListener('change', updateTotal);
+                    input.addEventListener('blur', updateTotal);
+                });
+                billedInputs.forEach(input => {
                     input.addEventListener('input', updateTotal);
                     input.addEventListener('change', updateTotal);
                     input.addEventListener('blur', updateTotal);
