@@ -71,6 +71,9 @@ const App = () => {
     numConnectors: 0,
     usesKsqlDB: 'no',
     usesOtherStreamProcessing: 'no',
+    numSchemas: '',
+    dataSinkTargets: 'none',
+    usesOpenTableFormat: 'no',
     monitoringTools: 'cloudwatch',
     monitoredMetrics: 'basic',
     alertingSystem: 'none',
@@ -555,7 +558,7 @@ const App = () => {
       workload: ['maxIngress', 'maxEgress', 'maxConnections', 'maxPartitions'],
       kafkaCore: ['numTopics', 'numPartitions', 'currentReplicationFactor', 'currentRetentionPeriod', 'messageFormat', 'messageCompression', 'hasComplexTopicConfigs', 'historicalDataMigration', 'acceptableDowntime', 'preferredDataMigrationTool', 'offsetSensitivity'],
       applications: ['numApplications', 'applicationTypes', 'applicationHosting', 'kafkaClientVersions', 'clientLibraries', 'hasCustomClientConfigs', 'hasStatefulApps', 'hasCustomPartitioning', 'hasExactlyOnceSemantics', 'hasTransactions', 'hasCustomErrorHandling'],
-      ecosystem: ['monitoringTools', 'monitoredMetrics', 'alertingSystem', 'loggingSolution', 'automationTools', 'hasCustomOperationalTools', 'backupSolution', 'hasCustomDashboards', 'usesSelfManagedSchemaRegistry'],
+      ecosystem: ['monitoringTools', 'monitoredMetrics', 'alertingSystem', 'loggingSolution', 'automationTools', 'hasCustomOperationalTools', 'backupSolution', 'hasCustomDashboards', 'usesSelfManagedSchemaRegistry', 'numSchemas', 'dataSinkTargets', 'usesOpenTableFormat'],
       security: ['encryptionAtRest', 'encryptionInTransit', 'clientAuthentication', 'authorizationMethod', 'credentialManagement', 'hasComplianceRequirements', 'auditLogging', 'hasCustomSecurityPolicies', 'usesIdpOAuth'],
       network: ['networkTopology', 'securityGroups', 'bandwidthUsage', 'usesVpcPeering', 'usesPrivateLink', 'privateNetworkingChoice', 'hasCustomNetworkConfigs', 'latencyRequirement', 'hasNetworkSecurityRequirements'],
       performance: ['throughputRequirement', 'partitionCount', 'messageSize', 'retentionPeriod', 'hasSpecificPerformanceRequirements'],
@@ -1454,6 +1457,22 @@ const App = () => {
             <Question label="Do you use a self-managed Schema Registry?" name="usesSelfManagedSchemaRegistry" type="select" value={formData.usesSelfManagedSchemaRegistry} onChange={handleChange}>
               <option value="no">No (Using AWS Glue or Confluent Cloud)</option>
               <option value="yes">Yes (Self-managed)</option>
+            </Question>
+            <Question label="How many schemas do you currently have?" name="numSchemas" type="number" value={formData.numSchemas} onChange={handleChange} min="0" placeholder="e.g., 120" />
+            <Question label="Is data being sinked to external systems (S3, Databricks, Snowflake, etc.)?" name="dataSinkTargets" type="select" value={formData.dataSinkTargets} onChange={handleChange}>
+              <option value="none">No</option>
+              <option value="s3">AWS S3</option>
+              <option value="databricks">Databricks</option>
+              <option value="snowflake">Snowflake</option>
+              <option value="redshift">Amazon Redshift</option>
+              <option value="bigquery">BigQuery</option>
+              <option value="multiple">Multiple targets</option>
+              <option value="other">Other</option>
+            </Question>
+            <Question label="Do you use or plan to use open table format or Delta format on Databricks?" name="usesOpenTableFormat" type="select" value={formData.usesOpenTableFormat} onChange={handleChange}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+              <option value="planned">Planned</option>
             </Question>
           </Section>
 
