@@ -48,9 +48,9 @@
         const clustersContainer = document.getElementById('clusters-container');
         const tablesContainer = document.getElementById('tables-container');
         const services = [
-            { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3 },
+            { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, defaultEnabled: true },
             { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 5, prod: 6 },
-            { name: 'Kafka Broker', nonProd: 3, prod: 4 },
+            { name: 'Kafka Broker', nonProd: 3, prod: 4, defaultEnabled: true },
             { name: 'Kafka Broker - Across 2 DC', nonProd: 3, prod: 6 },
             { name: 'Schema Registry', nonProd: 1, prod: 2 },
             { name: 'Replicator', nonProd: 0, prod: 0 },
@@ -114,7 +114,7 @@
                                             <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${service.prod}">
                                         </td>
                                         <td class="px-4 py-2 border text-center">
-                                            <input type="checkbox" class="service-toggle">
+                                            <input type="checkbox" class="service-toggle" ${service.defaultEnabled ? 'checked' : ''}>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -136,6 +136,7 @@
                 const nonProdCols = tableWrapper.querySelectorAll('.nonprod-col, .value-col:nth-child(2), .total-col:nth-child(2)');
                 const prodCols = tableWrapper.querySelectorAll('.prod-col, .value-col:nth-child(3), .total-col:nth-child(3)');
                 const nodeInputs = tableWrapper.querySelectorAll('.node-input');
+                const toggleInputs = tableWrapper.querySelectorAll('.service-toggle');
                 const totalCols = tableWrapper.querySelectorAll('.total-col');
 
                 const updateColumns = () => {
@@ -153,6 +154,11 @@
                         const isProdCell = cell?.classList.contains('prod-col');
                         const isNonProdCell = cell?.classList.contains('nonprod-col');
                         if ((isProd && !isProdCell) || (!isProd && !isNonProdCell)) {
+                            return;
+                        }
+                        const row = input.closest('tr');
+                        const toggle = row?.querySelector('.service-toggle');
+                        if (toggle && !toggle.checked) {
                             return;
                         }
                         const rawValue = input.value;
@@ -179,6 +185,9 @@
                     input.addEventListener('input', updateTotal);
                     input.addEventListener('change', updateTotal);
                     input.addEventListener('blur', updateTotal);
+                });
+                toggleInputs.forEach(toggle => {
+                    toggle.addEventListener('change', updateTotal);
                 });
                 updateColumns();
                 updateTitle();
