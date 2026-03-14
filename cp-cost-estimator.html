@@ -48,8 +48,8 @@
         const clustersContainer = document.getElementById('clusters-container');
         const tablesContainer = document.getElementById('tables-container');
         const services = [
-            { name: 'Zookeeper or KRaft Nodes', nonProd: 0, prod: 0 },
-            { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 5, prod: 5 },
+            { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3 },
+            { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 5, prod: 6 },
             { name: 'Kafka Broker', nonProd: 3, prod: 4 },
             { name: 'Kafka Broker - Across 2 DC', nonProd: 3, prod: 6 },
             { name: 'Schema Registry', nonProd: 1, prod: 2 },
@@ -135,7 +135,6 @@
                 const titleEl = tableWrapper.querySelector('.cluster-title');
                 const nonProdCols = tableWrapper.querySelectorAll('.nonprod-col, .value-col:nth-child(2), .total-col:nth-child(2)');
                 const prodCols = tableWrapper.querySelectorAll('.prod-col, .value-col:nth-child(3), .total-col:nth-child(3)');
-                const toggleInputs = tableWrapper.querySelectorAll('.service-toggle');
                 const nodeInputs = tableWrapper.querySelectorAll('.node-input');
                 const totalCols = tableWrapper.querySelectorAll('.total-col');
 
@@ -149,11 +148,14 @@
                     const isProd = envSelect.value === 'prod';
                     let total = 0;
 
-                    toggleInputs.forEach((toggle) => {
-                        if (!toggle.checked) return;
-                        const row = toggle.closest('tr');
-                        const input = row.querySelector(isProd ? '.prod-col .node-input' : '.nonprod-col .node-input');
-                        const value = Number(input?.value || 0);
+                    nodeInputs.forEach((input) => {
+                        const cell = input.closest('td');
+                        const isProdCell = cell?.classList.contains('prod-col');
+                        const isNonProdCell = cell?.classList.contains('nonprod-col');
+                        if ((isProd && !isProdCell) || (!isProd && !isNonProdCell)) {
+                            return;
+                        }
+                        const value = Number(input.value || 0);
                         total += Number.isNaN(value) ? 0 : value;
                     });
 
@@ -170,7 +172,6 @@
                 envSelect.addEventListener('change', updateColumns);
                 envSelect.addEventListener('change', updateTotal);
                 nameInput.addEventListener('input', updateTitle);
-                toggleInputs.forEach(toggle => toggle.addEventListener('change', updateTotal));
                 nodeInputs.forEach(input => input.addEventListener('input', updateTotal));
                 updateColumns();
                 updateTitle();
