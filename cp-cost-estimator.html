@@ -38,6 +38,19 @@
             </div>
 
             <div id="tables-container" class="space-y-6 mb-6"></div>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                <h2 class="text-lg font-semibold text-dark mb-2">Billed Nodes Summary</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <div class="font-semibold">Non Production</div>
+                        <div id="summary-nonprod" class="text-xl">0</div>
+                    </div>
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <div class="font-semibold">Production</div>
+                        <div id="summary-prod" class="text-xl">0</div>
+                    </div>
+                </div>
+            </div>
             <a href="index.html" class="text-primary underline">← Back to Landing Page</a>
         </div>
     </div>
@@ -94,7 +107,7 @@
                 tableWrapper.innerHTML = `
                     <h3 class="text-lg font-semibold text-dark mb-3 cluster-title">Cluster ${i + 1} Configuration</h3>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left border border-gray-200">
+                        <table class="w-full text-sm text-left border border-gray-200 cluster-table">
                             <thead class="bg-gray-50 text-dark">
                                 <tr>
                                     <th class="px-4 py-2 border">Services</th>
@@ -182,9 +195,6 @@
                         const cell = input.closest('td');
                         const isProdCell = cell?.classList.contains('prod-col');
                         const isNonProdCell = cell?.classList.contains('nonprod-col');
-                        if ((isProd && !isProdCell) || (!isProd && !isNonProdCell)) {
-                            return;
-                        }
                         const row = input.closest('tr');
                         const toggle = row?.querySelector('.service-toggle');
                         if (toggle && !toggle.checked) {
@@ -192,13 +202,40 @@
                         }
                         const rawValue = input.value;
                         const value = Number(rawValue === '' ? 0 : rawValue);
-                        billedTotal += Number.isNaN(value) ? 0 : value;
+                        if (Number.isNaN(value)) {
+                            return;
+                        }
+                        if (isProdCell && isProd) billedTotal += value;
+                        if (isNonProdCell && !isProd) billedTotal += value;
                     });
 
                     totalCols.forEach((col, idx) => {
                         const isBilled = idx % 2 === 1;
                         col.textContent = (isBilled ? billedTotal : nodeTotal).toString();
                     });
+
+                    const summaryNonProdEl = document.getElementById('summary-nonprod');
+                    const summaryProdEl = document.getElementById('summary-prod');
+                    let summaryNonProd = 0;
+                    let summaryProd = 0;
+
+                    document.querySelectorAll('.cluster-table').forEach((table) => {
+                        const rows = table.querySelectorAll('tbody tr');
+                        rows.forEach((row) => {
+                            const toggle = row.querySelector('.service-toggle');
+                            if (!toggle) return;
+                            if (!toggle.checked) return;
+                            const nonProdInput = row.querySelector('.nonprod-col .billed-input');
+                            const prodInput = row.querySelector('.prod-col .billed-input');
+                            const nonProdValue = Number(nonProdInput?.value || 0);
+                            const prodValue = Number(prodInput?.value || 0);
+                            summaryNonProd += Number.isNaN(nonProdValue) ? 0 : nonProdValue;
+                            summaryProd += Number.isNaN(prodValue) ? 0 : prodValue;
+                        });
+                    });
+
+                    if (summaryNonProdEl) summaryNonProdEl.textContent = summaryNonProd.toString();
+                    if (summaryProdEl) summaryProdEl.textContent = summaryProd.toString();
                 };
 
                 const updateTitle = () => {
