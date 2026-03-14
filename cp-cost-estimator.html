@@ -76,19 +76,6 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 no-print">
-                <h2 class="text-lg font-semibold text-dark mb-2">Test Cases</h2>
-                <p class="text-sm text-dark mb-3">Use these to validate totals.</p>
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <button id="test-brokers-only" class="bg-primary text-white px-4 py-2 rounded hover:bg-dark">
-                        Test: 1 Prod + 2 Non-Prod (Brokers only)
-                    </button>
-                    <button id="test-all-enabled" class="bg-primary text-white px-4 py-2 rounded hover:bg-dark">
-                        Test: All Enabled (Defaults)
-                    </button>
-                </div>
-                <div id="test-result" class="text-sm text-dark mt-3"></div>
-            </div>
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <a href="index.html" class="text-primary underline">← Back to Landing Page</a>
                 <button id="download-pdf" class="no-print bg-primary text-white px-4 py-2 rounded hover:bg-dark">Download PDF</button>
@@ -102,9 +89,6 @@
         const clustersContainer = document.getElementById('clusters-container');
         const tablesContainer = document.getElementById('tables-container');
         const downloadPdfButton = document.getElementById('download-pdf');
-        const testBrokersOnlyButton = document.getElementById('test-brokers-only');
-        const testAllEnabledButton = document.getElementById('test-all-enabled');
-        const testResult = document.getElementById('test-result');
         const STORAGE_KEY = 'cp-cost-estimator-state';
         const services = [
             { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, billedNonProd: 0, billedProd: 0, defaultEnabled: true },
@@ -405,88 +389,6 @@
 
         downloadPdfButton.addEventListener('click', () => {
             window.print();
-        });
-
-        const applyScenario = (clusters) => {
-            clusterCountInput.value = clusters.length;
-            renderClusters();
-
-            const clusterCards = Array.from(clustersContainer.children);
-            const tableCards = Array.from(tablesContainer.children);
-
-            clusters.forEach((cluster, idx) => {
-                const clusterCard = clusterCards[idx];
-                const tableCard = tableCards[idx];
-                if (!clusterCard || !tableCard) return;
-                const nameInput = clusterCard.querySelector('input[type="text"]');
-                const envSelect = clusterCard.querySelector('.env-select');
-                if (nameInput) nameInput.value = cluster.name;
-                if (envSelect) envSelect.value = cluster.env;
-
-                const rows = tableCard.querySelectorAll('tbody tr');
-                rows.forEach((row) => {
-                    const serviceName = row.querySelector('td')?.textContent?.trim();
-                    const toggle = row.querySelector('.service-toggle');
-                    const nodeInputs = row.querySelectorAll('.node-input');
-                    const billedInputs = row.querySelectorAll('.billed-input');
-                    if (!toggle || !serviceName) return;
-
-                    const serviceConfig = cluster.services[serviceName];
-                    toggle.checked = !!serviceConfig;
-                    if (serviceConfig) {
-                        if (nodeInputs[0]) nodeInputs[0].value = serviceConfig.nonProd ?? nodeInputs[0].value;
-                        if (nodeInputs[1]) nodeInputs[1].value = serviceConfig.prod ?? nodeInputs[1].value;
-                        if (billedInputs[0]) billedInputs[0].value = serviceConfig.billedNonProd ?? billedInputs[0].value;
-                        if (billedInputs[1]) billedInputs[1].value = serviceConfig.billedProd ?? billedInputs[1].value;
-                    }
-                });
-            });
-
-            renderClusters();
-        };
-
-        testBrokersOnlyButton.addEventListener('click', () => {
-            applyScenario([
-                {
-                    name: 'Prod',
-                    env: 'prod',
-                    services: {
-                        'Kafka Broker': { prod: 4, billedProd: 4 }
-                    }
-                },
-                {
-                    name: 'Non-Prod 1',
-                    env: 'nonprod',
-                    services: {
-                        'Kafka Broker': { nonProd: 3, billedNonProd: 3 }
-                    }
-                },
-                {
-                    name: 'Non-Prod 2',
-                    env: 'nonprod',
-                    services: {
-                        'Kafka Broker': { nonProd: 3, billedNonProd: 3 }
-                    }
-                }
-            ]);
-            testResult.textContent = 'Expected totals → Non Prod: 6, Prod: 4';
-        });
-
-        testAllEnabledButton.addEventListener('click', () => {
-            const fullServices = {};
-            services.forEach((service) => {
-                fullServices[service.name] = {
-                    nonProd: service.nonProd,
-                    billedNonProd: service.billedNonProd ?? service.nonProd,
-                    prod: service.prod,
-                    billedProd: service.billedProd ?? service.prod
-                };
-            });
-            applyScenario([
-                { name: 'Prod', env: 'prod', services: fullServices },
-                { name: 'Non-Prod', env: 'nonprod', services: fullServices }
-            ]);
-            testResult.textContent = 'Expected totals → Non Prod: 20, Prod: 26';
         });
 
         renderClusters();
