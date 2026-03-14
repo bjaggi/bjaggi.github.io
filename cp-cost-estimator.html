@@ -88,13 +88,16 @@
                     <div class="bg-white border border-gray-100 rounded p-3">
                         <label class="block text-sm text-dark mb-1" for="price-nonprod">Price per node in Non Production ($)</label>
                         <input id="price-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Non Prod Cost: <span id="total-nonprod-cost" class="font-semibold">$0.00</span></div>
+                        <div class="mt-2 text-sm">Total Non Prod Cost: <span id="total-nonprod-cost" class="font-semibold">$0</span></div>
                     </div>
                     <div class="bg-white border border-gray-100 rounded p-3">
                         <label class="block text-sm text-dark mb-1" for="price-prod">Price per node in Production ($)</label>
                         <input id="price-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Prod Cost: <span id="total-prod-cost" class="font-semibold">$0.00</span></div>
+                        <div class="mt-2 text-sm">Total Prod Cost: <span id="total-prod-cost" class="font-semibold">$0</span></div>
                     </div>
+                </div>
+                <div class="mt-4 text-sm text-dark">
+                    Total Amount: <span id="total-amount" class="font-semibold">$0</span>
                 </div>
             </div>
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -113,6 +116,7 @@
         const priceProdInput = document.getElementById('price-prod');
         const totalNonProdCostEl = document.getElementById('total-nonprod-cost');
         const totalProdCostEl = document.getElementById('total-prod-cost');
+        const totalAmountEl = document.getElementById('total-amount');
         const STORAGE_KEY = 'cp-cost-estimator-state';
         const services = [
             { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, billedNonProd: 0, billedProd: 0, defaultEnabled: true },
@@ -236,6 +240,7 @@
             };
             if (totalNonProdCostEl) totalNonProdCostEl.textContent = formatCurrency(nonProdCost);
             if (totalProdCostEl) totalProdCostEl.textContent = formatCurrency(prodCost);
+            if (totalAmountEl) totalAmountEl.textContent = formatCurrency(nonProdCost + prodCost);
         };
 
         const renderClusters = () => {
