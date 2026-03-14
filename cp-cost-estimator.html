@@ -155,7 +155,8 @@
                         if ((isProd && !isProdCell) || (!isProd && !isNonProdCell)) {
                             return;
                         }
-                        const value = Number(input.value || 0);
+                        const rawValue = input.value;
+                        const value = Number(rawValue === '' ? 0 : rawValue);
                         total += Number.isNaN(value) ? 0 : value;
                     });
 
@@ -169,10 +170,16 @@
                     titleEl.textContent = name ? `${name} Configuration` : `Cluster ${i + 1} Configuration`;
                 };
 
-                envSelect.addEventListener('change', updateColumns);
-                envSelect.addEventListener('change', updateTotal);
+                envSelect.addEventListener('change', () => {
+                    updateColumns();
+                    updateTotal();
+                });
                 nameInput.addEventListener('input', updateTitle);
-                nodeInputs.forEach(input => input.addEventListener('input', updateTotal));
+                nodeInputs.forEach(input => {
+                    input.addEventListener('input', updateTotal);
+                    input.addEventListener('change', updateTotal);
+                    input.addEventListener('blur', updateTotal);
+                });
                 updateColumns();
                 updateTitle();
                 updateTotal();
