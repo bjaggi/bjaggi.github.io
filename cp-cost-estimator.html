@@ -21,11 +21,142 @@
 </head>
 <body>
     <div class="container mx-auto px-4 py-10">
-        <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-8">
+        <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
             <h1 class="text-2xl font-bold text-dark mb-3">CP Cost Estimator</h1>
-            <p class="text-dark mb-6">This page is a placeholder for the CP cost estimator link.</p>
+            <p class="text-dark mb-6">Baseline sizing inputs for CP cost estimation.</p>
+
+            <div class="mb-8 border border-gray-200 rounded-lg p-4">
+                <h2 class="text-lg font-semibold text-dark mb-3">Cluster Setup</h2>
+                <div class="flex flex-col sm:flex-row gap-4 items-end">
+                    <div class="flex-1">
+                        <label class="block text-sm text-dark mb-1" for="cluster-count">Number of clusters</label>
+                        <input id="cluster-count" type="number" min="1" value="1" class="w-full border border-gray-300 rounded px-3 py-2">
+                    </div>
+                    <button id="generate-clusters" class="bg-primary text-white px-4 py-2 rounded hover:bg-dark">Generate</button>
+                </div>
+                <div id="clusters-container" class="mt-4 space-y-4"></div>
+            </div>
+
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full text-sm text-left border border-gray-200" id="config-table">
+                    <thead class="bg-gray-50 text-dark">
+                        <tr>
+                            <th class="px-4 py-2 border">Services</th>
+                            <th class="px-4 py-2 border">Non Prod</th>
+                            <th class="px-4 py-2 border">PROD</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-4 py-2 border">Zookeeper or KRaft Nodes</td>
+                            <td class="px-4 py-2 border">0</td>
+                            <td class="px-4 py-2 border">0</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border">Zookeeper or KRaft Nodes Across 2 DC</td>
+                            <td class="px-4 py-2 border">5</td>
+                            <td class="px-4 py-2 border">5</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border">Kafka Broker</td>
+                            <td class="px-4 py-2 border">3</td>
+                            <td class="px-4 py-2 border">4</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border">Kafka Broker - Across 2 DC</td>
+                            <td class="px-4 py-2 border">3</td>
+                            <td class="px-4 py-2 border">6</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border">Schema Registry</td>
+                            <td class="px-4 py-2 border">1</td>
+                            <td class="px-4 py-2 border">2</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border">Replicator</td>
+                            <td class="px-4 py-2 border">0</td>
+                            <td class="px-4 py-2 border">0</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border">REST Proxy</td>
+                            <td class="px-4 py-2 border">0</td>
+                            <td class="px-4 py-2 border">0</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border">ksqlDB (2 prod/1 Non Prod)</td>
+                            <td class="px-4 py-2 border">0</td>
+                            <td class="px-4 py-2 border">0</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border">Kafka Connect (2 prod/1 Non Prod)</td>
+                            <td class="px-4 py-2 border">0</td>
+                            <td class="px-4 py-2 border">0</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border">Control Center</td>
+                            <td class="px-4 py-2 border">1</td>
+                            <td class="px-4 py-2 border">1</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border">Confluent Operator</td>
+                            <td class="px-4 py-2 border">1</td>
+                            <td class="px-4 py-2 border">1</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 border">CP Flink Nodes</td>
+                            <td class="px-4 py-2 border">3</td>
+                            <td class="px-4 py-2 border">3</td>
+                        </tr>
+                        <tr class="font-semibold bg-gray-50">
+                            <td class="px-4 py-2 border">Total Nodes</td>
+                            <td class="px-4 py-2 border">17</td>
+                            <td class="px-4 py-2 border">22</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             <a href="index.html" class="text-primary underline">← Back to Landing Page</a>
         </div>
     </div>
+
+    <script>
+        const clusterCountInput = document.getElementById('cluster-count');
+        const generateButton = document.getElementById('generate-clusters');
+        const clustersContainer = document.getElementById('clusters-container');
+        const configTable = document.getElementById('config-table');
+
+        const renderClusters = () => {
+            const count = Math.max(1, Number(clusterCountInput.value) || 1);
+            clustersContainer.innerHTML = '';
+
+            for (let i = 0; i < count; i += 1) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'border border-gray-100 rounded-lg p-4 bg-gray-50';
+
+                wrapper.innerHTML = `
+                    <div class="flex flex-col sm:flex-row gap-4 items-end">
+                        <div class="flex-1">
+                            <label class="block text-sm text-dark mb-1">Cluster name</label>
+                            <input type="text" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="e.g., prod-cluster-1">
+                        </div>
+                        <div class="w-full sm:w-48">
+                            <label class="block text-sm text-dark mb-1">Environment</label>
+                            <select class="w-full border border-gray-300 rounded px-3 py-2 env-select">
+                                <option value="prod">Production</option>
+                                <option value="nonprod">Non Production</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+
+                clustersContainer.appendChild(wrapper);
+            }
+        };
+
+        generateButton.addEventListener('click', renderClusters);
+        clusterCountInput.addEventListener('change', renderClusters);
+
+        renderClusters();
+    </script>
 </body>
 </html>
