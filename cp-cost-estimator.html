@@ -92,7 +92,7 @@
                 const tableWrapper = document.createElement('div');
                 tableWrapper.className = 'bg-white shadow-lg rounded-lg p-4 border border-gray-100';
                 tableWrapper.innerHTML = `
-                    <h3 class="text-lg font-semibold text-dark mb-3">Cluster ${i + 1} Configuration</h3>
+                    <h3 class="text-lg font-semibold text-dark mb-3 cluster-title">Cluster ${i + 1} Configuration</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left border border-gray-200">
                             <thead class="bg-gray-50 text-dark">
@@ -121,6 +121,8 @@
                 tablesContainer.appendChild(tableWrapper);
 
                 const envSelect = wrapper.querySelector('.env-select');
+                const nameInput = wrapper.querySelector('input[type="text"]');
+                const titleEl = tableWrapper.querySelector('.cluster-title');
                 const nonProdCols = tableWrapper.querySelectorAll('.nonprod-col, .value-col:nth-child(2)');
                 const prodCols = tableWrapper.querySelectorAll('.prod-col, .value-col:nth-child(3)');
 
@@ -130,8 +132,15 @@
                     prodCols.forEach(col => col.style.display = isProd ? '' : 'none');
                 };
 
+                const updateTitle = () => {
+                    const name = nameInput.value.trim();
+                    titleEl.textContent = name ? `${name} Configuration` : `Cluster ${i + 1} Configuration`;
+                };
+
                 envSelect.addEventListener('change', updateColumns);
+                nameInput.addEventListener('input', updateTitle);
                 updateColumns();
+                updateTitle();
             }
         };
 
