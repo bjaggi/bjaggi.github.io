@@ -3,9 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reusable Tools</title>
+    <title>AWS MSK to Confluent Cloud Migration Estimator</title>
+    <!-- Load React -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+    <!-- Load Babel for JSX support -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -73,29 +80,20 @@
     </div>
     <div class="container mx-auto px-4 py-8">
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold mb-2 text-dark">Welcome to Reusable Tools</h1>
-            <p class="text-dark">Quick links to estimators and references.</p>
+            <h1 class="text-3xl font-bold mb-2 text-dark">AWS MSK to Confluent Cloud Migration Estimator</h1>
+            <p class="text-dark">Estimate the complexity and effort required for your migration</p>
             <div id="visit-counter" class="mt-2 text-sm text-dark opacity-75">
                 <span id="visit-count">Loading views since Mar 14...</span>
             </div>
+            <a href="docs.html" class="text-primary hover:text-dark underline mt-4 inline-block" target="_blank">View Documentation</a>
             <div class="mt-2 text-sm text-dark">
                 <p><strong>Contact:</strong> Brijesh Jaggi · <a class="text-primary hover:text-dark" href="mailto:bjaggi@confluent.io">bjaggi@confluent.io</a> · <a class="text-primary hover:text-dark" href="https://www.linkedin.com/in/brijeshjaggi/" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
             </div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <a href="estimator.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 class="text-xl font-semibold text-dark mb-2">AWS MSK to Confluent Cloud Migration Estimator</h2>
-                <p class="text-dark">Estimate complexity and effort required for your migration.</p>
-                <p class="text-primary mt-3 inline-block">Open estimator →</p>
-            </a>
-            <a href="cp-cost-estimator.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 class="text-xl font-semibold text-dark mb-2">CP Cost Estimator</h2>
-                <p class="text-dark">Estimate platform costs for your deployment.</p>
-                <p class="text-primary mt-3 inline-block">Open cost estimator →</p>
-            </a>
-        </div>
-        <div class="text-center mt-6">
-            <a href="docs.html" class="text-primary hover:text-dark underline">View Documentation</a>
+        <div id="root">
+            <div class="p-4 bg-yellow-100 text-yellow-700">
+                Loading...
+            </div>
         </div>
     </div>
 
@@ -130,6 +128,31 @@
             console.error('Error: ' + msg + '\nURL: ' + url + '\nLine: ' + lineNo + '\nColumn: ' + columnNo + '\nError object: ' + JSON.stringify(error));
             return false;
         };
+    </script>
+
+    <!-- Load our component -->
+    <script type="text/babel" src="msk-cc-migration-estimator.js"></script>
+
+    <!-- Render the app -->
+    <script type="text/babel">
+        console.log('Starting app render...');
+        try {
+            if (typeof App === 'undefined') {
+                throw new Error('App component is not defined');
+            }
+            console.log('App component found, rendering...');
+            ReactDOM.render(<App />, document.getElementById('root'));
+            console.log('App rendered successfully');
+        } catch (error) {
+            console.error('Error rendering app:', error);
+            document.getElementById('root').innerHTML = `
+                <div class="p-4 bg-red-100 text-red-700">
+                    Error rendering app: ${error.message}
+                    <br>
+                    <pre>${error.stack}</pre>
+                </div>
+            `;
+        }
     </script>
 </body>
 </html>
