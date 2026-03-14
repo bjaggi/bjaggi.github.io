@@ -17,6 +17,11 @@
         .text-dark {
             color: #0A3D62;
         }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -25,7 +30,7 @@
             <h1 class="text-2xl font-bold text-dark mb-3">CP Cost Estimator</h1>
             <p class="text-dark mb-6">Baseline sizing inputs for CP cost estimation.</p>
 
-            <div class="mb-8 border border-gray-200 rounded-lg p-4">
+            <div class="mb-8 border border-gray-200 rounded-lg p-4 no-print">
                 <h2 class="text-lg font-semibold text-dark mb-3">Cluster Setup</h2>
                 <div class="flex flex-col sm:flex-row gap-4 items-end">
                     <div class="flex-1">
@@ -51,7 +56,10 @@
                     </div>
                 </div>
             </div>
-            <a href="index.html" class="text-primary underline">← Back to Landing Page</a>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <a href="index.html" class="text-primary underline">← Back to Landing Page</a>
+                <button id="download-pdf" class="no-print bg-primary text-white px-4 py-2 rounded hover:bg-dark">Download PDF</button>
+            </div>
         </div>
     </div>
 
@@ -60,6 +68,8 @@
         const generateButton = document.getElementById('generate-clusters');
         const clustersContainer = document.getElementById('clusters-container');
         const tablesContainer = document.getElementById('tables-container');
+        const downloadPdfButton = document.getElementById('download-pdf');
+        const STORAGE_KEY = 'cp-cost-estimator-state';
         const services = [
             { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, billedNonProd: 0, billedProd: 0, defaultEnabled: true },
             { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 5, prod: 6, billedNonProd: 0, billedProd: 0 },
@@ -75,12 +85,75 @@
             { name: 'CP Flink Nodes', nonProd: 3, prod: 3 }
         ];
 
+        const loadState = () => {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const collectState = () => {
+            const clusters = [];
+            const clusterCards = Array.from(clustersContainer.children);
+            const tableCards = Array.from(tablesContainer.children);
+
+            clusterCards.forEach((clusterCard, index) => {
+                const tableCard = tableCards[index];
+                if (!tableCard) return;
+                const nameInput = clusterCard.querySelector('input[type="text"]');
+                const envSelect = clusterCard.querySelector('.env-select');
+                const rows = Array.from(tableCard.querySelectorAll('tbody tr')).filter(row => row.querySelector('.service-toggle'));
+                const servicesState = {};
+
+                rows.forEach((row) => {
+                    const serviceName = row.querySelector('td')?.textContent?.trim();
+                    if (!serviceName) return;
+                    const nonProdInput = row.querySelector('.nonprod-col .node-input');
+                    const nonProdBilledInput = row.querySelector('.nonprod-col .billed-input');
+                    const prodInput = row.querySelector('.prod-col .node-input');
+                    const prodBilledInput = row.querySelector('.prod-col .billed-input');
+                    const toggle = row.querySelector('.service-toggle');
+
+                    servicesState[serviceName] = {
+                        nonProd: nonProdInput?.value ?? '',
+                        billedNonProd: nonProdBilledInput?.value ?? '',
+                        prod: prodInput?.value ?? '',
+                        billedProd: prodBilledInput?.value ?? '',
+                        enabled: toggle?.checked ?? false
+                    };
+                });
+
+                clusters.push({
+                    name: nameInput?.value ?? '',
+                    env: envSelect?.value ?? 'prod',
+                    services: servicesState
+                });
+            });
+
+            return {
+                count: Math.max(1, Number(clusterCountInput.value) || 1),
+                clusters
+            };
+        };
+
+        const saveState = () => {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(collectState()));
+            } catch (error) {
+                console.warn('Unable to persist CP cost estimator state.', error);
+            }
+        };
+
         const renderClusters = () => {
-            const count = Math.max(1, Number(clusterCountInput.value) || 1);
+            const existingState = collectState().clusters.length ? collectState() : (loadState() || { clusters: [], count: 1 });
+            const count = Math.max(1, Number(clusterCountInput.value) || existingState.count || 1);
             clustersContainer.innerHTML = '';
             tablesContainer.innerHTML = '';
 
             for (let i = 0; i < count; i += 1) {
+                const clusterState = existingState.clusters[i] || {};
+                const servicesState = clusterState.services || {};
                 const wrapper = document.createElement('div');
                 wrapper.className = 'border border-gray-100 rounded-lg p-4 bg-gray-50';
 
@@ -88,13 +161,13 @@
                     <div class="flex flex-col sm:flex-row gap-4 items-end">
                         <div class="flex-1">
                             <label class="block text-sm text-dark mb-1">Cluster name</label>
-                            <input type="text" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="e.g., prod-cluster-1">
+                            <input type="text" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="e.g., prod-cluster-1" value="${clusterState.name || ''}">
                         </div>
                         <div class="w-full sm:w-48">
                             <label class="block text-sm text-dark mb-1">Environment</label>
                             <select class="w-full border border-gray-300 rounded px-3 py-2 env-select">
-                                <option value="prod">Production</option>
-                                <option value="nonprod">Non Production</option>
+                                <option value="prod" ${clusterState.env === 'prod' ? 'selected' : ''}>Production</option>
+                                <option value="nonprod" ${clusterState.env === 'nonprod' ? 'selected' : ''}>Non Production</option>
                             </select>
                         </div>
                     </div>
@@ -119,26 +192,33 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${services.map(service => `
+                                ${services.map(service => {
+                                    const saved = servicesState[service.name] || {};
+                                    const nonProdValue = saved.nonProd ?? service.nonProd;
+                                    const billedNonProdValue = saved.billedNonProd ?? service.billedNonProd ?? service.nonProd;
+                                    const prodValue = saved.prod ?? service.prod;
+                                    const billedProdValue = saved.billedProd ?? service.billedProd ?? service.prod;
+                                    const enabled = typeof saved.enabled === 'boolean' ? saved.enabled : !!service.defaultEnabled;
+                                    return `
                                     <tr>
                                         <td class="px-4 py-2 border">${service.name}</td>
                                         <td class="px-4 py-2 border nonprod-col">
-                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${service.nonProd}">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${nonProdValue}">
                                         </td>
                                         <td class="px-4 py-2 border nonprod-col">
-                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center billed-input" value="${service.billedNonProd ?? service.nonProd}">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center billed-input" value="${billedNonProdValue}">
                                         </td>
                                         <td class="px-4 py-2 border prod-col">
-                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${service.prod}">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${prodValue}">
                                         </td>
                                         <td class="px-4 py-2 border prod-col">
-                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center billed-input" value="${service.billedProd ?? service.prod}">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center billed-input" value="${billedProdValue}">
                                         </td>
                                         <td class="px-4 py-2 border text-center">
-                                            <input type="checkbox" class="service-toggle" ${service.defaultEnabled ? 'checked' : ''}>
+                                            <input type="checkbox" class="service-toggle" ${enabled ? 'checked' : ''}>
                                         </td>
                                     </tr>
-                                `).join('')}
+                                `}).join('')}
                                 <tr class="font-semibold bg-gray-50">
                                     <td class="px-4 py-2 border">Total Nodes</td>
                                     <td class="px-4 py-2 border text-center total-col">0</td>
@@ -236,6 +316,8 @@
 
                     if (summaryNonProdEl) summaryNonProdEl.textContent = summaryNonProd.toString();
                     if (summaryProdEl) summaryProdEl.textContent = summaryProd.toString();
+
+                    saveState();
                 };
 
                 const updateTitle = () => {
@@ -247,7 +329,10 @@
                     updateColumns();
                     updateTotal();
                 });
-                nameInput.addEventListener('input', updateTitle);
+                nameInput.addEventListener('input', () => {
+                    updateTitle();
+                    saveState();
+                });
                 nodeInputs.forEach(input => {
                     input.addEventListener('input', updateTotal);
                     input.addEventListener('change', updateTotal);
@@ -265,10 +350,16 @@
                 updateTitle();
                 updateTotal();
             }
+            saveState();
         };
 
         generateButton.addEventListener('click', renderClusters);
         clusterCountInput.addEventListener('change', renderClusters);
+        clusterCountInput.addEventListener('input', renderClusters);
+
+        downloadPdfButton.addEventListener('click', () => {
+            window.print();
+        });
 
         renderClusters();
     </script>
