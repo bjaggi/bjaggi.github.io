@@ -230,8 +230,12 @@
             const prodRate = Number(priceProdInput?.value || 0);
             const nonProdCost = (Number.isNaN(nonProdRate) ? 0 : nonProdRate) * summaryNonProd;
             const prodCost = (Number.isNaN(prodRate) ? 0 : prodRate) * summaryProd;
-            if (totalNonProdCostEl) totalNonProdCostEl.textContent = `$${nonProdCost.toFixed(2)}`;
-            if (totalProdCostEl) totalProdCostEl.textContent = `$${prodCost.toFixed(2)}`;
+            const formatCurrency = (value) => {
+                const rounded = Math.round(value);
+                return `$${rounded.toLocaleString('en-US')}`;
+            };
+            if (totalNonProdCostEl) totalNonProdCostEl.textContent = formatCurrency(nonProdCost);
+            if (totalProdCostEl) totalProdCostEl.textContent = formatCurrency(prodCost);
         };
 
         const renderClusters = () => {
