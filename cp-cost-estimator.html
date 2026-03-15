@@ -74,6 +74,16 @@
             <div id="tables-container" class="space-y-6 mb-6"></div>
             <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
                 <h2 class="text-lg font-semibold text-dark mb-2">Billed Nodes Summary</h2>
+                <div class="overflow-x-auto mb-4">
+                    <table class="w-full text-sm text-left border border-gray-200" id="summary-table">
+                        <thead class="bg-gray-50 text-dark">
+                            <tr id="summary-header">
+                                <th class="px-4 py-2 border">Component</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-body"></tbody>
+                    </table>
+                </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
                     <div class="bg-white border border-gray-100 rounded p-3">
                         <div class="font-semibold">Non Production</div>
@@ -112,6 +122,8 @@
         const clustersContainer = document.getElementById('clusters-container');
         const tablesContainer = document.getElementById('tables-container');
         const downloadPdfButton = document.getElementById('download-pdf');
+        const summaryHeader = document.getElementById('summary-header');
+        const summaryBody = document.getElementById('summary-body');
         const priceNonProdInput = document.getElementById('price-nonprod');
         const priceProdInput = document.getElementById('price-prod');
         const totalNonProdCostEl = document.getElementById('total-nonprod-cost');
@@ -208,6 +220,15 @@
 
             const clusterCards = Array.from(clustersContainer.children);
             const tableCards = Array.from(tablesContainer.children);
+            const clusterNames = clusterCards.map((clusterCard, idx) => {
+                const name = clusterCard.querySelector('input[type="text"]')?.value?.trim();
+                return name || `Cluster ${idx + 1}`;
+            });
+
+            if (summaryHeader && summaryBody) {
+                summaryHeader.innerHTML = `<th class="px-4 py-2 border">Component</th>${clusterNames.map(name => `<th class="px-4 py-2 border">${name}</th>`).join('')}`;
+                summaryBody.innerHTML = '';
+            }
 
             clusterCards.forEach((clusterCard, idx) => {
                 const tableCard = tableCards[idx];
@@ -242,6 +263,55 @@
             if (totalNonProdCostEl) totalNonProdCostEl.textContent = formatCurrency(nonProdCost);
             if (totalProdCostEl) totalProdCostEl.textContent = formatCurrency(prodCost);
             if (totalAmountEl) totalAmountEl.textContent = formatCurrency(nonProdCost + prodCost);
+
+            if (summaryBody) {
+                services.forEach((service) => {
+                    const rowValues = clusterCards.map((clusterCard, idx) => {
+                        const tableCard = tableCards[idx];
+                        if (!tableCard) return 0;
+                        const env = clusterCard.querySelector('.env-select')?.value || 'prod';
+                        const rows = Array.from(tableCard.querySelectorAll('tbody tr')).filter(r => r.querySelector('.service-toggle'));
+                        const row = rows.find(r => r.querySelector('td')?.textContent?.trim() === service.name);
+                        if (!row) return 0;
+                        const toggle = row.querySelector('.service-toggle');
+                        if (!toggle || !toggle.checked) return 0;
+                        const billedInput = row.querySelector(env === 'prod' ? '.prod-col .billed-input' : '.nonprod-col .billed-input');
+                        const value = Number(billedInput?.value || 0);
+                        return Number.isNaN(value) ? 0 : value;
+                    });
+
+                    const rowTotal = rowValues.reduce((sum, value) => sum + value, 0);
+                    const rowHtml = `
+                        <tr>
+                            <td class="px-4 py-2 border">${service.name}</td>
+                            ${rowValues.map(value => `<td class="px-4 py-2 border">${value}</td>`).join('')}
+                        </tr>
+                    `;
+                    summaryBody.insertAdjacentHTML('beforeend', rowHtml);
+                });
+
+                const totals = clusterCards.map((clusterCard, idx) => {
+                    const tableCard = tableCards[idx];
+                    if (!tableCard) return 0;
+                    const env = clusterCard.querySelector('.env-select')?.value || 'prod';
+                    const rows = Array.from(tableCard.querySelectorAll('tbody tr')).filter(r => r.querySelector('.service-toggle'));
+                    return rows.reduce((sum, row) => {
+                        const toggle = row.querySelector('.service-toggle');
+                        if (!toggle || !toggle.checked) return sum;
+                        const billedInput = row.querySelector(env === 'prod' ? '.prod-col .billed-input' : '.nonprod-col .billed-input');
+                        const value = Number(billedInput?.value || 0);
+                        return sum + (Number.isNaN(value) ? 0 : value);
+                    }, 0);
+                });
+
+                const totalsRow = `
+                    <tr class="font-semibold bg-gray-50">
+                        <td class="px-4 py-2 border">TOTAL</td>
+                        ${totals.map(value => `<td class="px-4 py-2 border">${value}</td>`).join('')}
+                    </tr>
+                `;
+                summaryBody.insertAdjacentHTML('beforeend', totalsRow);
+            }
         };
 
         const renderClusters = () => {
