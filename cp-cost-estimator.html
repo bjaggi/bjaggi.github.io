@@ -172,11 +172,11 @@
                 if (!tableCard) return;
                 const nameInput = clusterCard.querySelector('input[type="text"]');
                 const envSelect = clusterCard.querySelector('.env-select');
-                const rows = Array.from(tableCard.querySelectorAll('tbody tr')).filter(row => row.querySelector('.service-toggle'));
+                const rows = Array.from(tableCard.querySelectorAll('tbody tr[data-service]'));
                 const servicesState = {};
 
                 rows.forEach((row) => {
-                    const serviceName = row.querySelector('td')?.textContent?.trim();
+                    const serviceName = row.getAttribute('data-service');
                     if (!serviceName) return;
                     const nonProdInput = row.querySelector('.nonprod-col .node-input');
                     const nonProdBilledInput = row.querySelector('.nonprod-col .billed-input');
@@ -236,7 +236,7 @@
                 const tableCard = tableCards[idx];
                 if (!tableCard) return;
                 const env = clusterCard.querySelector('.env-select')?.value || 'prod';
-                const rows = tableCard.querySelectorAll('tbody tr');
+                const rows = tableCard.querySelectorAll('tbody tr[data-service]');
                 rows.forEach((row) => {
                     const toggle = row.querySelector('.service-toggle');
                     if (!toggle || !toggle.checked) return;
@@ -272,8 +272,8 @@
                         const tableCard = tableCards[idx];
                         if (!tableCard) return 0;
                         const env = clusterCard.querySelector('.env-select')?.value || 'prod';
-                        const rows = Array.from(tableCard.querySelectorAll('tbody tr')).filter(r => r.querySelector('.service-toggle'));
-                        const row = rows.find(r => r.querySelector('td')?.textContent?.trim() === service.name);
+                        const rows = Array.from(tableCard.querySelectorAll('tbody tr[data-service]'));
+                        const row = rows.find(r => r.getAttribute('data-service') === service.name);
                         if (!row) return 0;
                         const toggle = row.querySelector('.service-toggle');
                         if (!toggle || !toggle.checked) return 0;
@@ -296,7 +296,7 @@
                     const tableCard = tableCards[idx];
                     if (!tableCard) return 0;
                     const env = clusterCard.querySelector('.env-select')?.value || 'prod';
-                    const rows = Array.from(tableCard.querySelectorAll('tbody tr')).filter(r => r.querySelector('.service-toggle'));
+                    const rows = Array.from(tableCard.querySelectorAll('tbody tr[data-service]'));
                     return rows.reduce((sum, row) => {
                         const toggle = row.querySelector('.service-toggle');
                         if (!toggle || !toggle.checked) return sum;
@@ -373,7 +373,7 @@
                                     const billedProdValue = saved.billedProd ?? service.billedProd ?? service.prod;
                                     const enabled = typeof saved.enabled === 'boolean' ? saved.enabled : !!service.defaultEnabled;
                                     return `
-                                    <tr>
+                                    <tr data-service="${service.name}">
                                         <td class="px-4 py-2 border">
                                             <div>${service.name}</div>
                                             ${service.note ? `<div class="text-xs text-gray-500 mt-1">${service.note}</div>` : ''}
