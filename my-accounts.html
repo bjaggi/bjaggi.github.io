@@ -8,187 +8,519 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #F5F9FF;
-            color: #0A3D62;
+            background-color: #0a0c16;
+            color: #ffffff;
         }
         .logo-container {
             position: fixed;
             top: 1rem;
             left: 1rem;
             z-index: 1000;
-            background: white;
-            padding: 0.5rem;
+            background: #161b2a;
+            padding: 0.5rem 0.75rem;
             border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #374151;
         }
         .logo-container img {
-            height: 40px;
+            height: 36px;
             width: auto;
+            filter: brightness(1.05);
         }
-        .text-primary {
-            color: #0A85EA;
-        }
-        .text-dark {
-            color: #0A3D62;
-        }
-        .bg-primary {
-            background-color: #0A85EA;
-        }
-        .bg-dark {
-            background-color: #0A3D62;
-        }
-        .hover\:bg-primary-dark:hover {
-            background-color: #0870c4;
-        }
-        h1, h2, h3 {
-            color: #0A3D62;
+        .section-card {
+            background: #1e2533;
+            border: 1px solid #374151;
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
         }
     </style>
 </head>
-<body>
+<body class="min-h-screen">
     <div class="logo-container">
         <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
             <img src="assets/image.png" alt="Confluent Logo">
         </a>
-        <a href="index.html" class="text-primary text-sm block mt-2">← Back to HomePage</a>
+        <a href="index.html" class="text-[#60a5fa] text-sm block mt-2 hover:text-white">← Back to HomePage</a>
     </div>
 
-    <div class="container mx-auto px-4 py-10 pt-24 md:pt-10">
-        <div class="max-w-3xl mx-auto">
-            <div class="bg-white shadow-lg rounded-lg p-6 md:p-8 border border-gray-100 mb-6">
-                <h1 class="text-2xl font-bold text-dark mb-2">My Accounts - AI Assistant</h1>
-                <p class="text-gray-600 mb-1">Accounts assigned to you and the notes captured for each.</p>
-                <p class="text-sm text-gray-500 italic">Data is stored only in this browser (local storage).</p>
+    <div class="max-w-6xl mx-auto px-4 py-10 pt-28 md:pt-12">
+        <header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">Your Accounts</h1>
+                <p class="text-[#9ca3af] text-sm mt-2 max-w-xl">
+                    Click an account to view or edit. All profiles sync to Google Drive → Account Brain.
+                </p>
+                <p class="text-xs text-[#6b7280] mt-1 italic">Local preview: data stays in this browser until you connect sync.</p>
             </div>
+            <button type="button" id="btn-header-new"
+                class="shrink-0 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg shadow-blue-900/30 transition-colors">
+                + New Account
+            </button>
+        </header>
 
-            <div class="bg-white shadow-lg rounded-lg p-6 border border-gray-100 mb-6">
-                <h2 class="text-lg font-semibold text-dark mb-3">Add account</h2>
-                <div class="space-y-3">
+        <div id="accounts-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- Account Brain Profile modal -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 z-[2000] hidden items-center justify-center p-4" aria-hidden="true">
+        <div id="modal-panel" class="bg-[#161b2a] border border-gray-700 rounded-xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl" role="dialog" aria-labelledby="modal-title">
+            <form id="account-form" class="p-6 md:p-8">
+                <input type="hidden" id="form-id" value="">
+
+                <div class="flex items-start justify-between gap-4 mb-6">
                     <div>
-                        <label for="new-name" class="block text-sm font-medium text-dark mb-1">Account name</label>
-                        <input id="new-name" type="text" placeholder="e.g. Ulta Beauty, Target, Walmart"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#0A85EA]">
+                        <h2 id="modal-title" class="text-xl font-bold text-white">New Account</h2>
+                        <p class="text-[#9ca3af] text-sm mt-1">Account Brain Profile</p>
                     </div>
-                    <div>
-                        <label for="new-notes" class="block text-sm font-medium text-dark mb-1">Notes</label>
-                        <textarea id="new-notes" rows="4" placeholder="Key players, initiatives, next steps, or other context…"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#0A85EA]"></textarea>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button type="button" id="form-save-top" class="bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5">
+                            <span aria-hidden="true">💾</span> Save
+                        </button>
+                        <button type="button" id="modal-close-x" class="text-gray-400 hover:text-white text-2xl leading-none px-2 py-1 rounded hover:bg-gray-800" aria-label="Close">&times;</button>
                     </div>
-                    <button type="button" id="add-account-btn"
-                        class="bg-primary hover:bg-[#0870c4] text-white font-semibold px-4 py-2 rounded-lg transition-colors">
-                        Save account
-                    </button>
                 </div>
-            </div>
 
-            <div id="accounts-empty" class="hidden bg-white shadow-lg rounded-lg p-8 border border-gray-100 text-center text-gray-600">
-                No accounts yet. Add one above to get started.
-            </div>
-            <div id="accounts-list" class="space-y-4"></div>
+                <div class="space-y-5">
+                    <!-- Account name -->
+                    <div class="section-card">
+                        <label for="form-name" class="block text-sm font-medium text-white mb-2">Account Name <span class="text-red-400">*</span></label>
+                        <input id="form-name" type="text" required placeholder="e.g. Ulta Beauty, Target, Walmart"
+                            class="w-full bg-[#0a0c16] border border-gray-600 rounded-lg px-3 py-2.5 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent">
+                    </div>
+
+                    <!-- Key players -->
+                    <div class="section-card">
+                        <div class="flex items-start justify-between gap-3 mb-2">
+                            <div>
+                                <h3 class="text-white font-semibold text-sm flex items-center gap-2"><span>👥</span> Key Players &amp; Roles</h3>
+                                <p class="text-[#9ca3af] text-xs mt-1 italic">Add the people who matter — champions, blockers, decision makers.</p>
+                            </div>
+                            <button type="button" id="add-player" class="shrink-0 text-xs font-medium text-white border border-gray-500 hover:border-gray-400 bg-[#0a0c16] px-2.5 py-1.5 rounded-lg">+ Add</button>
+                        </div>
+                        <div id="list-players" class="space-y-2 mt-3"></div>
+                    </div>
+
+                    <!-- Initiatives max 3 -->
+                    <div class="section-card">
+                        <div class="flex items-start justify-between gap-3 mb-2">
+                            <div>
+                                <h3 class="text-white font-semibold text-sm flex items-center gap-2"><span>🎯</span> Top 3 Initiatives / Concerns</h3>
+                                <p class="text-[#9ca3af] text-xs mt-1 italic">What are this account&apos;s top strategic priorities or pain points?</p>
+                            </div>
+                            <button type="button" id="add-initiative" class="shrink-0 text-xs font-medium text-white border border-gray-500 hover:border-gray-400 bg-[#0a0c16] px-2.5 py-1.5 rounded-lg">+ Add (max 3)</button>
+                        </div>
+                        <div id="list-initiatives" class="space-y-2 mt-3"></div>
+                    </div>
+
+                    <!-- Next steps -->
+                    <div class="section-card">
+                        <div class="flex items-start justify-between gap-3 mb-2">
+                            <div>
+                                <h3 class="text-white font-semibold text-sm flex items-center gap-2"><span>✅</span> Next Steps / Action Items</h3>
+                                <p class="text-[#9ca3af] text-xs mt-1 italic">Track follow-ups, commitments, and next steps here.</p>
+                            </div>
+                            <button type="button" id="add-step" class="shrink-0 text-xs font-medium text-white border border-gray-500 hover:border-gray-400 bg-[#0a0c16] px-2.5 py-1.5 rounded-lg">+ Add</button>
+                        </div>
+                        <div id="list-steps" class="space-y-2 mt-3"></div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="section-card">
+                        <h3 class="text-white font-semibold text-sm flex items-center gap-2 mb-2"><span>📝</span> Additional Notes</h3>
+                        <textarea id="form-notes" rows="5" placeholder="Architecture context, competitive intel, relationship notes, recent wins/losses…"
+                            class="w-full bg-[#0a0c16] border border-[#60a5fa]/40 rounded-lg px-3 py-2.5 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2563eb] resize-y"></textarea>
+                        <p class="text-xs text-[#6b7280] mt-2 italic">Tip: Detailed meeting transcripts are auto-synced from Zoom/Teams into Google Drive.</p>
+                    </div>
+                </div>
+
+                <p class="text-xs text-[#6b7280] mt-6 mb-3">Profiles auto-upload to 🧠 Account Brain on next sync.</p>
+
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <button type="submit" class="flex-1 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2">
+                        <span aria-hidden="true">💾</span> Save Profile
+                    </button>
+                    <button type="button" id="form-cancel" class="text-sm text-[#9ca3af] hover:text-white underline px-2">Cancel</button>
+                    <button type="button" id="form-delete" class="hidden text-sm text-red-400 hover:text-red-300 underline sm:ml-auto">Remove account</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
         (function () {
-            var STORAGE_KEY = 'my-accounts-ai-assistant-v1';
+            var STORAGE_V3 = 'my-accounts-ai-assistant-v3';
+            var STORAGE_V2 = 'my-accounts-ai-assistant-v2';
+            var STORAGE_V1 = 'my-accounts-ai-assistant-v1';
 
-            var defaultAccounts = [
-                {
-                    id: 'seed-1',
-                    name: 'Sample Enterprise Co.',
-                    notes: '👥 Key players: VP Data (Alex), Platform lead (Sam).\n🎯 Top initiatives: MSK → CC migration, cost governance.\n✅ Next steps: Schedule technical deep-dive; share sizing worksheet.\n📝 Additional notes: Prefer dedicated clusters; EU region.'
-                },
-                {
-                    id: 'seed-2',
-                    name: 'Retail Partners Inc.',
-                    notes: '🎯 Focus on real-time inventory and Flink evaluation.\n📝 POC target: Q3. Compliance review pending.'
-                }
-            ];
+            var MAX_INITIATIVES = 3;
 
-            function loadAccounts() {
-                try {
-                    var raw = localStorage.getItem(STORAGE_KEY);
-                    if (raw) {
-                        var parsed = JSON.parse(raw);
-                        if (Array.isArray(parsed) && parsed.length) return parsed;
-                    }
-                } catch (e) {
-                    console.warn('Could not read accounts from storage', e);
-                }
-                return defaultAccounts.slice();
-            }
-
-            function saveAccounts(list) {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-            }
-
-            function escapeHtml(s) {
-                var div = document.createElement('div');
-                div.textContent = s;
-                return div.innerHTML;
+            function todayStr() {
+                return new Date().toISOString().slice(0, 10);
             }
 
             function previewNotes(text, maxLen) {
-                var t = text.replace(/\s+/g, ' ').trim();
+                var t = (text || '').replace(/\s+/g, ' ').trim();
                 if (t.length <= maxLen) return t;
                 return t.slice(0, maxLen).trim() + '…';
             }
 
-            function render() {
-                var list = loadAccounts();
-                var container = document.getElementById('accounts-list');
-                var emptyEl = document.getElementById('accounts-empty');
-                container.innerHTML = '';
-
-                if (!list.length) {
-                    emptyEl.classList.remove('hidden');
-                    return;
+            function toV3(acct) {
+                if (!acct) return null;
+                if (Array.isArray(acct.keyPlayers)) {
+                    return {
+                        id: acct.id || ('acc-' + Date.now()),
+                        name: acct.name || '',
+                        updatedAt: acct.updatedAt || todayStr(),
+                        keyPlayers: (acct.keyPlayers || []).map(String),
+                        topInitiatives: (acct.topInitiatives || []).map(String),
+                        nextSteps: (acct.nextSteps || []).map(String),
+                        additionalNotes: acct.additionalNotes != null ? String(acct.additionalNotes) : (acct.notes != null ? String(acct.notes) : '')
+                    };
                 }
-                emptyEl.classList.add('hidden');
+                var imp = '';
+                if ((acct.players || 0) + (acct.initiatives || 0) + (acct.actionItems || 0) > 0) {
+                    imp = '[Imported] ' + (acct.players || 0) + ' players, ' + (acct.initiatives || 0) + ' initiatives, ' + (acct.actionItems || 0) + ' action items.\n\n';
+                }
+                return {
+                    id: acct.id || ('acc-' + Date.now()),
+                    name: acct.name || '',
+                    updatedAt: acct.updatedAt || todayStr(),
+                    keyPlayers: [],
+                    topInitiatives: acct.priorityLine ? [String(acct.priorityLine)] : [],
+                    nextSteps: [],
+                    additionalNotes: imp + (acct.notes || '')
+                };
+            }
 
-                list.forEach(function (acct) {
-                    var card = document.createElement('article');
-                    card.className = 'bg-white shadow-lg rounded-lg p-6 border border-gray-100';
-                    var prev = previewNotes(acct.notes || '', 160);
-                    card.innerHTML =
-                        '<h2 class="text-xl font-semibold text-dark mb-2">' + escapeHtml(acct.name) + '</h2>' +
-                        '<p class="text-sm text-gray-600 italic mb-3">' + escapeHtml(prev || 'No notes yet.') + '</p>' +
-                        '<details class="mt-1">' +
-                        '<summary class="text-primary cursor-pointer font-medium">View full notes</summary>' +
-                        '<pre class="mt-3 text-sm text-dark whitespace-pre-wrap font-sans bg-[#F5F9FF] border border-gray-100 rounded-lg p-4">' +
-                        escapeHtml(acct.notes || '(empty)') + '</pre>' +
-                        '</details>' +
-                        '<button type="button" class="remove-btn mt-4 text-sm text-gray-500 hover:text-red-600 underline" data-id="' +
-                        escapeHtml(acct.id) + '">Remove from list</button>';
-                    container.appendChild(card);
-
-                    card.querySelector('.remove-btn').addEventListener('click', function () {
-                        var id = this.getAttribute('data-id');
-                        var next = loadAccounts().filter(function (a) { return a.id !== id; });
-                        saveAccounts(next);
-                        render();
-                    });
+            function migrateFromV1(oldList) {
+                return oldList.map(function (a) {
+                    return {
+                        id: a.id || ('mig-' + Math.random().toString(36).slice(2)),
+                        name: a.name || 'Account',
+                        players: 0,
+                        initiatives: 0,
+                        actionItems: 0,
+                        priorityLine: previewNotes(a.notes || '', 72) || '—',
+                        notes: a.notes || '',
+                        updatedAt: todayStr()
+                    };
                 });
             }
 
-            document.getElementById('add-account-btn').addEventListener('click', function () {
-                var nameInput = document.getElementById('new-name');
-                var notesInput = document.getElementById('new-notes');
-                var name = (nameInput.value || '').trim();
-                if (!name) {
-                    nameInput.focus();
-                    return;
+            function defaultAccounts() {
+                return [
+                    {
+                        id: 'seed-1',
+                        name: 'Cisco',
+                        updatedAt: '2026-04-14',
+                        keyPlayers: ['Alex Chen — Champion', 'Jamie Rivera — Platform lead', 'Pat Kim — Procurement'],
+                        topInitiatives: ['#1: Save Costs'],
+                        nextSteps: [],
+                        additionalNotes: 'Cost optimization and platform consolidation discussion ongoing.'
+                    },
+                    {
+                        id: 'seed-2',
+                        name: 'Nvidia',
+                        updatedAt: '2026-04-14',
+                        keyPlayers: ['Sam Okonkwo — Engineering', 'Jordan Lee — Architect'],
+                        topInitiatives: ['#1: Evaluate WarpStream'],
+                        nextSteps: ['Schedule architecture review with data team'],
+                        additionalNotes: 'Evaluating streaming options; competitive evaluation in progress.'
+                    }
+                ];
+            }
+
+            function loadAccounts() {
+                try {
+                    var r3 = localStorage.getItem(STORAGE_V3);
+                    if (r3) {
+                        var p3 = JSON.parse(r3);
+                        if (Array.isArray(p3)) return p3.map(toV3);
+                    }
+                    var r2 = localStorage.getItem(STORAGE_V2);
+                    if (r2) {
+                        var p2 = JSON.parse(r2);
+                        if (Array.isArray(p2) && p2.length) {
+                            var m2 = p2.map(toV3);
+                            saveAccounts(m2);
+                            localStorage.removeItem(STORAGE_V2);
+                            return m2;
+                        }
+                    }
+                    var r1 = localStorage.getItem(STORAGE_V1);
+                    if (r1) {
+                        var p1 = JSON.parse(r1);
+                        if (Array.isArray(p1) && p1.length) {
+                            var m1 = migrateFromV1(p1).map(toV3);
+                            saveAccounts(m1);
+                            localStorage.removeItem(STORAGE_V1);
+                            return m1;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Could not read accounts', e);
                 }
-                var list = loadAccounts();
-                list.unshift({
-                    id: 'acc-' + Date.now(),
-                    name: name,
-                    notes: (notesInput.value || '').trim()
+                return defaultAccounts();
+            }
+
+            function saveAccounts(list) {
+                localStorage.setItem(STORAGE_V3, JSON.stringify(list));
+            }
+
+            function escapeHtml(s) {
+                var div = document.createElement('div');
+                div.textContent = s == null ? '' : String(s);
+                return div.innerHTML;
+            }
+
+            function cardSummaryLine(acct) {
+                var ini = (acct.topInitiatives || []).map(function (s) { return String(s).trim(); }).filter(Boolean);
+                if (ini.length) return ini[0];
+                var n = (acct.additionalNotes || '').trim().split('\n')[0];
+                return n || '—';
+            }
+
+            function countPlayers(acct) {
+                return (acct.keyPlayers || []).filter(function (s) { return String(s).trim(); }).length;
+            }
+            function countInitiatives(acct) {
+                return (acct.topInitiatives || []).filter(function (s) { return String(s).trim(); }).length;
+            }
+            function countSteps(acct) {
+                return (acct.nextSteps || []).filter(function (s) { return String(s).trim(); }).length;
+            }
+
+            var inputClass = 'flex-1 min-w-0 bg-[#0a0c16] border border-gray-600 rounded-lg px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2563eb] text-sm';
+
+            function makeRow(placeholder, value) {
+                var wrap = document.createElement('div');
+                wrap.className = 'flex gap-2 items-center list-row';
+                var inp = document.createElement('input');
+                inp.type = 'text';
+                inp.className = 'list-line ' + inputClass;
+                inp.placeholder = placeholder;
+                inp.value = value || '';
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'remove-row shrink-0 text-gray-500 hover:text-red-400 px-2 py-1 text-lg leading-none';
+                btn.title = 'Remove';
+                btn.innerHTML = '&times;';
+                wrap.appendChild(inp);
+                wrap.appendChild(btn);
+                return wrap;
+            }
+
+            function collectLines(container) {
+                return Array.prototype.slice.call(container.querySelectorAll('input.list-line')).map(function (inp) {
+                    return inp.value.trim();
+                }).filter(Boolean);
+            }
+
+            function initiativeCount(container) {
+                return container.querySelectorAll('.list-row').length;
+            }
+
+            function updateInitiativeButtonState() {
+                var el = document.getElementById('list-initiatives');
+                var btn = document.getElementById('add-initiative');
+                if (!el || !btn) return;
+                btn.disabled = initiativeCount(el) >= MAX_INITIATIVES;
+                btn.classList.toggle('opacity-40', btn.disabled);
+                btn.classList.toggle('cursor-not-allowed', btn.disabled);
+            }
+
+            function bindListRemove(container) {
+                container.addEventListener('click', function (e) {
+                    if (e.target.closest('.remove-row')) {
+                        var row = e.target.closest('.list-row');
+                        if (row) row.remove();
+                        if (container.id === 'list-initiatives') updateInitiativeButtonState();
+                    }
                 });
+            }
+
+            var playersEl = document.getElementById('list-players');
+            var initiativesEl = document.getElementById('list-initiatives');
+            var stepsEl = document.getElementById('list-steps');
+            bindListRemove(playersEl);
+            bindListRemove(initiativesEl);
+            bindListRemove(stepsEl);
+
+            var overlay = document.getElementById('modal-overlay');
+            var form = document.getElementById('account-form');
+            var modalTitle = document.getElementById('modal-title');
+            var btnDelete = document.getElementById('form-delete');
+
+            function fillList(container, values, placeholder) {
+                container.innerHTML = '';
+                var list = values && values.length ? values : [];
+                list.forEach(function (v) {
+                    container.appendChild(makeRow(placeholder, v));
+                });
+            }
+
+            function openModal(editId) {
+                var list = loadAccounts();
+                var isNew = !editId;
+                modalTitle.textContent = isNew ? 'New Account' : 'Edit Account';
+                document.getElementById('form-id').value = isNew ? '' : editId;
+                btnDelete.classList.toggle('hidden', isNew);
+
+                if (isNew) {
+                    document.getElementById('form-name').value = '';
+                    fillList(playersEl, [], 'Name — role (e.g. Alex — Champion)');
+                    fillList(initiativesEl, [], 'Priority or concern');
+                    fillList(stepsEl, [], 'Next step or commitment');
+                    document.getElementById('form-notes').value = '';
+                } else {
+                    var acct = list.find(function (a) { return a.id === editId; });
+                    if (!acct) return;
+                    acct = toV3(acct);
+                    document.getElementById('form-name').value = acct.name || '';
+                    fillList(playersEl, acct.keyPlayers, 'Name — role (e.g. Alex — Champion)');
+                    fillList(initiativesEl, acct.topInitiatives, 'Priority or concern');
+                    fillList(stepsEl, acct.nextSteps, 'Next step or commitment');
+                    document.getElementById('form-notes').value = acct.additionalNotes || '';
+                }
+
+                updateInitiativeButtonState();
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+                overlay.setAttribute('aria-hidden', 'false');
+                document.getElementById('form-name').focus();
+            }
+
+            function closeModal() {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+                overlay.setAttribute('aria-hidden', 'true');
+            }
+
+            document.getElementById('add-player').addEventListener('click', function () {
+                playersEl.appendChild(makeRow('Name — role (e.g. Alex — Champion)', ''));
+            });
+
+            document.getElementById('add-initiative').addEventListener('click', function () {
+                if (initiativeCount(initiativesEl) >= MAX_INITIATIVES) return;
+                initiativesEl.appendChild(makeRow('Priority or concern', ''));
+                updateInitiativeButtonState();
+            });
+
+            document.getElementById('add-step').addEventListener('click', function () {
+                stepsEl.appendChild(makeRow('Next step or commitment', ''));
+            });
+
+            document.getElementById('form-save-top').addEventListener('click', function () {
+                form.requestSubmit();
+            });
+
+            document.getElementById('modal-close-x').addEventListener('click', closeModal);
+            document.getElementById('form-cancel').addEventListener('click', closeModal);
+
+            overlay.addEventListener('click', function (e) {
+                if (e.target === overlay) closeModal();
+            });
+
+            function render() {
+                var list = loadAccounts();
+                var grid = document.getElementById('accounts-grid');
+                grid.innerHTML = '';
+
+                list.forEach(function (acct) {
+                    acct = toV3(acct);
+                    var card = document.createElement('article');
+                    card.className =
+                        'account-card bg-[#161b2a] rounded-xl p-5 border border-gray-800 hover:border-gray-600 cursor-pointer transition-colors text-left';
+                    card.setAttribute('data-id', acct.id);
+
+                    var date = escapeHtml(acct.updatedAt || todayStr());
+                    var name = escapeHtml(acct.name);
+                    var pl = countPlayers(acct);
+                    var ini = countInitiatives(acct);
+                    var act = countSteps(acct);
+                    var priority = escapeHtml(cardSummaryLine(acct));
+
+                    var actionRow = '';
+                    if (act > 0) {
+                        actionRow = '<li class="text-[#9ca3af] text-sm">✅ ' + act + ' action item' + (act !== 1 ? 's' : '') + '</li>';
+                    }
+
+                    card.innerHTML =
+                        '<div class="flex justify-between items-start mb-2">' +
+                        '<span class="text-gray-500 text-lg" aria-hidden="true">🏢</span>' +
+                        '<span class="text-xs text-[#9ca3af]">' + date + '</span>' +
+                        '</div>' +
+                        '<h2 class="font-bold text-lg text-white">' + name + '</h2>' +
+                        '<ul class="mt-3 space-y-1">' +
+                        '<li class="text-[#9ca3af] text-sm">👥 ' + pl + ' player' + (pl !== 1 ? 's' : '') + '</li>' +
+                        '<li class="text-[#9ca3af] text-sm">🎯 ' + ini + ' initiative' + (ini !== 1 ? 's' : '') + '</li>' +
+                        actionRow +
+                        '</ul>' +
+                        '<p class="mt-4 text-sm text-[#9ca3af] italic border-t border-gray-700/80 pt-3">' + priority + '</p>';
+
+                    card.addEventListener('click', function () {
+                        openModal(acct.id);
+                    });
+                    grid.appendChild(card);
+                });
+
+                var addTile = document.createElement('button');
+                addTile.type = 'button';
+                addTile.className =
+                    'min-h-[220px] rounded-xl border-2 border-dashed border-gray-600 hover:border-gray-500 bg-transparent flex flex-col items-center justify-center gap-2 text-[#9ca3af] hover:text-gray-300 transition-colors';
+                addTile.innerHTML =
+                    '<span class="w-12 h-12 rounded-full border-2 border-gray-600 flex items-center justify-center text-2xl font-light leading-none">+</span>' +
+                    '<span class="text-sm font-medium">New Account</span>';
+                addTile.addEventListener('click', function () {
+                    openModal(null);
+                });
+                grid.appendChild(addTile);
+            }
+
+            document.getElementById('btn-header-new').addEventListener('click', function () {
+                openModal(null);
+            });
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var id = document.getElementById('form-id').value;
+                var name = (document.getElementById('form-name').value || '').trim();
+                if (!name) return;
+
+                var list = loadAccounts();
+                var entry = {
+                    id: id || ('acc-' + Date.now()),
+                    name: name,
+                    keyPlayers: collectLines(playersEl),
+                    topInitiatives: collectLines(initiativesEl).slice(0, MAX_INITIATIVES),
+                    nextSteps: collectLines(stepsEl),
+                    additionalNotes: (document.getElementById('form-notes').value || '').trim(),
+                    updatedAt: todayStr()
+                };
+
+                if (id) {
+                    var idx = list.findIndex(function (a) { return a.id === id; });
+                    if (idx >= 0) list[idx] = entry;
+                    else list.unshift(entry);
+                } else {
+                    list.unshift(entry);
+                }
+
                 saveAccounts(list);
-                nameInput.value = '';
-                notesInput.value = '';
+                closeModal();
                 render();
+            });
+
+            btnDelete.addEventListener('click', function () {
+                var id = document.getElementById('form-id').value;
+                if (!id || !confirm('Remove this account from your list?')) return;
+                var next = loadAccounts().filter(function (a) { return a.id !== id; });
+                saveAccounts(next);
+                closeModal();
+                render();
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeModal();
             });
 
             render();
