@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Accounts - AI Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #F5F9FF;
+            color: #0A3D62;
+        }
+        .logo-container {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1000;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .logo-container img {
+            height: 40px;
+            width: auto;
+        }
+        .text-primary {
+            color: #0A85EA;
+        }
+        .text-dark {
+            color: #0A3D62;
+        }
+        .bg-primary {
+            background-color: #0A85EA;
+        }
+        .bg-dark {
+            background-color: #0A3D62;
+        }
+        .hover\:bg-primary-dark:hover {
+            background-color: #0870c4;
+        }
+        h1, h2, h3 {
+            color: #0A3D62;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
+            <img src="assets/image.png" alt="Confluent Logo">
+        </a>
+        <a href="index.html" class="text-primary text-sm block mt-2">← Back to HomePage</a>
+    </div>
+
+    <div class="container mx-auto px-4 py-10 pt-24 md:pt-10">
+        <div class="max-w-3xl mx-auto">
+            <div class="bg-white shadow-lg rounded-lg p-6 md:p-8 border border-gray-100 mb-6">
+                <h1 class="text-2xl font-bold text-dark mb-2">My Accounts - AI Assistant</h1>
+                <p class="text-gray-600 mb-1">Accounts assigned to you and the notes captured for each.</p>
+                <p class="text-sm text-gray-500 italic">Data is stored only in this browser (local storage).</p>
+            </div>
+
+            <div class="bg-white shadow-lg rounded-lg p-6 border border-gray-100 mb-6">
+                <h2 class="text-lg font-semibold text-dark mb-3">Add account</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label for="new-name" class="block text-sm font-medium text-dark mb-1">Account name</label>
+                        <input id="new-name" type="text" placeholder="e.g. Ulta Beauty, Target, Walmart"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#0A85EA]">
+                    </div>
+                    <div>
+                        <label for="new-notes" class="block text-sm font-medium text-dark mb-1">Notes</label>
+                        <textarea id="new-notes" rows="4" placeholder="Key players, initiatives, next steps, or other context…"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#0A85EA]"></textarea>
+                    </div>
+                    <button type="button" id="add-account-btn"
+                        class="bg-primary hover:bg-[#0870c4] text-white font-semibold px-4 py-2 rounded-lg transition-colors">
+                        Save account
+                    </button>
+                </div>
+            </div>
+
+            <div id="accounts-empty" class="hidden bg-white shadow-lg rounded-lg p-8 border border-gray-100 text-center text-gray-600">
+                No accounts yet. Add one above to get started.
+            </div>
+            <div id="accounts-list" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var STORAGE_KEY = 'my-accounts-ai-assistant-v1';
+
+            var defaultAccounts = [
+                {
+                    id: 'seed-1',
+                    name: 'Sample Enterprise Co.',
+                    notes: '👥 Key players: VP Data (Alex), Platform lead (Sam).\n🎯 Top initiatives: MSK → CC migration, cost governance.\n✅ Next steps: Schedule technical deep-dive; share sizing worksheet.\n📝 Additional notes: Prefer dedicated clusters; EU region.'
+                },
+                {
+                    id: 'seed-2',
+                    name: 'Retail Partners Inc.',
+                    notes: '🎯 Focus on real-time inventory and Flink evaluation.\n📝 POC target: Q3. Compliance review pending.'
+                }
+            ];
+
+            function loadAccounts() {
+                try {
+                    var raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        var parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed) && parsed.length) return parsed;
+                    }
+                } catch (e) {
+                    console.warn('Could not read accounts from storage', e);
+                }
+                return defaultAccounts.slice();
+            }
+
+            function saveAccounts(list) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+            }
+
+            function escapeHtml(s) {
+                var div = document.createElement('div');
+                div.textContent = s;
+                return div.innerHTML;
+            }
+
+            function previewNotes(text, maxLen) {
+                var t = text.replace(/\s+/g, ' ').trim();
+                if (t.length <= maxLen) return t;
+                return t.slice(0, maxLen).trim() + '…';
+            }
+
+            function render() {
+                var list = loadAccounts();
+                var container = document.getElementById('accounts-list');
+                var emptyEl = document.getElementById('accounts-empty');
+                container.innerHTML = '';
+
+                if (!list.length) {
+                    emptyEl.classList.remove('hidden');
+                    return;
+                }
+                emptyEl.classList.add('hidden');
+
+                list.forEach(function (acct) {
+                    var card = document.createElement('article');
+                    card.className = 'bg-white shadow-lg rounded-lg p-6 border border-gray-100';
+                    var prev = previewNotes(acct.notes || '', 160);
+                    card.innerHTML =
+                        '<h2 class="text-xl font-semibold text-dark mb-2">' + escapeHtml(acct.name) + '</h2>' +
+                        '<p class="text-sm text-gray-600 italic mb-3">' + escapeHtml(prev || 'No notes yet.') + '</p>' +
+                        '<details class="mt-1">' +
+                        '<summary class="text-primary cursor-pointer font-medium">View full notes</summary>' +
+                        '<pre class="mt-3 text-sm text-dark whitespace-pre-wrap font-sans bg-[#F5F9FF] border border-gray-100 rounded-lg p-4">' +
+                        escapeHtml(acct.notes || '(empty)') + '</pre>' +
+                        '</details>' +
+                        '<button type="button" class="remove-btn mt-4 text-sm text-gray-500 hover:text-red-600 underline" data-id="' +
+                        escapeHtml(acct.id) + '">Remove from list</button>';
+                    container.appendChild(card);
+
+                    card.querySelector('.remove-btn').addEventListener('click', function () {
+                        var id = this.getAttribute('data-id');
+                        var next = loadAccounts().filter(function (a) { return a.id !== id; });
+                        saveAccounts(next);
+                        render();
+                    });
+                });
+            }
+
+            document.getElementById('add-account-btn').addEventListener('click', function () {
+                var nameInput = document.getElementById('new-name');
+                var notesInput = document.getElementById('new-notes');
+                var name = (nameInput.value || '').trim();
+                if (!name) {
+                    nameInput.focus();
+                    return;
+                }
+                var list = loadAccounts();
+                list.unshift({
+                    id: 'acc-' + Date.now(),
+                    name: name,
+                    notes: (notesInput.value || '').trim()
+                });
+                saveAccounts(list);
+                nameInput.value = '';
+                notesInput.value = '';
+                render();
+            });
+
+            render();
+        })();
+    </script>
+</body>
+</html>
