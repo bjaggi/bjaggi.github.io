@@ -8,29 +8,47 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #0a0c16;
-            color: #ffffff;
+            background-color: #F5F9FF;
+            color: #0A3D62;
         }
         .logo-container {
             position: fixed;
             top: 1rem;
             left: 1rem;
             z-index: 1000;
-            background: #161b2a;
-            padding: 0.5rem 0.75rem;
+            background: white;
+            padding: 0.5rem;
             border-radius: 0.5rem;
-            border: 1px solid #374151;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         .logo-container img {
-            height: 36px;
+            height: 40px;
             width: auto;
-            filter: brightness(1.05);
+        }
+        .text-primary {
+            color: #0A85EA;
+        }
+        .text-dark {
+            color: #0A3D62;
+        }
+        .bg-primary {
+            background-color: #0A85EA;
+        }
+        .hover\:bg-primary-dark:hover {
+            background-color: #0870c4;
+        }
+        .hover\:text-dark:hover {
+            color: #0A3D62;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #0A3D62;
         }
         .section-card {
-            background: #1e2533;
-            border: 1px solid #374151;
+            background: #fff;
+            border: 1px solid #e5e7eb;
             border-radius: 0.75rem;
             padding: 1rem 1.25rem;
+            box-shadow: 0 1px 2px rgba(10, 61, 98, 0.06);
         }
     </style>
 </head>
@@ -39,62 +57,84 @@
         <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
             <img src="assets/image.png" alt="Confluent Logo">
         </a>
-        <a href="index.html" class="text-[#60a5fa] text-sm block mt-2 hover:text-white">← Back to HomePage</a>
+        <a href="index.html" class="text-primary text-sm block mt-2 hover:text-dark">← Back to HomePage</a>
     </div>
 
     <div class="max-w-6xl mx-auto px-4 py-10 pt-28 md:pt-12">
-        <header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
-            <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">Your Accounts</h1>
-                <p class="text-[#9ca3af] text-sm mt-2 max-w-xl">
-                    Click an account to view or edit. All profiles sync to Google Drive → Account Brain.
+        <header class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8">
+            <div class="min-w-0 flex-1">
+                <h1 class="text-2xl md:text-3xl font-bold text-dark tracking-tight">Your Accounts</h1>
+                <p class="text-dark text-sm mt-2 max-w-xl opacity-90">
+                    Click an account to view or edit. With Google sign-in, profiles back up to your Google Drive (app data folder).
                 </p>
-                <p class="text-xs text-[#6b7280] mt-1 italic">Local preview: data stays in this browser until you connect sync.</p>
+                <p id="drive-hint-local" class="text-xs text-gray-600 mt-1 italic">Sign in with Google to sync the same backup across browsers.</p>
+                <p id="drive-status" class="text-xs text-primary mt-2 min-h-[1rem]" role="status"></p>
             </div>
-            <button type="button" id="btn-header-new"
-                class="shrink-0 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg shadow-blue-900/30 transition-colors">
-                + New Account
-            </button>
+            <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3 shrink-0 items-stretch sm:items-end lg:items-stretch xl:items-end">
+                <div id="drive-auth-stack" class="flex flex-col gap-2 order-2 sm:order-1 lg:order-1">
+                    <div class="flex flex-wrap gap-2 justify-end sm:justify-start lg:justify-end">
+                        <button type="button" id="btn-google-signin"
+                            class="bg-white text-gray-900 hover:bg-gray-100 font-medium px-4 py-2 rounded-lg text-sm border border-gray-300 flex items-center gap-2">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                            Sign in with Google
+                        </button>
+                        <button type="button" id="btn-google-signout" class="hidden text-sm font-medium text-dark hover:bg-gray-50 px-3 py-2 rounded-lg border border-gray-300 bg-white">
+                            Sign out
+                        </button>
+                    </div>
+                    <div id="drive-sync-row" class="hidden flex flex-wrap gap-2 justify-end sm:justify-start lg:justify-end">
+                        <button type="button" id="btn-drive-pull" class="text-sm font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg shadow-sm">Pull from Drive</button>
+                        <button type="button" id="btn-drive-push" class="text-sm font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg shadow-sm">Push to Drive</button>
+                    </div>
+                    <p id="drive-config-warning" class="hidden text-xs text-amber-800 text-right sm:text-left lg:text-right max-w-xs ml-auto sm:ml-0 lg:ml-auto bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                        Set <code class="text-amber-900 font-mono text-[11px]">GOOGLE_CLIENT_ID</code> in <code class="text-amber-900 font-mono text-[11px]">google-oauth-config.js</code> to enable sign-in.
+                    </p>
+                </div>
+                <button type="button" id="btn-header-new"
+                    class="order-1 sm:order-2 lg:order-2 xl:order-2 shrink-0 bg-primary hover:bg-[#0870c4] text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg transition-colors">
+                    + New Account
+                </button>
+            </div>
         </header>
 
         <div id="accounts-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
 
     <!-- Account Brain Profile modal -->
-    <div id="modal-overlay" class="fixed inset-0 bg-black/60 z-[2000] hidden items-center justify-center p-4" aria-hidden="true">
-        <div id="modal-panel" class="bg-[#161b2a] border border-gray-700 rounded-xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl" role="dialog" aria-labelledby="modal-title">
+    <div id="modal-overlay" class="fixed inset-0 bg-black/40 z-[2000] hidden items-center justify-center p-4" aria-hidden="true">
+        <div id="modal-panel" class="bg-white border border-gray-200 rounded-xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl" role="dialog" aria-labelledby="modal-title">
             <form id="account-form" class="p-6 md:p-8">
                 <input type="hidden" id="form-id" value="">
 
                 <div class="flex items-start justify-between gap-4 mb-6">
                     <div>
-                        <h2 id="modal-title" class="text-xl font-bold text-white">New Account</h2>
-                        <p class="text-[#9ca3af] text-sm mt-1">Account Brain Profile</p>
+                        <h2 id="modal-title" class="text-xl font-bold text-dark">New Account</h2>
+                        <p class="text-gray-600 text-sm mt-1">Account Brain Profile</p>
                     </div>
                     <div class="flex items-center gap-1 shrink-0">
-                        <button type="button" id="form-save-top" class="bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5">
+                        <button type="button" id="form-save-top" class="bg-primary hover:bg-[#0870c4] text-white text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5">
                             <span aria-hidden="true">💾</span> Save
                         </button>
-                        <button type="button" id="modal-close-x" class="text-gray-400 hover:text-white text-2xl leading-none px-2 py-1 rounded hover:bg-gray-800" aria-label="Close">&times;</button>
+                        <button type="button" id="modal-close-x" class="text-gray-500 hover:text-dark text-2xl leading-none px-2 py-1 rounded-lg hover:bg-gray-100" aria-label="Close">&times;</button>
                     </div>
                 </div>
 
                 <div class="space-y-5">
                     <!-- Account name -->
                     <div class="section-card">
-                        <label for="form-name" class="block text-sm font-medium text-white mb-2">Account Name <span class="text-red-400">*</span></label>
+                        <label for="form-name" class="block text-sm font-medium text-dark mb-2">Account Name <span class="text-red-600">*</span></label>
                         <input id="form-name" type="text" required placeholder="e.g. Ulta Beauty, Target, Walmart"
-                            class="w-full bg-[#0a0c16] border border-gray-600 rounded-lg px-3 py-2.5 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent">
+                            class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]">
                     </div>
 
                     <!-- Key players -->
                     <div class="section-card">
                         <div class="flex items-start justify-between gap-3 mb-2">
                             <div>
-                                <h3 class="text-white font-semibold text-sm flex items-center gap-2"><span>👥</span> Key Players &amp; Roles</h3>
-                                <p class="text-[#9ca3af] text-xs mt-1 italic">Add the people who matter — champions, blockers, decision makers.</p>
+                                <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>👥</span> Key Players &amp; Roles</h3>
+                                <p class="text-gray-600 text-xs mt-1 italic">Add the people who matter — champions, blockers, decision makers.</p>
                             </div>
-                            <button type="button" id="add-player" class="shrink-0 text-xs font-medium text-white border border-gray-500 hover:border-gray-400 bg-[#0a0c16] px-2.5 py-1.5 rounded-lg">+ Add</button>
+                            <button type="button" id="add-player" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg">+ Add</button>
                         </div>
                         <div id="list-players" class="space-y-2 mt-3"></div>
                     </div>
@@ -103,10 +143,10 @@
                     <div class="section-card">
                         <div class="flex items-start justify-between gap-3 mb-2">
                             <div>
-                                <h3 class="text-white font-semibold text-sm flex items-center gap-2"><span>🎯</span> Top 3 Initiatives / Concerns</h3>
-                                <p class="text-[#9ca3af] text-xs mt-1 italic">What are this account&apos;s top strategic priorities or pain points?</p>
+                                <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🎯</span> Top 3 Initiatives / Concerns</h3>
+                                <p class="text-gray-600 text-xs mt-1 italic">What are this account&apos;s top strategic priorities or pain points?</p>
                             </div>
-                            <button type="button" id="add-initiative" class="shrink-0 text-xs font-medium text-white border border-gray-500 hover:border-gray-400 bg-[#0a0c16] px-2.5 py-1.5 rounded-lg">+ Add (max 3)</button>
+                            <button type="button" id="add-initiative" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg">+ Add (max 3)</button>
                         </div>
                         <div id="list-initiatives" class="space-y-2 mt-3"></div>
                     </div>
@@ -115,36 +155,39 @@
                     <div class="section-card">
                         <div class="flex items-start justify-between gap-3 mb-2">
                             <div>
-                                <h3 class="text-white font-semibold text-sm flex items-center gap-2"><span>✅</span> Next Steps / Action Items</h3>
-                                <p class="text-[#9ca3af] text-xs mt-1 italic">Track follow-ups, commitments, and next steps here.</p>
+                                <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>✅</span> Next Steps / Action Items</h3>
+                                <p class="text-gray-600 text-xs mt-1 italic">Track follow-ups, commitments, and next steps here.</p>
                             </div>
-                            <button type="button" id="add-step" class="shrink-0 text-xs font-medium text-white border border-gray-500 hover:border-gray-400 bg-[#0a0c16] px-2.5 py-1.5 rounded-lg">+ Add</button>
+                            <button type="button" id="add-step" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg">+ Add</button>
                         </div>
                         <div id="list-steps" class="space-y-2 mt-3"></div>
                     </div>
 
                     <!-- Notes -->
                     <div class="section-card">
-                        <h3 class="text-white font-semibold text-sm flex items-center gap-2 mb-2"><span>📝</span> Additional Notes</h3>
+                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2 mb-2"><span>📝</span> Additional Notes</h3>
                         <textarea id="form-notes" rows="5" placeholder="Architecture context, competitive intel, relationship notes, recent wins/losses…"
-                            class="w-full bg-[#0a0c16] border border-[#60a5fa]/40 rounded-lg px-3 py-2.5 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2563eb] resize-y"></textarea>
-                        <p class="text-xs text-[#6b7280] mt-2 italic">Tip: Detailed meeting transcripts are auto-synced from Zoom/Teams into Google Drive.</p>
+                            class="w-full bg-white border border-[#0A85EA]/35 rounded-lg px-3 py-2.5 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA] resize-y"></textarea>
+                        <p class="text-xs text-gray-500 mt-2 italic">Tip: Detailed meeting transcripts are auto-synced from Zoom/Teams into Google Drive.</p>
                     </div>
                 </div>
 
-                <p class="text-xs text-[#6b7280] mt-6 mb-3">Profiles auto-upload to 🧠 Account Brain on next sync.</p>
+                <p class="text-xs text-gray-600 mt-6 mb-3">Profiles auto-upload to 🧠 Account Brain on next sync.</p>
 
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                    <button type="submit" class="flex-1 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2">
+                    <button type="submit" class="flex-1 bg-primary hover:bg-[#0870c4] text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2">
                         <span aria-hidden="true">💾</span> Save Profile
                     </button>
-                    <button type="button" id="form-cancel" class="text-sm text-[#9ca3af] hover:text-white underline px-2">Cancel</button>
-                    <button type="button" id="form-delete" class="hidden text-sm text-red-400 hover:text-red-300 underline sm:ml-auto">Remove account</button>
+                    <button type="button" id="form-cancel" class="text-sm text-primary hover:text-dark underline px-2">Cancel</button>
+                    <button type="button" id="form-delete" class="hidden text-sm text-red-600 hover:text-red-700 underline sm:ml-auto">Remove account</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <script src="google-oauth-config.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="my-accounts-drive.js"></script>
     <script>
         (function () {
             var STORAGE_V3 = 'my-accounts-ai-assistant-v3';
@@ -262,8 +305,26 @@
                 return defaultAccounts();
             }
 
+            function setDriveStatus(msg, isError) {
+                var el = document.getElementById('drive-status');
+                if (!el) return;
+                el.textContent = msg || '';
+                el.classList.toggle('text-red-600', !!isError);
+                el.classList.toggle('text-primary', !isError && !!msg);
+                el.classList.toggle('text-gray-500', !isError && !msg);
+            }
+
+            function syncToDriveQuiet(list) {
+                if (!window.AccountBrainDrive || !window.AccountBrainDrive.hasSessionToken()) return;
+                window.AccountBrainDrive.uploadAccounts(list, function (err) {
+                    if (err) setDriveStatus('Drive sync failed: ' + err.message, true);
+                    else setDriveStatus('Synced to Google Drive', false);
+                });
+            }
+
             function saveAccounts(list) {
                 localStorage.setItem(STORAGE_V3, JSON.stringify(list));
+                syncToDriveQuiet(list);
             }
 
             function escapeHtml(s) {
@@ -289,7 +350,7 @@
                 return (acct.nextSteps || []).filter(function (s) { return String(s).trim(); }).length;
             }
 
-            var inputClass = 'flex-1 min-w-0 bg-[#0a0c16] border border-gray-600 rounded-lg px-3 py-2 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#2563eb] text-sm';
+            var inputClass = 'flex-1 min-w-0 bg-white border border-gray-300 rounded-lg px-3 py-2 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA] text-sm';
 
             function makeRow(placeholder, value) {
                 var wrap = document.createElement('div');
@@ -429,7 +490,7 @@
                     acct = toV3(acct);
                     var card = document.createElement('article');
                     card.className =
-                        'account-card bg-[#161b2a] rounded-xl p-5 border border-gray-800 hover:border-gray-600 cursor-pointer transition-colors text-left';
+                        'account-card bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl cursor-pointer transition-shadow text-left';
                     card.setAttribute('data-id', acct.id);
 
                     var date = escapeHtml(acct.updatedAt || todayStr());
@@ -441,21 +502,21 @@
 
                     var actionRow = '';
                     if (act > 0) {
-                        actionRow = '<li class="text-[#9ca3af] text-sm">✅ ' + act + ' action item' + (act !== 1 ? 's' : '') + '</li>';
+                        actionRow = '<li class="text-gray-600 text-sm">✅ ' + act + ' action item' + (act !== 1 ? 's' : '') + '</li>';
                     }
 
                     card.innerHTML =
                         '<div class="flex justify-between items-start mb-2">' +
-                        '<span class="text-gray-500 text-lg" aria-hidden="true">🏢</span>' +
-                        '<span class="text-xs text-[#9ca3af]">' + date + '</span>' +
+                        '<span class="text-gray-400 text-lg" aria-hidden="true">🏢</span>' +
+                        '<span class="text-xs text-gray-500">' + date + '</span>' +
                         '</div>' +
-                        '<h2 class="font-bold text-lg text-white">' + name + '</h2>' +
+                        '<h2 class="font-bold text-lg text-dark">' + name + '</h2>' +
                         '<ul class="mt-3 space-y-1">' +
-                        '<li class="text-[#9ca3af] text-sm">👥 ' + pl + ' player' + (pl !== 1 ? 's' : '') + '</li>' +
-                        '<li class="text-[#9ca3af] text-sm">🎯 ' + ini + ' initiative' + (ini !== 1 ? 's' : '') + '</li>' +
+                        '<li class="text-gray-600 text-sm">👥 ' + pl + ' player' + (pl !== 1 ? 's' : '') + '</li>' +
+                        '<li class="text-gray-600 text-sm">🎯 ' + ini + ' initiative' + (ini !== 1 ? 's' : '') + '</li>' +
                         actionRow +
                         '</ul>' +
-                        '<p class="mt-4 text-sm text-[#9ca3af] italic border-t border-gray-700/80 pt-3">' + priority + '</p>';
+                        '<p class="mt-4 text-sm text-gray-600 italic border-t border-gray-100 pt-3">' + priority + '</p>';
 
                     card.addEventListener('click', function () {
                         openModal(acct.id);
@@ -466,10 +527,10 @@
                 var addTile = document.createElement('button');
                 addTile.type = 'button';
                 addTile.className =
-                    'min-h-[220px] rounded-xl border-2 border-dashed border-gray-600 hover:border-gray-500 bg-transparent flex flex-col items-center justify-center gap-2 text-[#9ca3af] hover:text-gray-300 transition-colors';
+                    'min-h-[220px] rounded-lg border-2 border-dashed border-gray-300 hover:border-[#0A85EA] bg-white/50 hover:bg-white flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-primary transition-colors shadow-sm';
                 addTile.innerHTML =
-                    '<span class="w-12 h-12 rounded-full border-2 border-gray-600 flex items-center justify-center text-2xl font-light leading-none">+</span>' +
-                    '<span class="text-sm font-medium">New Account</span>';
+                    '<span class="w-12 h-12 rounded-full border-2 border-gray-300 flex items-center justify-center text-2xl font-light leading-none text-primary">+</span>' +
+                    '<span class="text-sm font-medium text-dark">New Account</span>';
                 addTile.addEventListener('click', function () {
                     openModal(null);
                 });
@@ -523,6 +584,109 @@
                 if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeModal();
             });
 
+            function updateDriveBar() {
+                var ad = window.AccountBrainDrive;
+                var cfg = ad && ad.isConfigured();
+                var signed = ad && ad.hasSessionToken();
+                var warn = document.getElementById('drive-config-warning');
+                var signIn = document.getElementById('btn-google-signin');
+                var signOut = document.getElementById('btn-google-signout');
+                var syncRow = document.getElementById('drive-sync-row');
+                var hint = document.getElementById('drive-hint-local');
+                if (warn) {
+                    warn.classList.toggle('hidden', cfg);
+                }
+                if (signIn) {
+                    signIn.classList.toggle('hidden', !cfg || signed);
+                }
+                if (signOut) {
+                    signOut.classList.toggle('hidden', !cfg || !signed);
+                }
+                if (syncRow) {
+                    syncRow.classList.toggle('hidden', !cfg || !signed);
+                }
+                if (hint) {
+                    hint.classList.toggle('hidden', signed);
+                }
+            }
+
+            document.getElementById('btn-google-signin').addEventListener('click', function () {
+                if (!window.AccountBrainDrive || !window.AccountBrainDrive.isConfigured()) {
+                    setDriveStatus('Configure google-oauth-config.js with your OAuth Client ID first.', true);
+                    return;
+                }
+                setDriveStatus('Opening Google sign-in…', false);
+                window.AccountBrainDrive.signIn(function (err) {
+                    if (err) {
+                        setDriveStatus('Sign-in failed: ' + err.message, true);
+                        updateDriveBar();
+                        return;
+                    }
+                    updateDriveBar();
+                    window.AccountBrainDrive.downloadAccounts(function (e2, remote) {
+                        if (e2) {
+                            setDriveStatus('Signed in. Could not read Drive: ' + e2.message, true);
+                            return;
+                        }
+                        if (remote && remote.length) {
+                            var n = remote.length;
+                            if (confirm('Load ' + n + ' account(s) from Google Drive? This replaces data in this browser for this site.')) {
+                                var normalized = remote.map(toV3);
+                                localStorage.setItem(STORAGE_V3, JSON.stringify(normalized));
+                                setDriveStatus('Loaded from Drive. Saving profile also uploads changes.', false);
+                                render();
+                                return;
+                            }
+                            setDriveStatus('Signed in. Local data kept — use Push to Drive to overwrite the cloud backup.', false);
+                            return;
+                        }
+                        window.AccountBrainDrive.uploadAccounts(loadAccounts(), function (e3) {
+                            if (e3) setDriveStatus('Signed in. Upload failed: ' + e3.message, true);
+                            else setDriveStatus('Signed in — created Drive backup from this browser.', false);
+                        });
+                    });
+                });
+            });
+
+            document.getElementById('btn-google-signout').addEventListener('click', function () {
+                window.AccountBrainDrive.signOut(function () {
+                    setDriveStatus('Signed out of Google.', false);
+                    updateDriveBar();
+                });
+            });
+
+            document.getElementById('btn-drive-push').addEventListener('click', function () {
+                var list = loadAccounts();
+                setDriveStatus('Uploading to Drive…', false);
+                window.AccountBrainDrive.uploadAccounts(list, function (err) {
+                    if (err) setDriveStatus('Push failed: ' + err.message, true);
+                    else setDriveStatus('Backup saved to Google Drive.', false);
+                });
+            });
+
+            document.getElementById('btn-drive-pull').addEventListener('click', function () {
+                setDriveStatus('Downloading from Drive…', false);
+                window.AccountBrainDrive.downloadAccounts(function (err, remote) {
+                    if (err) {
+                        setDriveStatus('Pull failed: ' + err.message, true);
+                        return;
+                    }
+                    if (!remote || !remote.length) {
+                        setDriveStatus('No backup file in Drive yet. Use Push or save a profile.', false);
+                        return;
+                    }
+                    if (confirm('Replace local accounts with Drive backup (' + remote.length + ' account(s))?')) {
+                        localStorage.setItem(STORAGE_V3, JSON.stringify(remote.map(toV3)));
+                        setDriveStatus('Restored from Drive.', false);
+                        render();
+                    }
+                });
+            });
+
+            if (window.AccountBrainDrive) {
+                window.AccountBrainDrive.onAuthChange = updateDriveBar;
+            }
+            updateDriveBar();
             render();
         })();
     </script>
