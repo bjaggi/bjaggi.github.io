@@ -5,8 +5,12 @@
 (function (global) {
     var TOKEN_KEY = 'ab_google_access_token';
     var EXP_KEY = 'ab_google_expires_at_ms';
+    var SCOPE_TAG_KEY = 'ab_google_scope_tag';
+    var SCOPE_TAG_VALUE = 'drive.appdata+documents.readonly-v1';
     var FILE_NAME = 'account-brain-profiles.json';
-    var SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+    var SCOPE =
+        'https://www.googleapis.com/auth/drive.appdata ' +
+        'https://www.googleapis.com/auth/documents.readonly';
 
     function getClientId() {
         var id = global.GOOGLE_CLIENT_ID;
@@ -14,6 +18,10 @@
     }
 
     function getStoredToken() {
+        if (sessionStorage.getItem(SCOPE_TAG_KEY) !== SCOPE_TAG_VALUE) {
+            if (sessionStorage.getItem(TOKEN_KEY)) clearStoredToken();
+            return null;
+        }
         var t = sessionStorage.getItem(TOKEN_KEY);
         var exp = parseInt(sessionStorage.getItem(EXP_KEY), 10);
         if (!t || !exp) return null;
@@ -26,11 +34,13 @@
         if (isNaN(sec) || sec < 60) sec = 3600;
         sessionStorage.setItem(TOKEN_KEY, accessToken);
         sessionStorage.setItem(EXP_KEY, String(Date.now() + sec * 1000));
+        sessionStorage.setItem(SCOPE_TAG_KEY, SCOPE_TAG_VALUE);
     }
 
     function clearStoredToken() {
         sessionStorage.removeItem(TOKEN_KEY);
         sessionStorage.removeItem(EXP_KEY);
+        sessionStorage.removeItem(SCOPE_TAG_KEY);
     }
 
     var tokenClient = null;
@@ -172,6 +182,36 @@
         throw new Error('Unrecognized backup format');
     }
 
+    function extractPlainTextFromDoc(doc) {
+        var parts = [];
+        function walkContent(contentArr) {
+            if (!contentArr || !contentArr.length) return;
+            for (var i = 0; i < contentArr.length; i++) {
+                var el = contentArr[i];
+                if (el.paragraph) {
+                    var pe = el.paragraph.elements || [];
+                    for (var j = 0; j < pe.length; j++) {
+                        if (pe[j].textRun && pe[j].textRun.content) {
+                            parts.push(pe[j].textRun.content);
+                        }
+                    }
+                    parts.push('\n');
+                } else if (el.table && el.table.tableRows) {
+                    var rows = el.table.tableRows;
+                    for (var r = 0; r < rows.length; r++) {
+                        var cells = rows[r].tableCells || [];
+                        for (var c = 0; c < cells.length; c++) {
+                            walkContent(cells[c].content || []);
+                        }
+                        parts.push('\n');
+                    }
+                }
+            }
+        }
+        walkContent((doc.body && doc.body.content) || []);
+        return parts.join('');
+    }
+
     function notifyAuthChange() {
         if (typeof global.AccountBrainDrive.onAuthChange === 'function') {
             try {
@@ -255,6 +295,34 @@
                         })
                         .catch(cb);
                 });
+            });
+        },
+
+        /**
+         * Read a Google Doc the signed-in user can access. Plain text is flattened from the Docs API structure.
+         * Requires Google Docs API enabled in GCP and OAuth scope documents.readonly on the consent screen.
+         */
+        fetchGoogleDocPlainText: function (docId, cb) {
+            getAccessToken(function (err, token) {
+                if (err) return cb(err);
+                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(docId), {
+                    headers: { Authorization: 'Bearer ' + token }
+                })
+                    .then(function (r) {
+                        return r.json().then(function (data) {
+                            if (!r.ok) {
+                                throw new Error(
+                                    (data.error && (data.error.message || data.error.status)) ||
+                                        'Could not read Google Doc (enable Docs API and re-consent scopes).'
+                                );
+                            }
+                            return extractPlainTextFromDoc(data);
+                        });
+                    })
+                    .then(function (plain) {
+                        cb(null, plain);
+                    })
+                    .catch(cb);
             });
         }
     };

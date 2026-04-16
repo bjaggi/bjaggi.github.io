@@ -7,5 +7,9 @@
  * or for a future server-side integration only.
  *
  * Full GCP JSON: copy to google-oauth-web-client.local.json in this folder (see .gitignore).
+ *
+ * Also enable the Google Docs API and add OAuth scope:
+ *   https://www.googleapis.com/auth/documents.readonly
+ * so “Import from Doc” can read account profiles written in Google Docs.
  */
 window.GOOGLE_CLIENT_ID = '391245638390-2ll2p95i0a6a1e1qj005rsk9kgbtskfd.apps.googleusercontent.com';
