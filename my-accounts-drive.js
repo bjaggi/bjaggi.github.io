@@ -333,7 +333,8 @@
                                 } catch (e) { tabContentLen = -2; }
                             }
                             console.log('[AccountBrainDrive] mapping doc response — body.content:', bodyLen, '| tabs:', tabsLen, '| tab[0].content:', tabContentLen);
-                            console.log('[AccountBrainDrive] mapping doc raw JSON (first 2000 chars):', JSON.stringify(data).slice(0, 2000));
+                            console.log('[AccountBrainDrive] FULL mapping doc JSON:', JSON.stringify(data));
+                            global._lastMappingDocRaw = data;
                             var parsed = AM.parseAccountMappingFromDocument(data);
                             console.log('[AccountBrainDrive] parsed mapping accounts:', Object.keys(parsed.byAccount));
                             var diag = 'body.content:' + bodyLen + ' tabs:' + tabsLen + ' tab0.content:' + tabContentLen;
