@@ -700,7 +700,7 @@
                     return;
                 }
                 setGdocMsg('Loading account-mapping.doc from Drive…', false);
-                window.AccountBrainDrive.lookupProfileDocIdForAccount(acctName, function (errMap, profileDocId) {
+                window.AccountBrainDrive.lookupProfileDocIdForAccount(acctName, function (errMap, profileDocId, mappingPayload) {
                     if (errMap) {
                         setGdocMsg(
                             (errMap.message || String(errMap)) +
@@ -710,14 +710,18 @@
                         return;
                     }
                     if (!profileDocId) {
-                        setGdocMsg(
-                            'No Google Doc is mapped for "' +
-                                acctName +
-                                '". Add a line to account-mapping.doc (My Drive root or Shared with me), e.g. ' +
-                                acctName +
-                                ': https://docs.google.com/document/d/your-doc-id/edit (label must match this account name, case-insensitive).',
-                            true
-                        );
+                        var foundKeys = mappingPayload && mappingPayload.byAccount ? Object.keys(mappingPayload.byAccount) : [];
+                        var diagParts = ['No Google Doc is mapped for "' + acctName + '".'];
+                        if (mappingPayload && mappingPayload.mappingDocId) {
+                            diagParts.push('Mapping doc found (ID: ' + mappingPayload.mappingDocId + ').');
+                        }
+                        if (foundKeys.length) {
+                            diagParts.push('Mapped accounts: ' + foundKeys.join(', ') + '.');
+                        } else {
+                            diagParts.push('Mapping doc parsed to 0 accounts — check its contents.');
+                        }
+                        diagParts.push('Expected line: ' + acctName + ': https://docs.google.com/document/d/your-doc-id/edit');
+                        setGdocMsg(diagParts.join(' '), true);
                         return;
                     }
                     setGdocMsg('Loading profile document…', false);
