@@ -68,10 +68,14 @@
                     Click an account to view or edit. Your profiles are saved in this browser.
                 </p>
                 <p id="drive-hint-local" class="hidden text-xs text-gray-600 mt-1 italic">Sign in with Google to sync the same backup across browsers.</p>
+                <p id="drive-oauth-missing" class="hidden text-xs text-amber-800 mt-1 max-w-xl">
+                    Google sign-in is disabled until you set <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">window.GOOGLE_CLIENT_ID</code> in <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">google-oauth-config.js</code> (same folder as this page) and reload. Use a Web application OAuth client from Google Cloud Console with this site’s origin as an authorized JavaScript origin.
+                </p>
                 <p id="drive-status" class="text-xs text-primary mt-2 min-h-[1rem]" role="status"></p>
             </div>
             <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3 shrink-0 items-stretch sm:items-end lg:items-stretch xl:items-end">
                 <div id="drive-auth-stack" class="flex flex-col gap-2 order-2 sm:order-1 lg:order-1">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Google Drive &amp; Docs</p>
                     <div class="flex flex-wrap gap-2 justify-end sm:justify-start lg:justify-end">
                         <button type="button" id="btn-google-signin"
                             class="bg-white text-gray-900 hover:bg-gray-100 font-medium px-4 py-2 rounded-lg text-sm border border-gray-300 flex items-center gap-2">
@@ -810,12 +814,19 @@
                 var signOut = document.getElementById('btn-google-signout');
                 var syncRow = document.getElementById('drive-sync-row');
                 var hint = document.getElementById('drive-hint-local');
+                var oauthMissing = document.getElementById('drive-oauth-missing');
                 var intro = document.getElementById('accounts-intro');
                 if (stack) {
-                    stack.classList.toggle('hidden', !cfg);
+                    stack.classList.remove('hidden');
                 }
                 if (signIn) {
-                    signIn.classList.toggle('hidden', !cfg || signed);
+                    signIn.classList.toggle('hidden', !!signed);
+                    signIn.classList.toggle('opacity-50', !cfg);
+                    signIn.classList.toggle('cursor-not-allowed', !cfg);
+                    signIn.setAttribute('aria-disabled', cfg ? 'false' : 'true');
+                    signIn.title = cfg
+                        ? 'Sign in with Google to use Drive backup and Doc import.'
+                        : 'Set window.GOOGLE_CLIENT_ID in google-oauth-config.js (same folder as this page), then reload.';
                 }
                 if (signOut) {
                     signOut.classList.toggle('hidden', !cfg || !signed);
@@ -825,6 +836,9 @@
                 }
                 if (hint) {
                     hint.classList.toggle('hidden', !cfg || signed);
+                }
+                if (oauthMissing) {
+                    oauthMissing.classList.toggle('hidden', cfg);
                 }
                 if (intro) {
                     intro.textContent = cfg
