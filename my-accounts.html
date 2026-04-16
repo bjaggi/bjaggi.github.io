@@ -713,12 +713,19 @@
                         var foundKeys = mappingPayload && mappingPayload.byAccount ? Object.keys(mappingPayload.byAccount) : [];
                         var diagParts = ['No Google Doc is mapped for "' + acctName + '".'];
                         if (mappingPayload && mappingPayload.mappingDocId) {
-                            diagParts.push('Mapping doc found (ID: ' + mappingPayload.mappingDocId + ').');
+                            diagParts.push('Mapping doc ID: ' + mappingPayload.mappingDocId + '.');
                         }
                         if (foundKeys.length) {
                             diagParts.push('Mapped accounts: ' + foundKeys.join(', ') + '.');
                         } else {
-                            diagParts.push('Mapping doc parsed to 0 accounts — check its contents.');
+                            diagParts.push('Parsed 0 accounts.');
+                            if (mappingPayload && mappingPayload._diag) {
+                                diagParts.push('API response: ' + mappingPayload._diag + '.');
+                            }
+                            if (mappingPayload && mappingPayload._rawSnippet) {
+                                console.log('[AccountBrainUI] mapping doc raw snippet:', mappingPayload._rawSnippet);
+                                diagParts.push('Check browser Console (F12) for raw API response.');
+                            }
                         }
                         diagParts.push('Expected line: ' + acctName + ': https://docs.google.com/document/d/your-doc-id/edit');
                         setGdocMsg(diagParts.join(' '), true);
