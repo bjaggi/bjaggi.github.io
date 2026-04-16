@@ -239,48 +239,6 @@
                 return null;
             }
 
-            function parseAccountProfileFromDocText(text) {
-                var accountName = '';
-                var keyPlayers = [];
-                var inPlayers = false;
-                var lines = String(text || '').split(/\r?\n/);
-                for (var i = 0; i < lines.length; i++) {
-                    var line = lines[i];
-                    var trimmed = line.trim();
-                    var profile = trimmed.match(/^ACCOUNT PROFILE:\s*(.+)$/i);
-                    if (profile) {
-                        accountName = profile[1].trim();
-                        inPlayers = false;
-                        continue;
-                    }
-                    if (/^##\s*Key Players/i.test(trimmed)) {
-                        inPlayers = true;
-                        continue;
-                    }
-                    if (/^##\s+/.test(trimmed) && !/^##\s*Key Players/i.test(trimmed)) {
-                        inPlayers = false;
-                        continue;
-                    }
-                    if (inPlayers) {
-                        var subNotes = line.match(/^\s*Notes:\s*(.+)$/i);
-                        if (subNotes && keyPlayers.length > 0) {
-                            keyPlayers[keyPlayers.length - 1].other = subNotes[1].trim();
-                            continue;
-                        }
-                        var bullet = trimmed.match(/^[-*]\s+(.+)$/);
-                        if (bullet) {
-                            var parsed = parseLegacyPlayerString(bullet[1].trim());
-                            keyPlayers.push({
-                                name: parsed.name,
-                                title: parsed.title,
-                                other: parsed.other || ''
-                            });
-                        }
-                    }
-                }
-                return { accountName: accountName, keyPlayers: keyPlayers };
-            }
-
             function normalizeKeyPlayer(p) {
                 if (p && typeof p === 'object' && !Array.isArray(p)) {
                     return {
@@ -650,7 +608,7 @@
                     return;
                 }
                 setGdocMsg('Loading document…', false);
-                window.AccountBrainDrive.fetchGoogleDocPlainText(docId, function (err, plain) {
+                window.AccountBrainDrive.fetchGoogleDocProfileParsed(docId, function (err, parsed) {
                     if (err) {
                         setGdocMsg(
                             (err.message || String(err)) +
@@ -659,7 +617,6 @@
                         );
                         return;
                     }
-                    var parsed = parseAccountProfileFromDocText(plain);
                     if (!parsed.keyPlayers.length && !parsed.accountName) {
                         setGdocMsg('No ACCOUNT PROFILE or ## Key Players section with bullets found in the Doc.', true);
                         return;

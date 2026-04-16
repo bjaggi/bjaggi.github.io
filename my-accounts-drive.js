@@ -6,7 +6,7 @@
     var TOKEN_KEY = 'ab_google_access_token';
     var EXP_KEY = 'ab_google_expires_at_ms';
     var SCOPE_TAG_KEY = 'ab_google_scope_tag';
-    var SCOPE_TAG_VALUE = 'drive.appdata+documents.readonly-v1';
+    var SCOPE_TAG_VALUE = 'drive.appdata+documents.readonly-v2';
     var FILE_NAME = 'account-brain-profiles.json';
     var SCOPE =
         'https://www.googleapis.com/auth/drive.appdata ' +
@@ -190,11 +190,16 @@
                 var el = contentArr[i];
                 if (el.paragraph) {
                     var pe = el.paragraph.elements || [];
+                    var lineText = '';
                     for (var j = 0; j < pe.length; j++) {
                         if (pe[j].textRun && pe[j].textRun.content) {
-                            parts.push(pe[j].textRun.content);
+                            lineText += pe[j].textRun.content;
                         }
                     }
+                    if (el.paragraph.bullet) {
+                        lineText = '- ' + lineText;
+                    }
+                    parts.push(lineText);
                     parts.push('\n');
                 } else if (el.table && el.table.tableRows) {
                     var rows = el.table.tableRows;
@@ -210,6 +215,192 @@
         }
         walkContent((doc.body && doc.body.content) || []);
         return parts.join('');
+    }
+
+    function paragraphPlainText(para) {
+        if (!para) return '';
+        var els = para.elements || [];
+        var s = '';
+        for (var i = 0; i < els.length; i++) {
+            if (els[i].textRun && els[i].textRun.content) {
+                s += els[i].textRun.content;
+            }
+        }
+        return s.replace(/\u200b/g, '');
+    }
+
+    function splitNameTitle(line) {
+        var trimmed = String(line || '').trim();
+        if (!trimmed) return null;
+        var parts = trimmed.split(/\s*[—–\-]\s*/);
+        if (parts.length >= 2) {
+            return {
+                name: parts[0].trim(),
+                title: parts.slice(1).join(' — ').trim(),
+                other: ''
+            };
+        }
+        return { name: trimmed, title: '', other: '' };
+    }
+
+    /** If API walk finds nothing, parse flattened text (markdown-style). */
+    function parseProfilePlainTextFallback(text) {
+        var accountName = '';
+        var keyPlayers = [];
+        var inPlayers = false;
+        var lines = String(text || '').split(/\r?\n/);
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            var trimmed = line.trim();
+            var profile = trimmed.match(/^ACCOUNT PROFILE\s*:\s*(.+)$/i);
+            if (profile) {
+                accountName = profile[1].trim();
+                inPlayers = false;
+                continue;
+            }
+            if (/^##\s*Key Players/i.test(trimmed) || /^#\s*Key Players/i.test(trimmed) || /^Key Players\b/i.test(trimmed)) {
+                inPlayers = true;
+                continue;
+            }
+            if (/^##\s+/.test(trimmed) && !/^##\s*Key Players/i.test(trimmed)) {
+                inPlayers = false;
+                continue;
+            }
+            if (!inPlayers) continue;
+            var subNotes = line.match(/^\s*Notes:\s*(.+)$/i);
+            if (subNotes && keyPlayers.length > 0) {
+                keyPlayers[keyPlayers.length - 1].other = subNotes[1].trim();
+                continue;
+            }
+            var bullet = trimmed.match(/^[-*•\u2022\u25CF]\s+(.+)$/);
+            if (bullet) {
+                var pl = splitNameTitle(bullet[1].trim());
+                if (pl && pl.name) {
+                    keyPlayers.push({ name: pl.name, title: pl.title, other: pl.other || '' });
+                }
+                continue;
+            }
+            if (/[—–\-]/.test(trimmed) && !/^notes:/i.test(trimmed)) {
+                var pl2 = splitNameTitle(trimmed);
+                if (pl2 && pl2.name) {
+                    keyPlayers.push({ name: pl2.name, title: pl2.title, other: pl2.other || '' });
+                }
+            }
+        }
+        return { accountName: accountName, keyPlayers: keyPlayers };
+    }
+
+    /**
+     * Walk Docs API JSON (not plain text). Handles native bullets (no "-" in runs) and heading-styled "Key Players".
+     */
+    function extractProfileFromDocument(doc) {
+        var accountName = '';
+        var keyPlayers = [];
+        var inKeyPlayers = false;
+
+        function processParagraph(para) {
+            var raw = paragraphPlainText(para);
+            var trimmed = raw.trim();
+            var bullet = !!(para && para.bullet);
+            var style = (para.paragraphStyle && para.paragraphStyle.namedStyleType) || '';
+
+            var prof = trimmed.match(/^ACCOUNT PROFILE\s*:\s*(.+)$/i);
+            if (prof) {
+                accountName = prof[1].trim();
+                inKeyPlayers = false;
+                return;
+            }
+
+            var isKeyPlayersHeader =
+                /^##\s*Key Players/i.test(trimmed) ||
+                /^#\s*Key Players/i.test(trimmed) ||
+                /^Key Players\b/i.test(trimmed) ||
+                (/^HEADING_/i.test(style) && /^Key Players/i.test(trimmed));
+
+            if (isKeyPlayersHeader) {
+                inKeyPlayers = true;
+                return;
+            }
+
+            if (inKeyPlayers) {
+                if (/^##\s+/.test(trimmed) && !/^##\s*Key Players/i.test(trimmed)) {
+                    inKeyPlayers = false;
+                    return;
+                }
+                if (/^HEADING_/i.test(style) && trimmed.length > 0 && !/^Key Players/i.test(trimmed)) {
+                    inKeyPlayers = false;
+                    return;
+                }
+            }
+
+            if (!inKeyPlayers) {
+                return;
+            }
+
+            var notesM = trimmed.match(/^Notes:\s*(.+)$/i);
+            if (notesM && keyPlayers.length > 0) {
+                keyPlayers[keyPlayers.length - 1].other = notesM[1].trim();
+                return;
+            }
+
+            var body = trimmed;
+            if (bullet) {
+                body = trimmed.replace(/^[\s\u2022\u25CF\-\*]+/, '').trim();
+            }
+
+            if (!body) {
+                return;
+            }
+
+            if (bullet || /^[\-\*\u2022\u25CF]\s+/.test(trimmed)) {
+                if (/^[\-\*\u2022\u25CF]\s+/.test(trimmed)) {
+                    body = trimmed.replace(/^[\-\*\u2022\u25CF]\s+/, '').trim();
+                }
+                var pl = splitNameTitle(body);
+                if (pl && pl.name) {
+                    keyPlayers.push({ name: pl.name, title: pl.title, other: pl.other || '' });
+                }
+                return;
+            }
+
+            if (/[—–\-]/.test(trimmed) && !/^notes:/i.test(trimmed)) {
+                var pl2 = splitNameTitle(trimmed);
+                if (pl2 && pl2.name) {
+                    keyPlayers.push({ name: pl2.name, title: pl2.title, other: pl2.other || '' });
+                }
+            }
+        }
+
+        function walk(contentArr) {
+            if (!contentArr || !contentArr.length) return;
+            for (var i = 0; i < contentArr.length; i++) {
+                var el = contentArr[i];
+                if (el.paragraph) {
+                    processParagraph(el.paragraph);
+                } else if (el.table && el.table.tableRows) {
+                    var rows = el.table.tableRows;
+                    for (var r = 0; r < rows.length; r++) {
+                        var cells = rows[r].tableCells || [];
+                        for (var c = 0; c < cells.length; c++) {
+                            walk(cells[c].content || []);
+                        }
+                    }
+                }
+            }
+        }
+
+        walk((doc.body && doc.body.content) || []);
+        var out = { accountName: accountName, keyPlayers: keyPlayers };
+        if (keyPlayers.length === 0) {
+            var fb = parseProfilePlainTextFallback(extractPlainTextFromDoc(doc));
+            if (fb.keyPlayers.length) {
+                out.keyPlayers = fb.keyPlayers;
+            }
+            if (!out.accountName && fb.accountName) {
+                out.accountName = fb.accountName;
+            }
+        }
+        return out;
     }
 
     function notifyAuthChange() {
@@ -321,6 +512,31 @@
                     })
                     .then(function (plain) {
                         cb(null, plain);
+                    })
+                    .catch(cb);
+            });
+        },
+
+        /** Preferred: parses Docs API structure (bullets, headings), not markdown text. */
+        fetchGoogleDocProfileParsed: function (docId, cb) {
+            getAccessToken(function (err, token) {
+                if (err) return cb(err);
+                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(docId), {
+                    headers: { Authorization: 'Bearer ' + token }
+                })
+                    .then(function (r) {
+                        return r.json().then(function (data) {
+                            if (!r.ok) {
+                                throw new Error(
+                                    (data.error && (data.error.message || data.error.status)) ||
+                                        'Could not read Google Doc (enable Docs API and re-consent scopes).'
+                                );
+                            }
+                            return extractProfileFromDocument(data);
+                        });
+                    })
+                    .then(function (parsed) {
+                        cb(null, parsed);
                     })
                     .catch(cb);
             });
