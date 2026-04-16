@@ -24,6 +24,7 @@
             var tr = els[i].textRun;
             var url = tr.textStyle && tr.textStyle.link && tr.textStyle.link.url;
             if (url) {
+                console.log('[AccountMapping] flattenPara elem[' + i + '] LINK url=' + JSON.stringify(url).slice(0, 100) + ' text=' + JSON.stringify(tr.content || '').slice(0, 60));
                 parts.push(String(url).trim());
             } else if (tr.content) {
                 parts.push(tr.content);
@@ -39,24 +40,46 @@
         if (!line) return;
         var trimmed = String(line).replace(/^[-*•\s]+/g, '').trim();
         if (!trimmed || /^[-_=]{3,}$/.test(trimmed)) return;
-        var colon = trimmed.indexOf(':');
-        if (colon === -1) return;
+
+        var docUrlRe = /https:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/i;
+
+        // Find the label colon (skip colons inside "https:" or "http:")
+        var colon = -1;
+        for (var ci = 0; ci < trimmed.length; ci++) {
+            if (trimmed[ci] !== ':') continue;
+            var before = trimmed.slice(0, ci);
+            if (/https?$/i.test(before)) continue;
+            colon = ci;
+            break;
+        }
+        if (colon === -1) {
+            console.log('[AccountMapping] applyMappingLine: no label colon in:', JSON.stringify(trimmed).slice(0, 120));
+            return;
+        }
         var label = trimmed.slice(0, colon).trim();
         if (!label) return;
         var tail = trimmed.slice(colon + 1).trim();
-        var md = tail.match(/https:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/i);
+        var md = tail.match(docUrlRe);
+        // Also scan the full line in case the URL precedes the tail split
+        if (!md) md = trimmed.match(docUrlRe);
         var id = md ? md[1] : extractDocIdFromGoogleDocUrl(tail);
+        console.log('[AccountMapping] applyMappingLine: label=' + JSON.stringify(label) + ' id=' + (id || 'NULL') + ' tail=' + JSON.stringify(tail).slice(0, 100));
         if (!id) return;
         var key = label.toLowerCase();
         byAccount[key] = { docId: id, accountLabel: label };
     }
 
     function walkMappingContent(contentArr, byAccount) {
-        if (!contentArr || !contentArr.length) return;
+        if (!contentArr || !contentArr.length) {
+            console.log('[AccountMapping] walkMappingContent: empty/null contentArr');
+            return;
+        }
+        console.log('[AccountMapping] walkMappingContent: elements count =', contentArr.length);
         for (var i = 0; i < contentArr.length; i++) {
             var el = contentArr[i];
             if (el.paragraph) {
                 var flat = flattenParagraphForMapping(el.paragraph);
+                console.log('[AccountMapping] paragraph[' + i + '] flat:', JSON.stringify(flat).slice(0, 200));
                 if (flat.indexOf('\n') >= 0) {
                     flat.split(/\r?\n/).forEach(function (sub) {
                         applyMappingLine(sub, byAccount);
@@ -76,16 +99,65 @@
         }
     }
 
+    /**
+     * Recursively extract every textRun from the raw Docs API JSON.
+     * Yields {content, linkUrl} for each run, regardless of nesting depth.
+     */
+    function deepCollectTextRuns(obj, out) {
+        if (!obj || typeof obj !== 'object') return;
+        if (Array.isArray(obj)) {
+            for (var i = 0; i < obj.length; i++) deepCollectTextRuns(obj[i], out);
+            return;
+        }
+        if (obj.textRun) {
+            var tr = obj.textRun;
+            var url = tr.textStyle && tr.textStyle.link && tr.textStyle.link.url;
+            out.push({ content: tr.content || '', linkUrl: url || '' });
+        }
+        var keys = Object.keys(obj);
+        for (var k = 0; k < keys.length; k++) {
+            if (keys[k] !== 'textRun') deepCollectTextRuns(obj[keys[k]], out);
+        }
+    }
+
+    /**
+     * Fallback: rebuild lines from all textRuns, substituting link URLs.
+     */
+    function plainTextFallback(doc, byAccount) {
+        var runs = [];
+        deepCollectTextRuns(doc, runs);
+        if (!runs.length) return;
+        var buf = '';
+        for (var i = 0; i < runs.length; i++) {
+            var r = runs[i];
+            var text = r.linkUrl ? r.linkUrl : r.content;
+            buf += text;
+        }
+        console.log('[AccountMapping] plainTextFallback total chars:', buf.length);
+        var lines = buf.split(/\r?\n/);
+        for (var li = 0; li < lines.length; li++) {
+            applyMappingLine(lines[li], byAccount);
+        }
+    }
+
     function parseAccountMappingFromDocument(doc) {
         var byAccount = {};
         var DP = root.AccountBrainDocParse;
-        if (!DP || typeof DP.collectContentRoots !== 'function') {
-            throw new Error('Load google-doc-profile-parse.js before google-account-mapping.js');
+        if (DP && typeof DP.collectContentRoots === 'function') {
+            var roots = DP.collectContentRoots(doc);
+            console.log('[AccountMapping] collectContentRoots returned', roots.length, 'root(s)');
+            for (var ri = 0; ri < roots.length; ri++) {
+                console.log('[AccountMapping] root[' + ri + '] length:', roots[ri].length);
+                walkMappingContent(roots[ri], byAccount);
+            }
+        } else {
+            console.warn('[AccountMapping] collectContentRoots unavailable, skipping structured walk');
         }
-        var roots = DP.collectContentRoots(doc);
-        for (var ri = 0; ri < roots.length; ri++) {
-            walkMappingContent(roots[ri], byAccount);
+        if (!Object.keys(byAccount).length) {
+            console.log('[AccountMapping] structured walk found 0 accounts, trying plainTextFallback');
+            plainTextFallback(doc, byAccount);
         }
+        console.log('[AccountMapping] final byAccount keys:', Object.keys(byAccount));
         return { byAccount: byAccount };
     }
 

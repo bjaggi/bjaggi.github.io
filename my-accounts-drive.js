@@ -323,7 +323,19 @@
                                     'google-account-mapping.js did not load. Check Network tab for a 404 on that file; it must appear before my-accounts-drive.js in my-accounts.html.'
                                 );
                             }
+                            console.log('[AccountBrainDrive] mapping doc raw keys:', Object.keys(data));
+                            if (data.body && data.body.content) {
+                                console.log('[AccountBrainDrive] body.content length:', data.body.content.length);
+                            } else {
+                                console.log('[AccountBrainDrive] body.content is EMPTY or missing');
+                            }
+                            if (data.tabs) {
+                                console.log('[AccountBrainDrive] tabs count:', data.tabs.length);
+                            } else {
+                                console.log('[AccountBrainDrive] no tabs key in response');
+                            }
                             var parsed = AM.parseAccountMappingFromDocument(data);
+                            console.log('[AccountBrainDrive] parsed mapping accounts:', Object.keys(parsed.byAccount));
                             var payload = { mappingDocId: mapDocId, byAccount: parsed.byAccount };
                             accountMappingCache = { data: payload, at: Date.now() };
                             cb(null, payload);
