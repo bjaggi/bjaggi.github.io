@@ -8,8 +8,14 @@
  *
  * Full GCP JSON: copy to google-oauth-web-client.local.json in this folder (see .gitignore).
  *
- * Also enable the Google Docs API and add OAuth scope:
+ * Also enable the Google Docs API and add OAuth scopes (consent screen + GCP):
  *   https://www.googleapis.com/auth/documents.readonly
- * so “Import from Doc” can read account profiles written in Google Docs.
+ *   https://www.googleapis.com/auth/drive.metadata.readonly
+ * The second scope lists files in My Drive root and Shared with me to find account-mapping.doc.
+ *
+ * Optional: skip Drive search by name and pin the mapping file ID:
+ *   window.GOOGLE_ACCOUNT_MAPPING_DOC_ID = 'your-document-id';
+ * Example (your account-mapping index doc):
+ *   window.GOOGLE_ACCOUNT_MAPPING_DOC_ID = '1TWqDyzBrye-0hHq39DyoGYFxRqBktmwxj1qLglWCe10';
  */
 window.GOOGLE_CLIENT_ID = '391245638390-2ll2p95i0a6a1e1qj005rsk9kgbtskfd.apps.googleusercontent.com';

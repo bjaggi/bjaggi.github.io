@@ -408,6 +408,7 @@
     }
 
     var api = {
+        collectContentRoots: collectContentRoots,
         extractPlainTextFromDoc: extractPlainTextFromDoc,
         paragraphPlainText: paragraphPlainText,
         splitNameTitle: splitNameTitle,

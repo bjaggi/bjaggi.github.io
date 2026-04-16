@@ -1,15 +1,18 @@
 /**
  * Google Sign-In + Drive appDataFolder sync for Account Brain profiles.
- * Depends on: window.GOOGLE_CLIENT_ID, https://accounts.google.com/gsi/client
+ * Depends on: window.GOOGLE_CLIENT_ID, https://accounts.google.com/gsi/client,
+ * google-doc-profile-parse.js, google-account-mapping.js (load before this file).
  */
 (function (global) {
     var TOKEN_KEY = 'ab_google_access_token';
     var EXP_KEY = 'ab_google_expires_at_ms';
     var SCOPE_TAG_KEY = 'ab_google_scope_tag';
-    var SCOPE_TAG_VALUE = 'drive.appdata+documents.readonly-v3';
+    var SCOPE_TAG_VALUE = 'drive.appdata+documents.readonly+metadata-v5';
     var FILE_NAME = 'account-brain-profiles.json';
+    var MAPPING_DOC_NAMES = ['account-mapping.doc', 'account-mapping'];
     var SCOPE =
         'https://www.googleapis.com/auth/drive.appdata ' +
+        'https://www.googleapis.com/auth/drive.metadata.readonly ' +
         'https://www.googleapis.com/auth/documents.readonly';
 
     function getClientId() {
@@ -186,8 +189,128 @@
     if (!DP) {
         throw new Error('Load google-doc-profile-parse.js before my-accounts-drive.js');
     }
+    var AM = global.AccountBrainAccountMapping;
+    if (!AM) {
+        throw new Error('Load google-account-mapping.js before my-accounts-drive.js');
+    }
     var extractPlainTextFromDoc = DP.extractPlainTextFromDoc;
     var extractProfileFromDocument = DP.extractProfileFromDocument;
+
+    var accountMappingCache = null;
+
+    function clearAccountMappingCache() {
+        accountMappingCache = null;
+    }
+
+    function resolveMappingDocId(token, cb) {
+        var override = global.GOOGLE_ACCOUNT_MAPPING_DOC_ID;
+        if (typeof override === 'string') {
+            var tid = override.trim();
+            if (/^[a-zA-Z0-9_-]{12,}$/.test(tid)) {
+                cb(null, tid);
+                return;
+            }
+        }
+        function listMappingCandidates(encodedQuery) {
+            return fetch(
+                'https://www.googleapis.com/drive/v3/files?q=' +
+                    encodedQuery +
+                    '&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc&pageSize=5',
+                { headers: { Authorization: 'Bearer ' + token } }
+            ).then(function (r) {
+                return r.json().then(function (data) {
+                    if (!r.ok) throw new Error(data.error ? data.error.message : 'Drive list failed');
+                    return data.files || [];
+                });
+            });
+        }
+
+        function findMappingDocForName(rawName, done) {
+            var esc = rawName.replace(/'/g, "\\'");
+            var base =
+                "name='" +
+                esc +
+                "' and trashed=false and mimeType='application/vnd.google-apps.document'";
+            var qRoot = encodeURIComponent(base + " and 'root' in parents");
+            listMappingCandidates(qRoot)
+                .then(function (rootFiles) {
+                    if (rootFiles.length) {
+                        done(null, rootFiles[0].id);
+                        return;
+                    }
+                    var qShared = encodeURIComponent(base + ' and sharedWithMe=true');
+                    return listMappingCandidates(qShared);
+                })
+                .then(function (sharedFiles) {
+                    if (!sharedFiles) return;
+                    if (sharedFiles.length) {
+                        done(null, sharedFiles[0].id);
+                    } else {
+                        done(null, null);
+                    }
+                })
+                .catch(done);
+        }
+
+        var nameIdx = 0;
+        function tryNextName() {
+            if (nameIdx >= MAPPING_DOC_NAMES.length) {
+                cb(null, null);
+                return;
+            }
+            var rawName = MAPPING_DOC_NAMES[nameIdx++];
+            findMappingDocForName(rawName, function (err, id) {
+                if (err) {
+                    cb(err);
+                    return;
+                }
+                if (id) {
+                    cb(null, id);
+                } else {
+                    tryNextName();
+                }
+            });
+        }
+        tryNextName();
+    }
+
+    function fetchAccountMappingData(cb) {
+        if (accountMappingCache && Date.now() - accountMappingCache.at < 5 * 60 * 1000) {
+            cb(null, accountMappingCache.data);
+            return;
+        }
+        getAccessToken(function (err, token) {
+            if (err) return cb(err);
+            resolveMappingDocId(token, function (e2, mapDocId) {
+                if (e2) return cb(e2);
+                if (!mapDocId) {
+                    return cb(
+                        new Error(
+                            'Could not find account-mapping.doc in My Drive root or in Shared with me. Use that exact name, or set window.GOOGLE_ACCOUNT_MAPPING_DOC_ID to its document ID.'
+                        )
+                    );
+                }
+                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(mapDocId), {
+                    headers: { Authorization: 'Bearer ' + token }
+                })
+                    .then(function (r) {
+                        return r.json().then(function (data) {
+                            if (!r.ok) {
+                                throw new Error(
+                                    (data.error && (data.error.message || data.error.status)) ||
+                                        'Could not read account-mapping doc.'
+                                );
+                            }
+                            var parsed = AM.parseAccountMappingFromDocument(data);
+                            var payload = { mappingDocId: mapDocId, byAccount: parsed.byAccount };
+                            accountMappingCache = { data: payload, at: Date.now() };
+                            cb(null, payload);
+                        });
+                    })
+                    .catch(cb);
+            });
+        });
+    }
 
     function notifyAuthChange() {
         if (typeof global.AccountBrainDrive.onAuthChange === 'function') {
@@ -212,6 +335,7 @@
 
         signIn: function (cb) {
             clearStoredToken();
+            clearAccountMappingCache();
             requestToken(true, function (err, token) {
                 notifyAuthChange();
                 if (cb) cb(err, token);
@@ -222,6 +346,7 @@
             var t = sessionStorage.getItem(TOKEN_KEY);
             clearStoredToken();
             tokenClient = null;
+            clearAccountMappingCache();
             notifyAuthChange();
             if (!t) {
                 if (cb) cb(null);
@@ -325,6 +450,28 @@
                         cb(null, parsed);
                     })
                     .catch(cb);
+            });
+        },
+
+        /** Loads account-mapping.doc from Drive root (or GOOGLE_ACCOUNT_MAPPING_DOC_ID). Cached ~5 min. */
+        fetchAccountMapping: function (cb) {
+            fetchAccountMappingData(cb);
+        },
+
+        invalidateAccountMappingCache: function () {
+            clearAccountMappingCache();
+        },
+
+        /**
+         * Resolves profile Google Doc ID for an account label using account-mapping.doc.
+         * cb(err, docId|null, mappingPayload?)
+         */
+        lookupProfileDocIdForAccount: function (accountName, cb) {
+            fetchAccountMappingData(function (err, data) {
+                if (err) return cb(err);
+                var k = String(accountName || '').trim().toLowerCase();
+                var row = data.byAccount[k];
+                cb(null, row ? row.docId : null, data);
             });
         }
     };

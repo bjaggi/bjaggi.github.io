@@ -137,12 +137,14 @@
                             <p id="gdoc-signin-hint" class="hidden text-amber-800 text-xs font-medium mb-2">Sign in with Google (header) before importing from a Doc.</p>
                             <p class="text-gray-700 text-xs mb-2">
                                 <strong>Google Doc vs Pull from Drive:</strong> Pull only restores this app’s <em>backup JSON</em> in Drive, not a Google Doc.
-                                Import reads your Doc (including <strong>tabbed Docs</strong> where the API stores text under each tab, not only the default canvas), including profiles inside a <strong>fenced code block</strong> (triple-backtick “Full Content” section in Account Brain). Paste the Doc URL or ID. Also supports <code class="text-[11px] bg-white px-1 rounded border"># [Account Profile] Name</code>, <code class="text-[11px] bg-white px-1 rounded border">ACCOUNT PROFILE: Name</code>, <code class="text-[11px] bg-white px-1 rounded border">## Key Players</code> (or <code class="text-[11px] bg-white px-1 rounded border">### …</code> / emoji after the hashes), <code class="text-[11px] bg-white px-1 rounded border">- Name — Title</code> or <code class="text-[11px] bg-white px-1 rounded border">1. Name — Title</code>, and <code class="text-[11px] bg-white px-1 rounded border">Notes:</code> under a bullet.
+                                <strong>Which Doc to import:</strong> Do not paste a URL here. Keep a Google Doc named <code class="text-[11px] bg-white px-1 rounded border">account-mapping.doc</code> in the <strong>root of My Drive</strong> or in <strong>Shared with me</strong> (same exact filename). Each line maps <code class="text-[11px] bg-white px-1 rounded border">Account name</code> to that account’s profile Doc, e.g. <code class="text-[11px] bg-white px-1 rounded border">Nvidia: https://docs.google.com/document/d/…/edit</code>. If the URL is a <strong>hyperlink</strong>, the app uses the link’s destination URL, not the visible text. Optional override: set <code class="text-[11px] bg-white px-1 rounded border">GOOGLE_ACCOUNT_MAPPING_DOC_ID</code> in <code class="text-[11px] bg-white px-1 rounded border">google-oauth-config.js</code> to the mapping file’s document ID.
                             </p>
-                            <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-                                <input id="gdoc-import-url" type="text" placeholder="https://docs.google.com/document/d/…/edit"
-                                    class="flex-1 min-w-0 text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]">
-                                <button type="button" id="btn-import-gdoc" class="shrink-0 text-xs font-semibold text-white bg-primary hover:bg-[#0870c4] px-3 py-2 rounded-lg">Import from Doc</button>
+                            <p class="text-gray-700 text-xs mb-2">
+                                Import reads the profile Doc (tabbed Docs and fenced “Full Content” blocks supported), including <code class="text-[11px] bg-white px-1 rounded border"># [Account Profile]</code>, <code class="text-[11px] bg-white px-1 rounded border">ACCOUNT PROFILE:</code>, <code class="text-[11px] bg-white px-1 rounded border">## Key Players</code>, bullets, numbered lines, and <code class="text-[11px] bg-white px-1 rounded border">Notes:</code>.
+                            </p>
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <button type="button" id="btn-import-gdoc" class="text-xs font-semibold text-white bg-primary hover:bg-[#0870c4] px-3 py-2 rounded-lg">Import from mapped Doc</button>
+                                <button type="button" id="btn-gdoc-mapping-refresh" class="text-xs font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg">Reload mapping</button>
                             </div>
                             <p id="gdoc-import-msg" class="text-xs mt-2 min-h-[1.25rem] text-gray-600" role="status"></p>
                         </div>
@@ -198,6 +200,7 @@
     <script src="google-oauth-config.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="google-doc-profile-parse.js"></script>
+    <script src="google-account-mapping.js"></script>
     <script src="my-accounts-drive.js"></script>
     <script>
         (function () {
@@ -229,15 +232,6 @@
                     };
                 }
                 return { name: str, title: '', other: '' };
-            }
-
-            function extractGoogleDocIdFromInput(raw) {
-                var s = String(raw || '').trim();
-                if (!s) return null;
-                var m = s.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
-                if (m) return m[1];
-                if (/^[a-zA-Z0-9_-]+$/.test(s) && s.length >= 12) return s;
-                return null;
             }
 
             function normalizeKeyPlayer(p) {
@@ -566,8 +560,6 @@
 
                 updateInitiativeButtonState();
                 setGdocMsg('', false);
-                var gdocUrl = document.getElementById('gdoc-import-url');
-                if (gdocUrl) gdocUrl.value = '';
                 overlay.classList.remove('hidden');
                 overlay.classList.add('flex');
                 overlay.setAttribute('aria-hidden', 'false');
@@ -592,6 +584,13 @@
                 el.classList.toggle('text-gray-600', !isError);
             }
 
+            document.getElementById('btn-gdoc-mapping-refresh').addEventListener('click', function () {
+                setGdocMsg('', false);
+                if (!window.AccountBrainDrive || !window.AccountBrainDrive.invalidateAccountMappingCache) return;
+                window.AccountBrainDrive.invalidateAccountMappingCache();
+                setGdocMsg('Account mapping cache cleared. Import again to re-read account-mapping.doc from Drive.', false);
+            });
+
             document.getElementById('btn-import-gdoc').addEventListener('click', function () {
                 setGdocMsg('', false);
                 if (!window.AccountBrainDrive || !window.AccountBrainDrive.isConfigured()) {
@@ -602,14 +601,34 @@
                     setGdocMsg('Sign in with Google first.', true);
                     return;
                 }
-                var raw = document.getElementById('gdoc-import-url').value;
-                var docId = extractGoogleDocIdFromInput(raw);
-                if (!docId) {
-                    setGdocMsg('Paste a Google Doc link or the document ID.', true);
+                var acctName = (document.getElementById('form-name').value || '').trim();
+                if (!acctName) {
+                    setGdocMsg('Set the Account Name above first — it must match a line in account-mapping.doc.', true);
                     return;
                 }
-                setGdocMsg('Loading document…', false);
-                window.AccountBrainDrive.fetchGoogleDocProfileParsed(docId, function (err, parsed) {
+                setGdocMsg('Loading account-mapping.doc from Drive…', false);
+                window.AccountBrainDrive.lookupProfileDocIdForAccount(acctName, function (errMap, profileDocId, mappingPayload) {
+                    if (errMap) {
+                        setGdocMsg(
+                            (errMap.message || String(errMap)) +
+                                ' If you just updated OAuth scopes, sign out and sign in again.',
+                            true
+                        );
+                        return;
+                    }
+                    if (!profileDocId) {
+                        setGdocMsg(
+                            'No Google Doc is mapped for "' +
+                                acctName +
+                                '". Add a line to account-mapping.doc (My Drive root or Shared with me), e.g. ' +
+                                acctName +
+                                ': https://docs.google.com/document/d/your-doc-id/edit (name must match this field, case-insensitive).',
+                            true
+                        );
+                        return;
+                    }
+                    setGdocMsg('Loading profile document…', false);
+                    window.AccountBrainDrive.fetchGoogleDocProfileParsed(profileDocId, function (err, parsed) {
                     if (err) {
                         setGdocMsg(
                             (err.message || String(err)) +
@@ -650,10 +669,11 @@
                         setGdocMsg(
                             'Imported ' +
                                 (parsed.keyPlayers.length || '0') +
-                                ' key player(s). Click Save Profile to save and sync.',
+                                ' key player(s) from the mapped Doc. Click Save Profile to save and sync.',
                             false
                         );
                     }
+                    });
                 });
             });
 
