@@ -114,17 +114,22 @@
 
     function findFileId(token, cb) {
         var q = encodeURIComponent("name='" + FILE_NAME + "' and trashed=false");
-        fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=' + q + '&fields=files(id,name)', {
-            headers: { Authorization: 'Bearer ' + token }
-        })
+        var url = 'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=' + q + '&fields=files(id,name)';
+        fetch(url, { headers: { Authorization: 'Bearer ' + token } })
             .then(function (r) {
                 return r.json().then(function (data) {
-                    if (!r.ok) throw new Error(data.error ? data.error.message : 'Drive list failed');
+                    if (!r.ok) {
+                        var msg = (data.error && data.error.message) || 'Drive list failed (' + r.status + ')';
+                        console.error('[AccountBrainDrive] findFileId error:', msg, data);
+                        throw new Error(msg);
+                    }
                     var files = data.files || [];
-                    cb(null, files.length ? files[0].id : null);
+                    return files.length ? files[0].id : null;
                 });
             })
+            .then(function (id) { cb(null, id); })
             .catch(function (e) {
+                console.error('[AccountBrainDrive] findFileId catch:', e);
                 cb(e);
             });
     }
@@ -156,7 +161,12 @@
         })
             .then(function (r) {
                 return r.json().then(function (data) {
-                    if (!r.ok) throw new Error(data.error ? data.error.message : 'Drive create failed');
+                    if (!r.ok) {
+                        var msg = (data.error && data.error.message) || 'Drive create failed (' + r.status + ')';
+                        console.error('[AccountBrainDrive] createFile error:', msg, data);
+                        throw new Error(msg);
+                    }
+                    console.log('[AccountBrainDrive] created backup file:', data.id);
                     cb(null, data.id);
                 });
             })
@@ -173,10 +183,18 @@
             body: jsonBody
         })
             .then(function (r) {
-                if (!r.ok) return r.text().then(function (t) { throw new Error(t || r.status); });
+                if (!r.ok) {
+                    return r.text().then(function (t) {
+                        console.error('[AccountBrainDrive] patchFile error:', r.status, t);
+                        throw new Error(t || ('Drive update failed (' + r.status + ')'));
+                    });
+                }
                 return r.json();
             })
-            .then(function () { cb(null); })
+            .then(function () {
+                console.log('[AccountBrainDrive] backup updated:', fileId);
+                cb(null);
+            })
             .catch(cb);
     }
 
@@ -288,7 +306,7 @@
                         )
                     );
                 }
-                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(mapDocId), {
+                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(mapDocId) + '?includeTabsContent=true', {
                     headers: { Authorization: 'Bearer ' + token }
                 })
                     .then(function (r) {
@@ -411,7 +429,7 @@
         fetchGoogleDocPlainText: function (docId, cb) {
             getAccessToken(function (err, token) {
                 if (err) return cb(err);
-                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(docId), {
+                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(docId) + '?includeTabsContent=true', {
                     headers: { Authorization: 'Bearer ' + token }
                 })
                     .then(function (r) {
@@ -436,7 +454,7 @@
         fetchGoogleDocProfileParsed: function (docId, cb) {
             getAccessToken(function (err, token) {
                 if (err) return cb(err);
-                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(docId), {
+                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(docId) + '?includeTabsContent=true', {
                     headers: { Authorization: 'Bearer ' + token }
                 })
                     .then(function (r) {
