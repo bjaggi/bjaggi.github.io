@@ -93,6 +93,11 @@
                         <button type="button" id="btn-drive-pull" class="text-sm font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg shadow-sm">Pull from Drive</button>
                         <button type="button" id="btn-drive-push" class="text-sm font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg shadow-sm">Push to Drive</button>
                     </div>
+                    <p id="drive-sync-hint" class="hidden text-[11px] text-gray-500 max-w-[16rem] leading-tight mt-1">
+                        <strong>Pull</strong> downloads your backup from Drive to this browser.
+                        <strong>Push</strong> uploads what's here to Drive.
+                        Edits you make on this page stay local until you Push.
+                    </p>
                 </div>
                 <button type="button" id="btn-header-new"
                     class="order-1 sm:order-2 lg:order-2 xl:order-2 shrink-0 bg-primary hover:bg-[#0870c4] text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg transition-colors">
@@ -732,6 +737,10 @@
                 }
                 if (syncRow) {
                     syncRow.classList.toggle('hidden', !cfg || !signed);
+                }
+                var syncHint = document.getElementById('drive-sync-hint');
+                if (syncHint) {
+                    syncHint.classList.toggle('hidden', !cfg || !signed);
                 }
                 if (hint) {
                     hint.classList.toggle('hidden', !cfg || signed);
