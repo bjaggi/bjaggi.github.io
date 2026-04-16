@@ -90,8 +90,7 @@
                         </button>
                     </div>
                     <div id="drive-sync-row" class="hidden flex flex-wrap gap-2 justify-end sm:justify-start lg:justify-end">
-                        <button type="button" id="btn-drive-pull" class="text-sm font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg shadow-sm">Pull from Drive</button>
-                        <button type="button" id="btn-drive-push" class="text-sm font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg shadow-sm">Push to Drive</button>
+                        <button type="button" id="btn-drive-sync" class="text-sm font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg shadow-sm">Sync with Drive</button>
                     </div>
                 </div>
                 <button type="button" id="btn-header-new"
@@ -207,7 +206,7 @@
         </div>
     </div>
 
-    <script src="./google-oauth-config.js?v=5"></script>
+    <script src="./google-oauth-config.js?v=6"></script>
     <script>
         (function () {
             var id = window.GOOGLE_CLIENT_ID;
@@ -217,9 +216,9 @@
         })();
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="./google-doc-profile-parse.js?v=5"></script>
-    <script src="./google-account-mapping.js?v=5"></script>
-    <script src="./my-accounts-drive.js?v=5"></script>
+    <script src="./google-doc-profile-parse.js?v=6"></script>
+    <script src="./google-account-mapping.js?v=6"></script>
+    <script src="./my-accounts-drive.js?v=6"></script>
     <script>
         (function () {
             var STORAGE_V3 = 'my-accounts-ai-assistant-v3';
@@ -997,7 +996,7 @@
                                 render();
                                 return;
                             }
-                            setDriveStatus('Signed in. Local data kept — use Push to Drive to overwrite the cloud backup.', false);
+                            setDriveStatus('Signed in. Use Sync with Drive to merge local and cloud data.', false);
                             return;
                         }
                         window.AccountBrainDrive.uploadAccounts(loadAccounts(), function (e3) {
@@ -1015,31 +1014,36 @@
                 });
             });
 
-            document.getElementById('btn-drive-push').addEventListener('click', function () {
-                var list = loadAccounts();
-                setDriveStatus('Uploading to Drive…', false);
-                window.AccountBrainDrive.uploadAccounts(list, function (err) {
-                    if (err) setDriveStatus('Push failed: ' + err.message, true);
-                    else setDriveStatus('Backup saved to Google Drive.', false);
-                });
-            });
-
-            document.getElementById('btn-drive-pull').addEventListener('click', function () {
-                setDriveStatus('Downloading from Drive…', false);
+            document.getElementById('btn-drive-sync').addEventListener('click', function () {
+                setDriveStatus('Syncing with Drive…', false);
+                var local = loadAccounts();
                 window.AccountBrainDrive.downloadAccounts(function (err, remote) {
                     if (err) {
-                        setDriveStatus('Pull failed: ' + err.message, true);
+                        setDriveStatus('Sync failed (download): ' + err.message, true);
                         return;
                     }
                     if (!remote || !remote.length) {
-                        setDriveStatus('No backup file in Drive yet. Use Push or save a profile.', false);
+                        setDriveStatus('No backup in Drive yet — uploading local data…', false);
+                        window.AccountBrainDrive.uploadAccounts(local, function (e2) {
+                            if (e2) setDriveStatus('Upload failed: ' + e2.message, true);
+                            else setDriveStatus('Local data pushed to Drive (first sync).', false);
+                        });
                         return;
                     }
-                    if (confirm('Replace local accounts with Drive backup (' + remote.length + ' account(s))?')) {
-                        localStorage.setItem(STORAGE_V3, JSON.stringify(remote.map(toV3)));
-                        setDriveStatus('Restored from Drive.', false);
-                        render();
-                    }
+                    var localById = {};
+                    local.forEach(function (a) { localById[a.id] = a; });
+                    var merged = remote.map(toV3);
+                    merged.forEach(function (r) { localById[r.id] = r; });
+                    local.forEach(function (a) {
+                        if (!localById[a.id] || localById[a.id] === a) localById[a.id] = a;
+                    });
+                    var finalList = Object.keys(localById).map(function (k) { return toV3(localById[k]); });
+                    localStorage.setItem(STORAGE_V3, JSON.stringify(finalList));
+                    render();
+                    window.AccountBrainDrive.uploadAccounts(finalList, function (e2) {
+                        if (e2) setDriveStatus('Sync failed (upload): ' + e2.message, true);
+                        else setDriveStatus('Synced — ' + finalList.length + ' account(s) merged with Drive.', false);
+                    });
                 });
             });
 

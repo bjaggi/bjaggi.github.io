@@ -325,13 +325,19 @@
                             }
                             var bodyLen = (data.body && data.body.content) ? data.body.content.length : 0;
                             var tabsLen = Array.isArray(data.tabs) ? data.tabs.length : 0;
-                            var rawSnippet = JSON.stringify(data).slice(0, 1500);
-                            console.log('[AccountBrainDrive] mapping doc raw (first 1500 chars):', rawSnippet);
-                            console.log('[AccountBrainDrive] body.content length:', bodyLen, '| tabs count:', tabsLen);
+                            var tabContentLen = 0;
+                            if (tabsLen > 0) {
+                                try {
+                                    var tc = data.tabs[0].documentTab.body.content;
+                                    tabContentLen = Array.isArray(tc) ? tc.length : -1;
+                                } catch (e) { tabContentLen = -2; }
+                            }
+                            console.log('[AccountBrainDrive] mapping doc response — body.content:', bodyLen, '| tabs:', tabsLen, '| tab[0].content:', tabContentLen);
+                            console.log('[AccountBrainDrive] mapping doc raw JSON (first 2000 chars):', JSON.stringify(data).slice(0, 2000));
                             var parsed = AM.parseAccountMappingFromDocument(data);
                             console.log('[AccountBrainDrive] parsed mapping accounts:', Object.keys(parsed.byAccount));
-                            var diag = 'body.content:' + bodyLen + ' tabs:' + tabsLen;
-                            var payload = { mappingDocId: mapDocId, byAccount: parsed.byAccount, _diag: diag, _rawSnippet: rawSnippet };
+                            var diag = 'body.content:' + bodyLen + ' tabs:' + tabsLen + ' tab0.content:' + tabContentLen;
+                            var payload = { mappingDocId: mapDocId, byAccount: parsed.byAccount, _diag: diag };
                             accountMappingCache = { data: payload, at: Date.now() };
                             cb(null, payload);
                         });
