@@ -1,0 +1,28 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kafka-cluster:Connect",
+        "kafka-cluster:DescribeCluster",
+        "kafka-cluster:DescribeClusterDynamicConfiguration",
+        "kafka-cluster:DescribeTopic",
+        "kafka-cluster:CreateTopic",
+        "kafka-cluster:WriteData",
+        "kafka-cluster:ReadData",
+        "kafka-cluster:AlterTopic",
+        "kafka-cluster:AlterGroup",
+        "kafka-cluster:DescribeGroup",
+        "kafka-cluster:DescribeTransactionalId",
+        "kafka-cluster:AlterTransactionalId"
+      ],
+      "Resource": [
+        "arn:aws:kafka:us-east-2:492737776546:cluster/jaggi-msk/*",
+        "arn:aws:kafka:us-east-2:492737776546:topic/jaggi-msk/*",
+        "arn:aws:kafka:us-east-2:492737776546:group/jaggi-msk/*",
+        "arn:aws:kafka:us-east-2:492737776546:transactional-id/jaggi-msk/*"
+      ]
+    }
+  ]
+}
