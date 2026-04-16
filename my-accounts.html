@@ -101,6 +101,24 @@
             </div>
         </header>
 
+        <div id="gdoc-import-wrap" class="hidden mb-6 p-4 rounded-lg bg-[#F5F9FF] border border-gray-200 max-w-4xl">
+            <p id="gdoc-signin-hint" class="hidden text-amber-800 text-xs font-medium mb-2">Sign in with Google (above) before importing from Docs.</p>
+            <p class="text-gray-700 text-xs mb-3">
+                <strong>Doc import (not Pull):</strong> Keep <code class="text-[11px] bg-white px-1 rounded border">account-mapping.doc</code> in My Drive root or Shared with me. Each line: <code class="text-[11px] bg-white px-1 rounded border">AccountName: https://docs.google.com/document/d/…/edit</code> (hyperlink targets are used, not link text). After you change that file or a profile Doc in Drive, click <strong>Reload mapping</strong> then import again — the app does not poll Google automatically.
+            </p>
+            <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 mb-3">
+                <div class="flex flex-col gap-1 min-w-[12rem]">
+                    <label for="gdoc-import-account-select" class="text-xs font-medium text-dark">Account to update</label>
+                    <select id="gdoc-import-account-select" class="text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]"></select>
+                </div>
+                <div class="flex flex-wrap gap-2 items-center">
+                    <button type="button" id="btn-import-gdoc" class="text-xs font-semibold text-white bg-primary hover:bg-[#0870c4] px-3 py-2 rounded-lg">Import from mapped Doc</button>
+                    <button type="button" id="btn-gdoc-mapping-refresh" class="text-xs font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg">Reload mapping</button>
+                </div>
+            </div>
+            <p id="gdoc-import-msg" class="text-xs min-h-[1.25rem] text-gray-600" role="status"></p>
+        </div>
+
         <div id="accounts-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
 
@@ -139,21 +157,6 @@
                                 <p class="text-gray-600 text-xs mt-1 italic">Add the people who matter — use Name, Title, and Other for context.</p>
                             </div>
                             <button type="button" id="add-player" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg">+ Add</button>
-                        </div>
-                        <div id="gdoc-import-wrap" class="hidden mt-3 p-3 rounded-lg bg-[#F5F9FF] border border-gray-200">
-                            <p id="gdoc-signin-hint" class="hidden text-amber-800 text-xs font-medium mb-2">Sign in with Google (header) before importing from a Doc.</p>
-                            <p class="text-gray-700 text-xs mb-2">
-                                <strong>Google Doc vs Pull from Drive:</strong> Pull only restores this app’s <em>backup JSON</em> in Drive, not a Google Doc.
-                                <strong>Which Doc to import:</strong> Do not paste a URL here. Keep a Google Doc named <code class="text-[11px] bg-white px-1 rounded border">account-mapping.doc</code> in the <strong>root of My Drive</strong> or in <strong>Shared with me</strong> (same exact filename). Each line maps <code class="text-[11px] bg-white px-1 rounded border">Account name</code> to that account’s profile Doc, e.g. <code class="text-[11px] bg-white px-1 rounded border">Nvidia: https://docs.google.com/document/d/…/edit</code>. If the URL is a <strong>hyperlink</strong>, the app uses the link’s destination URL, not the visible text. Optional override: set <code class="text-[11px] bg-white px-1 rounded border">GOOGLE_ACCOUNT_MAPPING_DOC_ID</code> in <code class="text-[11px] bg-white px-1 rounded border">google-oauth-config.js</code> to the mapping file’s document ID.
-                            </p>
-                            <p class="text-gray-700 text-xs mb-2">
-                                Import reads the profile Doc (tabbed Docs and fenced “Full Content” blocks supported), including <code class="text-[11px] bg-white px-1 rounded border"># [Account Profile]</code>, <code class="text-[11px] bg-white px-1 rounded border">ACCOUNT PROFILE:</code>, <code class="text-[11px] bg-white px-1 rounded border">## Key Players</code>, bullets, numbered lines, and <code class="text-[11px] bg-white px-1 rounded border">Notes:</code>.
-                            </p>
-                            <div class="flex flex-wrap gap-2 items-center">
-                                <button type="button" id="btn-import-gdoc" class="text-xs font-semibold text-white bg-primary hover:bg-[#0870c4] px-3 py-2 rounded-lg">Import from mapped Doc</button>
-                                <button type="button" id="btn-gdoc-mapping-refresh" class="text-xs font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg">Reload mapping</button>
-                            </div>
-                            <p id="gdoc-import-msg" class="text-xs mt-2 min-h-[1.25rem] text-gray-600" role="status"></p>
                         </div>
                         <div id="list-players" class="space-y-2 mt-3"></div>
                     </div>
@@ -204,7 +207,7 @@
         </div>
     </div>
 
-    <script src="google-oauth-config.js?v=2"></script>
+    <script src="./google-oauth-config.js?v=3"></script>
     <script>
         (function () {
             var id = window.GOOGLE_CLIENT_ID;
@@ -214,9 +217,9 @@
         })();
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="google-doc-profile-parse.js?v=2"></script>
-    <script src="google-account-mapping.js?v=2"></script>
-    <script src="my-accounts-drive.js?v=2"></script>
+    <script src="./google-doc-profile-parse.js?v=3"></script>
+    <script src="./google-account-mapping.js?v=3"></script>
+    <script src="./my-accounts-drive.js?v=3"></script>
     <script>
         (function () {
             var STORAGE_V3 = 'my-accounts-ai-assistant-v3';
@@ -574,7 +577,6 @@
                 }
 
                 updateInitiativeButtonState();
-                setGdocMsg('', false);
                 overlay.classList.remove('hidden');
                 overlay.classList.add('flex');
                 overlay.setAttribute('aria-hidden', 'false');
@@ -585,6 +587,7 @@
                 overlay.classList.add('hidden');
                 overlay.classList.remove('flex');
                 overlay.setAttribute('aria-hidden', 'true');
+                updateGdocAccountSelect();
             }
 
             document.getElementById('add-player').addEventListener('click', function () {
@@ -597,6 +600,67 @@
                 el.textContent = msg || '';
                 el.classList.toggle('text-red-600', !!isError);
                 el.classList.toggle('text-gray-600', !isError);
+            }
+
+            function updateGdocAccountSelect() {
+                var sel = document.getElementById('gdoc-import-account-select');
+                if (!sel) return;
+                var list = loadAccounts().map(toV3);
+                var cur = sel.value;
+                sel.innerHTML = '';
+                var btnImp = document.getElementById('btn-import-gdoc');
+                if (!list.length) {
+                    var opt0 = document.createElement('option');
+                    opt0.value = '';
+                    opt0.textContent = 'Add an account first';
+                    sel.appendChild(opt0);
+                    sel.disabled = true;
+                    if (btnImp) btnImp.disabled = true;
+                    return;
+                }
+                sel.disabled = false;
+                if (btnImp) btnImp.disabled = false;
+                list.forEach(function (a) {
+                    var opt = document.createElement('option');
+                    opt.value = a.id;
+                    opt.textContent = a.name || 'Untitled';
+                    sel.appendChild(opt);
+                });
+                if (cur && list.some(function (a) { return a.id === cur; })) {
+                    sel.value = cur;
+                }
+            }
+
+            function applyParsedProfileToStoredAccount(accountId, parsed, applyKeyPlayers) {
+                var list = loadAccounts();
+                var idx = list.findIndex(function (a) {
+                    return a.id === accountId;
+                });
+                if (idx < 0) {
+                    setGdocMsg('That account no longer exists. Reload the page.', true);
+                    return false;
+                }
+                var acct = toV3(list[idx]);
+                if (parsed.accountName) {
+                    var curName = (acct.name || '').trim();
+                    if (!curName || curName.toLowerCase() === parsed.accountName.toLowerCase()) {
+                        acct.name = parsed.accountName;
+                    } else if (
+                        confirm(
+                            'Update stored account name from "' + curName + '" to "' + parsed.accountName + '" from the Doc?'
+                        )
+                    ) {
+                        acct.name = parsed.accountName;
+                    }
+                }
+                if (applyKeyPlayers && parsed.keyPlayers && parsed.keyPlayers.length) {
+                    acct.keyPlayers = parsed.keyPlayers.map(normalizeKeyPlayer);
+                }
+                acct.updatedAt = todayStr();
+                list[idx] = acct;
+                saveAccounts(list);
+                render();
+                return true;
             }
 
             document.getElementById('btn-gdoc-mapping-refresh').addEventListener('click', function () {
@@ -616,13 +680,27 @@
                     setGdocMsg('Sign in with Google first.', true);
                     return;
                 }
-                var acctName = (document.getElementById('form-name').value || '').trim();
+                var sel = document.getElementById('gdoc-import-account-select');
+                var accountId = sel && sel.value ? sel.value.trim() : '';
+                if (!accountId || (sel && sel.disabled)) {
+                    setGdocMsg('Add at least one account (or pick one in the list) before importing.', true);
+                    return;
+                }
+                var list = loadAccounts();
+                var acctRow = list.find(function (a) {
+                    return a.id === accountId;
+                });
+                if (!acctRow) {
+                    setGdocMsg('Selected account not found. Try Reload after adding accounts.', true);
+                    return;
+                }
+                var acctName = (toV3(acctRow).name || '').trim();
                 if (!acctName) {
-                    setGdocMsg('Set the Account Name above first — it must match a line in account-mapping.doc.', true);
+                    setGdocMsg('Selected account has no name — set a name in the editor first.', true);
                     return;
                 }
                 setGdocMsg('Loading account-mapping.doc from Drive…', false);
-                window.AccountBrainDrive.lookupProfileDocIdForAccount(acctName, function (errMap, profileDocId, mappingPayload) {
+                window.AccountBrainDrive.lookupProfileDocIdForAccount(acctName, function (errMap, profileDocId) {
                     if (errMap) {
                         setGdocMsg(
                             (errMap.message || String(errMap)) +
@@ -637,57 +715,54 @@
                                 acctName +
                                 '". Add a line to account-mapping.doc (My Drive root or Shared with me), e.g. ' +
                                 acctName +
-                                ': https://docs.google.com/document/d/your-doc-id/edit (name must match this field, case-insensitive).',
+                                ': https://docs.google.com/document/d/your-doc-id/edit (label must match this account name, case-insensitive).',
                             true
                         );
                         return;
                     }
                     setGdocMsg('Loading profile document…', false);
                     window.AccountBrainDrive.fetchGoogleDocProfileParsed(profileDocId, function (err, parsed) {
-                    if (err) {
-                        setGdocMsg(
-                            (err.message || String(err)) +
-                                ' If you just updated OAuth scopes, sign out and sign in again.',
-                            true
-                        );
-                        return;
-                    }
-                    if (!parsed.keyPlayers.length && !parsed.accountName) {
-                        setGdocMsg('No ACCOUNT PROFILE or ## Key Players section with bullets found in the Doc.', true);
-                        return;
-                    }
-                    var partialImport = !parsed.keyPlayers.length && !!parsed.accountName;
-                    if (partialImport) {
-                        setGdocMsg(
-                            'Found account name in the Doc but could not parse any Key Players rows, so your current list was left unchanged. ' +
-                                'Use a heading like "## Key Players" (### or emoji between ## and Key Players is fine), then bullets (-), numbers (1.), or "Name — Title" lines. Notes: can sit under a player line.',
-                            true
-                        );
-                    }
-                    if (parsed.keyPlayers.length && !confirm('Replace current Key Players with ' + parsed.keyPlayers.length + ' row(s) from the Doc?')) {
-                        setGdocMsg('Import cancelled.', false);
-                        return;
-                    }
-                    if (parsed.accountName) {
-                        var nameInput = document.getElementById('form-name');
-                        var cur = (nameInput.value || '').trim();
-                        if (!cur || cur.toLowerCase() === parsed.accountName.toLowerCase()) {
-                            nameInput.value = parsed.accountName;
-                        } else if (confirm('Set account name to "' + parsed.accountName + '" from the Doc?')) {
-                            nameInput.value = parsed.accountName;
+                        if (err) {
+                            setGdocMsg(
+                                (err.message || String(err)) +
+                                    ' If you just updated OAuth scopes, sign out and sign in again.',
+                                true
+                            );
+                            return;
                         }
-                    }
-                    if (parsed.keyPlayers.length) {
-                        fillPlayerList(playersEl, parsed.keyPlayers);
-                    }
-                    if (!partialImport) {
-                        setGdocMsg(
-                            'Imported ' +
-                                (parsed.keyPlayers.length || '0') +
-                                ' key player(s) from the mapped Doc. Click Save Profile to save and sync.',
-                            false
-                        );
-                    }
+                        if (!parsed.keyPlayers.length && !parsed.accountName) {
+                            setGdocMsg('No ACCOUNT PROFILE or ## Key Players section with bullets found in the Doc.', true);
+                            return;
+                        }
+                        var partialImport = !parsed.keyPlayers.length && !!parsed.accountName;
+                        if (partialImport) {
+                            if (applyParsedProfileToStoredAccount(accountId, parsed, false)) {
+                                setGdocMsg(
+                                    'Updated account name from the Doc; no key players were parsed. Fix headings in the Doc, use Reload mapping, then import again.',
+                                    true
+                                );
+                            }
+                            return;
+                        }
+                        if (parsed.keyPlayers.length && !confirm('Replace key players for "' + acctName + '" with ' + parsed.keyPlayers.length + ' row(s) from the Doc?')) {
+                            setGdocMsg('Import cancelled.', false);
+                            return;
+                        }
+                        if (applyParsedProfileToStoredAccount(accountId, parsed, true)) {
+                            var afterList = loadAccounts();
+                            var afterAcct = afterList.find(function (a) {
+                                return a.id === accountId;
+                            });
+                            var nm = afterAcct ? afterAcct.name || acctName : acctName;
+                            setGdocMsg(
+                                'Saved ' +
+                                    parsed.keyPlayers.length +
+                                    ' key player(s) for "' +
+                                    nm +
+                                    '" from the mapped Doc. The account card is updated; open it to edit details.',
+                                false
+                            );
+                        }
                     });
                 });
             });
@@ -767,6 +842,7 @@
                     openModal(null);
                 });
                 grid.appendChild(addTile);
+                updateGdocAccountSelect();
             }
 
             document.getElementById('btn-header-new').addEventListener('click', function () {
@@ -801,6 +877,7 @@
                 saveAccounts(list);
                 closeModal();
                 render();
+                updateGdocAccountSelect();
             });
 
             btnDelete.addEventListener('click', function () {
@@ -810,6 +887,7 @@
                 saveAccounts(next);
                 closeModal();
                 render();
+                updateGdocAccountSelect();
             });
 
             document.addEventListener('keydown', function (e) {
@@ -863,7 +941,7 @@
                 }
                 var gdocWrap = document.getElementById('gdoc-import-wrap');
                 if (gdocWrap) {
-                    gdocWrap.classList.toggle('hidden', !cfg);
+                    gdocWrap.classList.toggle('hidden', !cfg || !signed);
                 }
                 var gdocHint = document.getElementById('gdoc-signin-hint');
                 if (gdocHint) {
