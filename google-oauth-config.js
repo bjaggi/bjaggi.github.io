@@ -17,5 +17,8 @@
  *   window.GOOGLE_ACCOUNT_MAPPING_DOC_ID = 'your-document-id';
  * Example (your account-mapping index doc):
  *   window.GOOGLE_ACCOUNT_MAPPING_DOC_ID = '1TWqDyzBrye-0hHq39DyoGYFxRqBktmwxj1qLglWCe10';
+ *
+ * my-accounts.html also applies a small inline fallback if this file is missing or cached empty;
+ * keep this file in sync when you rotate the OAuth client.
  */
 window.GOOGLE_CLIENT_ID = '391245638390-2ll2p95i0a6a1e1qj005rsk9kgbtskfd.apps.googleusercontent.com';

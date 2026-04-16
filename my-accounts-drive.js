@@ -17,7 +17,9 @@
 
     function getClientId() {
         var id = global.GOOGLE_CLIENT_ID;
-        return typeof id === 'string' && id.indexOf('.apps.googleusercontent.com') !== -1 ? id.trim() : '';
+        if (typeof id !== 'string') return '';
+        id = id.replace(/^\uFEFF/, '').trim().replace(/^['"]+|['"]+$/g, '');
+        return id.indexOf('.apps.googleusercontent.com') !== -1 ? id : '';
     }
 
     function getStoredToken() {
@@ -189,10 +191,6 @@
     if (!DP) {
         throw new Error('Load google-doc-profile-parse.js before my-accounts-drive.js');
     }
-    var AM = global.AccountBrainAccountMapping;
-    if (!AM) {
-        throw new Error('Load google-account-mapping.js before my-accounts-drive.js');
-    }
     var extractPlainTextFromDoc = DP.extractPlainTextFromDoc;
     var extractProfileFromDocument = DP.extractProfileFromDocument;
 
@@ -299,6 +297,12 @@
                                 throw new Error(
                                     (data.error && (data.error.message || data.error.status)) ||
                                         'Could not read account-mapping doc.'
+                                );
+                            }
+                            var AM = global.AccountBrainAccountMapping;
+                            if (!AM || typeof AM.parseAccountMappingFromDocument !== 'function') {
+                                throw new Error(
+                                    'google-account-mapping.js did not load. Check Network tab for a 404 on that file; it must appear before my-accounts-drive.js in my-accounts.html.'
                                 );
                             }
                             var parsed = AM.parseAccountMappingFromDocument(data);

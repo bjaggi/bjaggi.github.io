@@ -68,8 +68,11 @@
                     Click an account to view or edit. Your profiles are saved in this browser.
                 </p>
                 <p id="drive-hint-local" class="hidden text-xs text-gray-600 mt-1 italic">Sign in with Google to sync the same backup across browsers.</p>
+                <p id="drive-script-error" class="hidden text-xs text-red-700 mt-1 max-w-xl">
+                    Google Drive code did not load (<code class="text-[11px]">AccountBrainDrive</code> missing). Open DevTools → Network and confirm <code class="text-[11px]">my-accounts-drive.js</code>, <code class="text-[11px]">google-doc-profile-parse.js</code>, and <code class="text-[11px]">google-account-mapping.js</code> return 200 from the same folder as this page (not blocked).
+                </p>
                 <p id="drive-oauth-missing" class="hidden text-xs text-amber-800 mt-1 max-w-xl">
-                    Google sign-in is disabled until you set <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">window.GOOGLE_CLIENT_ID</code> in <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">google-oauth-config.js</code> (same folder as this page) and reload. Use a Web application OAuth client from Google Cloud Console with this site’s origin as an authorized JavaScript origin.
+                    Google sign-in is disabled because <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">window.GOOGLE_CLIENT_ID</code> is missing or invalid. Set it in <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">google-oauth-config.js</code> (must end in <code class="text-[11px]">.apps.googleusercontent.com</code>), hard-refresh, and add this site’s URL under Authorized JavaScript origins in Google Cloud Console → APIs &amp; Services → Credentials → your OAuth 2.0 Client ID.
                 </p>
                 <p id="drive-status" class="text-xs text-primary mt-2 min-h-[1rem]" role="status"></p>
             </div>
@@ -201,11 +204,19 @@
         </div>
     </div>
 
-    <script src="google-oauth-config.js"></script>
+    <script src="google-oauth-config.js?v=2"></script>
+    <script>
+        (function () {
+            var id = window.GOOGLE_CLIENT_ID;
+            if (typeof id !== 'string' || id.indexOf('.apps.googleusercontent.com') === -1) {
+                window.GOOGLE_CLIENT_ID = '391245638390-2ll2p95i0a6a1e1qj005rsk9kgbtskfd.apps.googleusercontent.com';
+            }
+        })();
+    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="google-doc-profile-parse.js"></script>
-    <script src="google-account-mapping.js"></script>
-    <script src="my-accounts-drive.js"></script>
+    <script src="google-doc-profile-parse.js?v=2"></script>
+    <script src="google-account-mapping.js?v=2"></script>
+    <script src="my-accounts-drive.js?v=2"></script>
     <script>
         (function () {
             var STORAGE_V3 = 'my-accounts-ai-assistant-v3';
@@ -815,9 +826,14 @@
                 var syncRow = document.getElementById('drive-sync-row');
                 var hint = document.getElementById('drive-hint-local');
                 var oauthMissing = document.getElementById('drive-oauth-missing');
+                var scriptErr = document.getElementById('drive-script-error');
                 var intro = document.getElementById('accounts-intro');
+                var driveOk = !!window.AccountBrainDrive;
                 if (stack) {
                     stack.classList.remove('hidden');
+                }
+                if (scriptErr) {
+                    scriptErr.classList.toggle('hidden', driveOk);
                 }
                 if (signIn) {
                     signIn.classList.toggle('hidden', !!signed);
@@ -838,7 +854,7 @@
                     hint.classList.toggle('hidden', !cfg || signed);
                 }
                 if (oauthMissing) {
-                    oauthMissing.classList.toggle('hidden', cfg);
+                    oauthMissing.classList.toggle('hidden', !driveOk || cfg);
                 }
                 if (intro) {
                     intro.textContent = cfg
@@ -856,8 +872,18 @@
             }
 
             document.getElementById('btn-google-signin').addEventListener('click', function () {
-                if (!window.AccountBrainDrive || !window.AccountBrainDrive.isConfigured()) {
-                    setDriveStatus('Configure google-oauth-config.js with your OAuth Client ID first.', true);
+                if (!window.AccountBrainDrive) {
+                    setDriveStatus(
+                        'Google Drive script did not load. Check the red notice above and the browser Network tab for failed JS files.',
+                        true
+                    );
+                    return;
+                }
+                if (!window.AccountBrainDrive.isConfigured()) {
+                    setDriveStatus(
+                        'OAuth Client ID is missing or invalid. Set window.GOOGLE_CLIENT_ID in google-oauth-config.js (must contain .apps.googleusercontent.com) and reload.',
+                        true
+                    );
                     return;
                 }
                 setDriveStatus('Opening Google sign-in…', false);
