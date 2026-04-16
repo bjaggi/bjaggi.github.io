@@ -137,7 +137,7 @@
                             <p id="gdoc-signin-hint" class="hidden text-amber-800 text-xs font-medium mb-2">Sign in with Google (header) before importing from a Doc.</p>
                             <p class="text-gray-700 text-xs mb-2">
                                 <strong>Google Doc vs Pull from Drive:</strong> Pull only restores this app’s <em>backup JSON</em> in Drive, not a Google Doc.
-                                Import reads your Doc, including profiles inside a <strong>fenced code block</strong> (triple-backtick “Full Content” section in Account Brain). Paste the Doc URL or ID. Also supports <code class="text-[11px] bg-white px-1 rounded border"># [Account Profile] Name</code>, <code class="text-[11px] bg-white px-1 rounded border">ACCOUNT PROFILE: Name</code>, <code class="text-[11px] bg-white px-1 rounded border">## Key Players</code>, <code class="text-[11px] bg-white px-1 rounded border">- Name — Title</code>, and <code class="text-[11px] bg-white px-1 rounded border">Notes:</code> under a bullet.
+                                Import reads your Doc, including profiles inside a <strong>fenced code block</strong> (triple-backtick “Full Content” section in Account Brain). Paste the Doc URL or ID. Also supports <code class="text-[11px] bg-white px-1 rounded border"># [Account Profile] Name</code>, <code class="text-[11px] bg-white px-1 rounded border">ACCOUNT PROFILE: Name</code>, <code class="text-[11px] bg-white px-1 rounded border">## Key Players</code> (or <code class="text-[11px] bg-white px-1 rounded border">### …</code> / emoji after the hashes), <code class="text-[11px] bg-white px-1 rounded border">- Name — Title</code> or <code class="text-[11px] bg-white px-1 rounded border">1. Name — Title</code>, and <code class="text-[11px] bg-white px-1 rounded border">Notes:</code> under a bullet.
                             </p>
                             <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                                 <input id="gdoc-import-url" type="text" placeholder="https://docs.google.com/document/d/…/edit"
@@ -622,6 +622,14 @@
                         setGdocMsg('No ACCOUNT PROFILE or ## Key Players section with bullets found in the Doc.', true);
                         return;
                     }
+                    var partialImport = !parsed.keyPlayers.length && !!parsed.accountName;
+                    if (partialImport) {
+                        setGdocMsg(
+                            'Found account name in the Doc but could not parse any Key Players rows, so your current list was left unchanged. ' +
+                                'Use a heading like "## Key Players" (### or emoji between ## and Key Players is fine), then bullets (-), numbers (1.), or "Name — Title" lines. Notes: can sit under a player line.',
+                            true
+                        );
+                    }
                     if (parsed.keyPlayers.length && !confirm('Replace current Key Players with ' + parsed.keyPlayers.length + ' row(s) from the Doc?')) {
                         setGdocMsg('Import cancelled.', false);
                         return;
@@ -638,12 +646,14 @@
                     if (parsed.keyPlayers.length) {
                         fillPlayerList(playersEl, parsed.keyPlayers);
                     }
-                    setGdocMsg(
-                        'Imported ' +
-                            (parsed.keyPlayers.length || '0') +
-                            ' key player(s). Click Save Profile to save and sync.',
-                        false
-                    );
+                    if (!partialImport) {
+                        setGdocMsg(
+                            'Imported ' +
+                                (parsed.keyPlayers.length || '0') +
+                                ' key player(s). Click Save Profile to save and sync.',
+                            false
+                        );
+                    }
                 });
             });
 
