@@ -23,11 +23,18 @@
             if (!els[i].textRun) continue;
             var tr = els[i].textRun;
             var url = tr.textStyle && tr.textStyle.link && tr.textStyle.link.url;
+            var content = tr.content || '';
             if (url) {
-                console.log('[AccountMapping] flattenPara elem[' + i + '] LINK url=' + JSON.stringify(url).slice(0, 100) + ' text=' + JSON.stringify(tr.content || '').slice(0, 60));
-                parts.push(String(url).trim());
-            } else if (tr.content) {
-                parts.push(tr.content);
+                // If content already embeds the doc URL (e.g. "Nvidia: https://docs.google.com/…"),
+                // keep it so the label isn't lost. Only substitute when content is
+                // pure display text like "Click here" or "Open profile".
+                if (/docs\.google\.com\/document\/d\//.test(content)) {
+                    parts.push(content);
+                } else {
+                    parts.push(String(url).trim());
+                }
+            } else if (content) {
+                parts.push(content);
             }
         }
         return parts.join('').replace(/\u200b/g, '').trim();
