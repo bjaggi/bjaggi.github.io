@@ -265,8 +265,9 @@
         })();
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="./google-doc-profile-parse.js?v=8"></script>
-    <script src="./my-accounts-drive.js?v=8"></script>
+    <script src="./google-doc-profile-parse.js?v=9"></script>
+    <script src="./google-account-mapping.js?v=9"></script>
+    <script src="./my-accounts-drive.js?v=9"></script>
     <script>
         (function () {
             var STORAGE_V3 = 'my-accounts-ai-assistant-v3';
@@ -365,7 +366,7 @@
                 return [
                     {
                         id: 'seed-1',
-                        name: 'Cisco',
+                        name: 'ACME Corp',
                         updatedAt: '2026-04-14',
                         keyPlayers: [
                             { name: 'Alex Chen', title: 'Champion', other: '' },
@@ -378,7 +379,7 @@
                     },
                     {
                         id: 'seed-2',
-                        name: 'Nvidia',
+                        name: 'My Fav Bank',
                         updatedAt: '2026-04-14',
                         keyPlayers: [
                             { name: 'Sam Okonkwo', title: 'Engineering', other: '' },
@@ -901,7 +902,29 @@
                         return;
                     }
                     updateDriveBar();
-                    setDriveStatus('Signed in. Use Pull to read Google Docs, Push to write back.', false);
+                    setDriveStatus('Signed in — pulling accounts from Google Docs…', false);
+                    window.AccountBrainDrive.pullFromDocs(function (e2, profiles) {
+                        if (e2) {
+                            setDriveStatus('Signed in. Auto-pull failed: ' + e2.message, true);
+                            return;
+                        }
+                        if (!profiles || !profiles.length) {
+                            setDriveStatus('Signed in. No account profiles found in Drive.', false);
+                            return;
+                        }
+                        var merged = profiles.map(function (p) {
+                            return toV3({
+                                name: p.accountName,
+                                keyPlayers: p.keyPlayers,
+                                topInitiatives: p.topInitiatives || [],
+                                nextSteps: p.nextSteps || [],
+                                additionalNotes: p.additionalNotes || []
+                            });
+                        });
+                        localStorage.setItem(STORAGE_V3, JSON.stringify(merged));
+                        setDriveStatus('Signed in — loaded ' + profiles.length + ' account(s) from Google Docs.', false);
+                        render();
+                    });
                 });
             });
 
