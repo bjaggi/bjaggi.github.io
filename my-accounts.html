@@ -942,8 +942,10 @@
 
             document.getElementById('btn-google-signout').addEventListener('click', function () {
                 window.AccountBrainDrive.signOut(function () {
+                    localStorage.removeItem(STORAGE_V3);
                     setDriveStatus('Signed out of Google.', false);
                     updateDriveBar();
+                    render();
                 });
             });
 
