@@ -114,20 +114,26 @@
         var trimmed = stripMarkdownNoise(String(line || '').trim());
         if (!trimmed) return null;
         var parts = trimmed.split(/\s*[—–]\s*/);
-        if (parts.length >= 2) {
+        if (parts.length >= 3) {
             return {
                 name: parts[0].trim(),
-                title: parts.slice(1).join(' — ').trim(),
-                other: ''
+                title: parts[1].trim(),
+                other: parts.slice(2).join(' — ').trim()
             };
         }
+        if (parts.length === 2) {
+            return { name: parts[0].trim(), title: parts[1].trim(), other: '' };
+        }
         parts = trimmed.split(/\s-\s/);
-        if (parts.length >= 2) {
+        if (parts.length >= 3) {
             return {
                 name: parts[0].trim(),
-                title: parts.slice(1).join(' - ').trim(),
-                other: ''
+                title: parts[1].trim(),
+                other: parts.slice(2).join(' - ').trim()
             };
+        }
+        if (parts.length === 2) {
+            return { name: parts[0].trim(), title: parts[1].trim(), other: '' };
         }
         return { name: trimmed, title: '', other: '' };
     }
@@ -229,21 +235,21 @@
             .replace(/\r/g, '\n')
             .replace(/\u2028/g, '\n')
             .replace(/\uFEFF/g, '');
-        var fencedSource = extractBestFencedMarkdown(plainFull);
-        var fromFence = parseProfilePlainTextFallback(fencedSource);
-        if (fromFence.keyPlayers.length > 0) {
-            if (!fromFence.accountName) {
-                var fromOuter = parseProfilePlainTextFallback(plainFull);
-                if (fromOuter.accountName) {
-                    fromFence.accountName = fromOuter.accountName;
-                }
-            }
-            return fromFence;
-        }
 
         var accountName = '';
         var keyPlayers = [];
-        var inKeyPlayers = false;
+        var topInitiatives = [];
+        var nextSteps = [];
+        var notesEntries = [];
+        var section = 'none';
+
+        function detectSection(text) {
+            if (isKeyPlayersHeading(text)) return 'keyPlayers';
+            if (/initiatives|concerns/i.test(text) && /^#{1,6}\s+|^\u{1F3AF}/u.test(text)) return 'initiatives';
+            if (/next\s*steps|action\s*items/i.test(text) && /^#{1,6}\s+|^\u2705/u.test(text)) return 'steps';
+            if (/(?:additional\s*)?notes/i.test(text) && /^#{1,6}\s+|^\u{1F4DD}/u.test(text)) return 'notes';
+            return null;
+        }
 
         function processParagraph(para) {
             var raw = paragraphPlainText(para);
@@ -259,85 +265,68 @@
                 var bracketTop = scan.match(/^#\s*\[\s*Account Profile\s*\]\s+(.+)$/i);
                 if (bracketTop) {
                     accountName = bracketTop[1].trim();
-                    inKeyPlayers = false;
+                    section = 'none';
                     continue;
                 }
                 var prof = scan.match(/^ACCOUNT PROFILE\s*:\s*(.+)$/i);
                 if (prof) {
                     accountName = prof[1].trim();
-                    inKeyPlayers = false;
+                    section = 'none';
                     continue;
                 }
 
-                var isKeyPlayersHeader =
-                    isKeyPlayersHeading(trimmed) ||
-                    (/^HEADING_/i.test(style) && /^Key Players/i.test(scan));
-
-                if (isKeyPlayersHeader) {
-                    inKeyPlayers = true;
+                var detected = detectSection(trimmed) ||
+                    ((/^HEADING_/i.test(style) && /^Key Players/i.test(scan)) ? 'keyPlayers' : null);
+                if (detected) {
+                    section = detected;
                     continue;
                 }
 
-                if (inKeyPlayers) {
-                    if (/^#{1,6}\s+/.test(scan) && !isKeyPlayersHeading(trimmed)) {
-                        inKeyPlayers = false;
-                        continue;
-                    }
-                    if (/^HEADING_/i.test(style) && trimmed.length > 0 && !/^Key Players/i.test(scan)) {
-                        inKeyPlayers = false;
-                        continue;
-                    }
-                }
-
-                if (!inKeyPlayers) {
+                if (/^#{1,6}\s+/.test(scan) || (/^HEADING_/i.test(style) && trimmed.length > 0)) {
+                    section = 'none';
                     continue;
                 }
 
-                var subNotes = line.match(/^\s*Notes:\s*(.+)$/i);
-                if (subNotes && keyPlayers.length > 0) {
-                    keyPlayers[keyPlayers.length - 1].other = subNotes[1].trim();
-                    continue;
-                }
+                if (section === 'none') continue;
 
-                var notesM = trimmed.match(/^Notes:\s*(.+)$/i);
-                if (notesM && keyPlayers.length > 0) {
-                    keyPlayers[keyPlayers.length - 1].other = notesM[1].trim();
-                    continue;
-                }
-
-                var numbered = trimmed.match(/^\d+\.\s+(.+)$/);
-                if (numbered) {
-                    var pln = splitNameTitle(numbered[1].trim());
-                    if (pln && pln.name) {
-                        keyPlayers.push({ name: pln.name, title: pln.title, other: pln.other || '' });
-                    }
-                    continue;
-                }
-
-                var body = trimmed;
+                var itemText = trimmed;
                 if (bulletThisLine) {
-                    body = trimmed.replace(/^[\s\u2022\u25CF\-\*]+/, '').trim();
+                    itemText = trimmed.replace(/^[\s\u2022\u25CF\-\*]+/, '').trim();
+                } else if (/^[\-\*\u2022\u25CF]\s+/.test(trimmed)) {
+                    itemText = trimmed.replace(/^[\-\*\u2022\u25CF]\s+/, '').trim();
+                } else if (/^\d+\.\s+/.test(trimmed)) {
+                    itemText = trimmed.replace(/^\d+\.\s+/, '').trim();
                 }
 
-                if (!body) {
-                    continue;
-                }
-
-                if (bulletThisLine || /^[\-\*\u2022\u25CF]\s+/.test(trimmed)) {
-                    if (/^[\-\*\u2022\u25CF]\s+/.test(trimmed)) {
-                        body = trimmed.replace(/^[\-\*\u2022\u25CF]\s+/, '').trim();
+                if (section === 'keyPlayers') {
+                    if (!itemText) continue;
+                    var subNotes = line.match(/^\s*Notes:\s*(.+)$/i);
+                    if (subNotes && keyPlayers.length > 0) {
+                        keyPlayers[keyPlayers.length - 1].other = subNotes[1].trim();
+                        continue;
                     }
-                    var pl = splitNameTitle(body);
+                    var notesM = trimmed.match(/^Notes:\s*(.+)$/i);
+                    if (notesM && keyPlayers.length > 0) {
+                        keyPlayers[keyPlayers.length - 1].other = notesM[1].trim();
+                        continue;
+                    }
+                    if (/^\(none\)$/i.test(itemText)) continue;
+                    var pl = splitNameTitle(itemText);
                     if (pl && pl.name) {
                         keyPlayers.push({ name: pl.name, title: pl.title, other: pl.other || '' });
                     }
-                    continue;
-                }
-
-                if (/[—–\-]/.test(trimmed) && !/^notes:/i.test(trimmed)) {
-                    var pl2 = splitNameTitle(trimmed);
-                    if (pl2 && pl2.name) {
-                        keyPlayers.push({ name: pl2.name, title: pl2.title, other: pl2.other || '' });
+                } else if (section === 'initiatives') {
+                    if (itemText) topInitiatives.push(itemText);
+                } else if (section === 'steps') {
+                    if (itemText) nextSteps.push(itemText);
+                } else if (section === 'notes') {
+                    if (/^\|[-\s|:]+\|$/.test(trimmed)) continue;
+                    if (/^\|\s*Date\s*\|/i.test(trimmed)) continue;
+                    var tableRow = trimmed.match(/^\|\s*(.+?)\s*\|\s*(.+?)\s*\|$/);
+                    if (tableRow) {
+                        notesEntries.push({ date: tableRow[1].trim(), text: tableRow[2].trim() });
+                    } else if (trimmed) {
+                        notesEntries.push({ date: '', text: trimmed });
                     }
                 }
             }
@@ -372,8 +361,15 @@
         for (var rj = 0; rj < roots.length; rj++) {
             walk(roots[rj]);
         }
-        var out = { accountName: accountName, keyPlayers: keyPlayers };
+        var out = {
+            accountName: accountName,
+            keyPlayers: keyPlayers,
+            topInitiatives: topInitiatives,
+            nextSteps: nextSteps,
+            additionalNotes: notesEntries
+        };
         if (out.keyPlayers.length === 0) {
+            var fencedSource = extractBestFencedMarkdown(plainFull);
             var fb = parseProfilePlainTextFallback(fencedSource);
             if (fb.keyPlayers.length) {
                 out.keyPlayers = fb.keyPlayers;
@@ -407,6 +403,58 @@
         };
     }
 
+    /**
+     * Convert a v3 account object to the plain-text format used in Google Docs.
+     * Round-trips with extractProfileFromDocument / parseProfilePlainTextFallback.
+     */
+    function serializeAccountToProfileText(acct) {
+        var lines = [];
+        lines.push('ACCOUNT PROFILE: ' + (acct.name || 'Untitled'));
+        lines.push('');
+        lines.push('## \u{1F465} Key Players & Roles');
+        var kp = acct.keyPlayers || [];
+        for (var i = 0; i < kp.length; i++) {
+            var parts = [kp[i].name || ''];
+            if (kp[i].title) parts.push(kp[i].title);
+            if (kp[i].other) parts.push(kp[i].other);
+            lines.push('- ' + parts.join(' \u2014 '));
+        }
+        if (!kp.length) lines.push('(none)');
+        lines.push('');
+        var inits = acct.topInitiatives || [];
+        if (inits.length) {
+            lines.push('## \u{1F3AF} Top 3 Initiatives / Concerns');
+            for (var j = 0; j < inits.length; j++) {
+                if (inits[j]) lines.push('- ' + inits[j]);
+            }
+            lines.push('');
+        }
+        var steps = acct.nextSteps || [];
+        if (steps.length) {
+            lines.push('## \u2705 Next Steps / Action Items');
+            for (var s = 0; s < steps.length; s++) {
+                if (steps[s]) lines.push('- ' + steps[s]);
+            }
+            lines.push('');
+        }
+        var notes = acct.additionalNotes || [];
+        if (typeof notes === 'string') {
+            notes = notes.trim() ? [{ date: '', text: notes.trim() }] : [];
+        }
+        if (notes.length) {
+            lines.push('## \u{1F4DD} Notes');
+            lines.push('| Date | Note |');
+            lines.push('|------|------|');
+            for (var ni = 0; ni < notes.length; ni++) {
+                var d = (notes[ni].date || '').replace(/\|/g, '/');
+                var t = (notes[ni].text || '').replace(/\|/g, '/').replace(/\n/g, ' ');
+                lines.push('| ' + d + ' | ' + t + ' |');
+            }
+            lines.push('');
+        }
+        return lines.join('\n');
+    }
+
     var api = {
         collectContentRoots: collectContentRoots,
         extractPlainTextFromDoc: extractPlainTextFromDoc,
@@ -415,6 +463,7 @@
         extractBestFencedMarkdown: extractBestFencedMarkdown,
         parseProfilePlainTextFallback: parseProfilePlainTextFallback,
         extractProfileFromDocument: extractProfileFromDocument,
+        serializeAccountToProfileText: serializeAccountToProfileText,
         buildMockDocFromPlainText: buildMockDocFromPlainText
     };
 

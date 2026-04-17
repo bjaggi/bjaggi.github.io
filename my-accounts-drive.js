@@ -1,19 +1,22 @@
 /**
- * Google Sign-In + Drive appDataFolder sync for Account Brain profiles.
+ * Google Sign-In + bidirectional Google Docs sync for Account Brain profiles.
+ *
+ * Pull: find all "[Account Profile] *" docs in Drive → parse → update localStorage
+ * Push: for each local account, find/create "[Account Profile] Name" doc → write profile text
+ *
  * Depends on: window.GOOGLE_CLIENT_ID, https://accounts.google.com/gsi/client,
- * google-doc-profile-parse.js, google-account-mapping.js (load before this file).
+ * google-doc-profile-parse.js (load before this file).
  */
 (function (global) {
     var TOKEN_KEY = 'ab_google_access_token';
     var EXP_KEY = 'ab_google_expires_at_ms';
     var SCOPE_TAG_KEY = 'ab_google_scope_tag';
-    var SCOPE_TAG_VALUE = 'drive.appdata+documents.readonly+metadata-v5';
-    var FILE_NAME = 'account-brain-profiles.json';
-    var MAPPING_DOC_NAMES = ['account-mapping.doc', 'account-mapping'];
+    var SCOPE_TAG_VALUE = 'drive+documents-v7';
+    var PROFILE_DOC_PREFIX = '[Account Profile] ';
     var SCOPE =
-        'https://www.googleapis.com/auth/drive.appdata ' +
-        'https://www.googleapis.com/auth/drive.metadata.readonly ' +
-        'https://www.googleapis.com/auth/documents.readonly';
+        'https://www.googleapis.com/auth/drive.file ' +
+        'https://www.googleapis.com/auth/drive ' +
+        'https://www.googleapis.com/auth/documents';
 
     function getClientId() {
         var id = global.GOOGLE_CLIENT_ID;
@@ -112,266 +115,229 @@
         });
     }
 
-    function findFileId(token, cb) {
-        var q = encodeURIComponent("name='" + FILE_NAME + "' and trashed=false");
-        var url = 'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=' + q + '&fields=files(id,name)';
+    // ─── Drive helpers ───
+
+    function driveSearch(token, query, cb) {
+        var url = 'https://www.googleapis.com/drive/v3/files?q=' +
+            encodeURIComponent(query) +
+            '&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc&pageSize=100';
         fetch(url, { headers: { Authorization: 'Bearer ' + token } })
             .then(function (r) {
                 return r.json().then(function (data) {
-                    if (!r.ok) {
-                        var msg = (data.error && data.error.message) || 'Drive list failed (' + r.status + ')';
-                        console.error('[AccountBrainDrive] findFileId error:', msg, data);
-                        throw new Error(msg);
-                    }
-                    var files = data.files || [];
-                    return files.length ? files[0].id : null;
+                    if (!r.ok) throw new Error((data.error && data.error.message) || 'Drive search failed');
+                    return data.files || [];
                 });
             })
-            .then(function (id) { cb(null, id); })
-            .catch(function (e) {
-                console.error('[AccountBrainDrive] findFileId catch:', e);
-                cb(e);
-            });
-    }
-
-    function createMultipartBody(metadata, content, boundary) {
-        var delimiter = '\r\n--' + boundary + '\r\n';
-        var close = '\r\n--' + boundary + '--';
-        return (
-            delimiter +
-            'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-            JSON.stringify(metadata) +
-            delimiter +
-            'Content-Type: application/json\r\n\r\n' +
-            content +
-            close
-        );
-    }
-
-    function createFile(token, jsonBody, cb) {
-        var boundary = 'ab_brain_' + Math.random().toString(36).slice(2);
-        var body = createMultipartBody({ name: FILE_NAME, parents: ['appDataFolder'] }, jsonBody, boundary);
-        fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST',
-            headers: {
-                Authorization: 'Bearer ' + token,
-                'Content-Type': 'multipart/related; boundary="' + boundary + '"'
-            },
-            body: body
-        })
-            .then(function (r) {
-                return r.json().then(function (data) {
-                    if (!r.ok) {
-                        var msg = (data.error && data.error.message) || 'Drive create failed (' + r.status + ')';
-                        console.error('[AccountBrainDrive] createFile error:', msg, data);
-                        throw new Error(msg);
-                    }
-                    console.log('[AccountBrainDrive] created backup file:', data.id);
-                    cb(null, data.id);
-                });
-            })
+            .then(function (files) { cb(null, files); })
             .catch(cb);
     }
 
-    function patchFile(token, fileId, jsonBody, cb) {
-        fetch('https://www.googleapis.com/upload/drive/v3/files/' + encodeURIComponent(fileId) + '?uploadType=media', {
-            method: 'PATCH',
-            headers: {
-                Authorization: 'Bearer ' + token,
-                'Content-Type': 'application/json'
-            },
-            body: jsonBody
-        })
-            .then(function (r) {
-                if (!r.ok) {
-                    return r.text().then(function (t) {
-                        console.error('[AccountBrainDrive] patchFile error:', r.status, t);
-                        throw new Error(t || ('Drive update failed (' + r.status + ')'));
-                    });
-                }
-                return r.json();
-            })
-            .then(function () {
-                console.log('[AccountBrainDrive] backup updated:', fileId);
-                cb(null);
-            })
-            .catch(cb);
-    }
-
-    function parseAccountsPayload(text) {
-        var j = JSON.parse(text);
-        if (Array.isArray(j)) return j;
-        if (j && Array.isArray(j.accounts)) return j.accounts;
-        throw new Error('Unrecognized backup format');
-    }
+    // ─── Docs API helpers ───
 
     var DP = global.AccountBrainDocParse;
     if (!DP) {
         throw new Error('Load google-doc-profile-parse.js before my-accounts-drive.js');
     }
-    var extractPlainTextFromDoc = DP.extractPlainTextFromDoc;
-    var extractProfileFromDocument = DP.extractProfileFromDocument;
 
-    var accountMappingCache = null;
-
-    function clearAccountMappingCache() {
-        accountMappingCache = null;
-    }
-
-    function resolveMappingDocId(token, cb) {
-        var override = global.GOOGLE_ACCOUNT_MAPPING_DOC_ID;
-        if (typeof override === 'string') {
-            var tid = override.trim();
-            if (/^[a-zA-Z0-9_-]{12,}$/.test(tid)) {
-                cb(null, tid);
-                return;
-            }
-        }
-        function listMappingCandidates(encodedQuery) {
-            return fetch(
-                'https://www.googleapis.com/drive/v3/files?q=' +
-                    encodedQuery +
-                    '&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc&pageSize=5',
-                { headers: { Authorization: 'Bearer ' + token } }
-            ).then(function (r) {
+    function readDocParsed(token, docId, cb) {
+        fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(docId) + '?includeTabsContent=true', {
+            headers: { Authorization: 'Bearer ' + token }
+        })
+            .then(function (r) {
                 return r.json().then(function (data) {
-                    if (!r.ok) throw new Error(data.error ? data.error.message : 'Drive list failed');
-                    return data.files || [];
+                    if (!r.ok) throw new Error((data.error && data.error.message) || 'Could not read doc');
+                    return DP.extractProfileFromDocument(data);
                 });
-            });
-        }
-
-        function findMappingDocForName(rawName, done) {
-            var esc = rawName.replace(/'/g, "\\'");
-            var base =
-                "name='" +
-                esc +
-                "' and trashed=false and mimeType='application/vnd.google-apps.document'";
-            var qRoot = encodeURIComponent(base + " and 'root' in parents");
-            listMappingCandidates(qRoot)
-                .then(function (rootFiles) {
-                    if (rootFiles.length) {
-                        done(null, rootFiles[0].id);
-                        return;
-                    }
-                    var qShared = encodeURIComponent(base + ' and sharedWithMe=true');
-                    return listMappingCandidates(qShared);
-                })
-                .then(function (sharedFiles) {
-                    if (!sharedFiles) return;
-                    if (sharedFiles.length) {
-                        done(null, sharedFiles[0].id);
-                    } else {
-                        done(null, null);
-                    }
-                })
-                .catch(done);
-        }
-
-        var nameIdx = 0;
-        function tryNextName() {
-            if (nameIdx >= MAPPING_DOC_NAMES.length) {
-                cb(null, null);
-                return;
-            }
-            var rawName = MAPPING_DOC_NAMES[nameIdx++];
-            findMappingDocForName(rawName, function (err, id) {
-                if (err) {
-                    cb(err);
-                    return;
-                }
-                if (id) {
-                    cb(null, id);
-                } else {
-                    tryNextName();
-                }
-            });
-        }
-        tryNextName();
+            })
+            .then(function (parsed) { cb(null, parsed); })
+            .catch(cb);
     }
 
-    function fetchAccountMappingData(cb) {
-        if (accountMappingCache && Date.now() - accountMappingCache.at < 5 * 60 * 1000) {
-            cb(null, accountMappingCache.data);
-            return;
-        }
+    function getDocEndIndex(token, docId, cb) {
+        fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(docId) + '?includeTabsContent=true', {
+            headers: { Authorization: 'Bearer ' + token }
+        })
+            .then(function (r) {
+                return r.json().then(function (data) {
+                    if (!r.ok) throw new Error((data.error && data.error.message) || 'Could not read doc');
+                    var roots = DP.collectContentRoots(data);
+                    var maxEnd = 1;
+                    for (var ri = 0; ri < roots.length; ri++) {
+                        var content = roots[ri];
+                        for (var ci = 0; ci < content.length; ci++) {
+                            var ei = content[ci].endIndex;
+                            if (typeof ei === 'number' && ei > maxEnd) maxEnd = ei;
+                        }
+                    }
+                    cb(null, maxEnd);
+                });
+            })
+            .catch(cb);
+    }
+
+    function writeDocContent(token, docId, text, cb) {
+        getDocEndIndex(token, docId, function (err, endIdx) {
+            if (err) return cb(err);
+            var requests = [];
+            if (endIdx > 2) {
+                requests.push({
+                    deleteContentRange: {
+                        range: { startIndex: 1, endIndex: endIdx - 1 }
+                    }
+                });
+            }
+            requests.push({
+                insertText: {
+                    location: { index: 1 },
+                    text: text
+                }
+            });
+            fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(docId) + ':batchUpdate', {
+                method: 'POST',
+                headers: {
+                    Authorization: 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ requests: requests })
+            })
+                .then(function (r) {
+                    return r.json().then(function (data) {
+                        if (!r.ok) throw new Error((data.error && data.error.message) || 'Doc write failed');
+                        cb(null);
+                    });
+                })
+                .catch(cb);
+        });
+    }
+
+    function createProfileDoc(token, accountName, text, cb) {
+        var docTitle = PROFILE_DOC_PREFIX + accountName;
+        fetch('https://docs.googleapis.com/v1/documents', {
+            method: 'POST',
+            headers: {
+                Authorization: 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ title: docTitle })
+        })
+            .then(function (r) {
+                return r.json().then(function (data) {
+                    if (!r.ok) throw new Error((data.error && data.error.message) || 'Could not create doc');
+                    var newDocId = data.documentId;
+                    console.log('[AccountBrainDrive] created doc:', docTitle, newDocId);
+                    writeDocContent(token, newDocId, text, function (e2) {
+                        cb(e2, newDocId);
+                    });
+                });
+            })
+            .catch(cb);
+    }
+
+    // ─── Pull: Google Docs → localStorage ───
+
+    function pullFromDocs(cb) {
         getAccessToken(function (err, token) {
             if (err) return cb(err);
-            resolveMappingDocId(token, function (e2, mapDocId) {
+            var query = "name contains '" + PROFILE_DOC_PREFIX.replace(/'/g, "\\'") + "' and trashed=false and mimeType='application/vnd.google-apps.document'";
+            driveSearch(token, query, function (e2, files) {
                 if (e2) return cb(e2);
-                if (!mapDocId) {
-                    return cb(
-                        new Error(
-                            'Could not find account-mapping.doc in My Drive root or in Shared with me. Use that exact name, or set window.GOOGLE_ACCOUNT_MAPPING_DOC_ID to its document ID.'
-                        )
-                    );
-                }
-                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(mapDocId) + '?includeTabsContent=true', {
-                    headers: { Authorization: 'Bearer ' + token }
-                })
-                    .then(function (r) {
-                        return r.json().then(function (data) {
-                            if (!r.ok) {
-                                throw new Error(
-                                    (data.error && (data.error.message || data.error.status)) ||
-                                        'Could not read account-mapping doc.'
-                                );
-                            }
-                            var AM = global.AccountBrainAccountMapping;
-                            if (!AM || typeof AM.parseAccountMappingFromDocument !== 'function') {
-                                throw new Error(
-                                    'google-account-mapping.js did not load. Check Network tab for a 404 on that file; it must appear before my-accounts-drive.js in my-accounts.html.'
-                                );
-                            }
-                            var bodyLen = (data.body && data.body.content) ? data.body.content.length : 0;
-                            var tabsLen = Array.isArray(data.tabs) ? data.tabs.length : 0;
-                            var tabContentLen = 0;
-                            if (tabsLen > 0) {
-                                try {
-                                    var tc = data.tabs[0].documentTab.body.content;
-                                    tabContentLen = Array.isArray(tc) ? tc.length : -1;
-                                } catch (e) { tabContentLen = -2; }
-                            }
-                            console.log('[AccountBrainDrive] mapping doc response — body.content:', bodyLen, '| tabs:', tabsLen, '| tab[0].content:', tabContentLen);
-                            console.log('[AccountBrainDrive] FULL mapping doc JSON:', JSON.stringify(data));
-                            global._lastMappingDocRaw = data;
-                            var parsed = AM.parseAccountMappingFromDocument(data);
-                            console.log('[AccountBrainDrive] parsed mapping accounts:', Object.keys(parsed.byAccount));
-                            var diag = 'body.content:' + bodyLen + ' tabs:' + tabsLen + ' tab0.content:' + tabContentLen;
-                            var payload = { mappingDocId: mapDocId, byAccount: parsed.byAccount, _diag: diag };
-                            accountMappingCache = { data: payload, at: Date.now() };
-                            cb(null, payload);
-                        });
-                    })
-                    .catch(cb);
+                if (!files.length) return cb(null, []);
+                var results = [];
+                var pending = files.length;
+                var firstErr = null;
+                files.forEach(function (file) {
+                    readDocParsed(token, file.id, function (e3, parsed) {
+                        if (e3) {
+                            console.error('[AccountBrainDrive] pull read error for', file.name, e3);
+                            if (!firstErr) firstErr = e3;
+                        } else {
+                            var accountName = parsed.accountName || file.name.replace(PROFILE_DOC_PREFIX, '').trim();
+                            results.push({
+                                docId: file.id,
+                                docName: file.name,
+                                accountName: accountName,
+                                keyPlayers: parsed.keyPlayers || [],
+                                topInitiatives: parsed.topInitiatives || [],
+                                nextSteps: parsed.nextSteps || [],
+                                additionalNotes: parsed.additionalNotes || ''
+                            });
+                        }
+                        pending--;
+                        if (pending === 0) {
+                            console.log('[AccountBrainDrive] pull complete:', results.length, 'profiles from', files.length, 'docs');
+                            cb(firstErr && !results.length ? firstErr : null, results);
+                        }
+                    });
+                });
             });
         });
     }
 
+    // ─── Push: localStorage → Google Docs ───
+
+    function pushToDocs(accountsArray, cb) {
+        getAccessToken(function (err, token) {
+            if (err) return cb(err);
+            if (!accountsArray.length) return cb(null, { created: 0, updated: 0 });
+            var query = "name contains '" + PROFILE_DOC_PREFIX.replace(/'/g, "\\'") + "' and trashed=false and mimeType='application/vnd.google-apps.document'";
+            driveSearch(token, query, function (e2, files) {
+                if (e2) return cb(e2);
+                var docsByName = {};
+                files.forEach(function (f) {
+                    var label = f.name.replace(PROFILE_DOC_PREFIX, '').trim().toLowerCase();
+                    if (!docsByName[label]) docsByName[label] = f;
+                });
+                var stats = { created: 0, updated: 0, errors: [] };
+                var pending = accountsArray.length;
+                accountsArray.forEach(function (acct) {
+                    var name = (acct.name || '').trim();
+                    if (!name) { pending--; checkDone(); return; }
+                    var text = DP.serializeAccountToProfileText(acct);
+                    var existing = docsByName[name.toLowerCase()];
+                    if (existing) {
+                        writeDocContent(token, existing.id, text, function (e3) {
+                            if (e3) stats.errors.push(name + ': ' + e3.message);
+                            else stats.updated++;
+                            pending--;
+                            checkDone();
+                        });
+                    } else {
+                        createProfileDoc(token, name, text, function (e3) {
+                            if (e3) stats.errors.push(name + ': ' + e3.message);
+                            else stats.created++;
+                            pending--;
+                            checkDone();
+                        });
+                    }
+                });
+                function checkDone() {
+                    if (pending <= 0) {
+                        console.log('[AccountBrainDrive] push complete:', stats);
+                        cb(stats.errors.length && !stats.updated && !stats.created ? new Error(stats.errors.join('; ')) : null, stats);
+                    }
+                }
+            });
+        });
+    }
+
+    // ─── Auth events ───
+
     function notifyAuthChange() {
         if (typeof global.AccountBrainDrive.onAuthChange === 'function') {
-            try {
-                global.AccountBrainDrive.onAuthChange();
-            } catch (e) {
-                console.warn(e);
-            }
+            try { global.AccountBrainDrive.onAuthChange(); } catch (e) { console.warn(e); }
         }
     }
+
+    // ─── Public API ───
 
     global.AccountBrainDrive = {
         onAuthChange: null,
 
-        isConfigured: function () {
-            return !!getClientId();
-        },
-
-        hasSessionToken: function () {
-            return !!getStoredToken();
-        },
+        isConfigured: function () { return !!getClientId(); },
+        hasSessionToken: function () { return !!getStoredToken(); },
 
         signIn: function (cb) {
             clearStoredToken();
-            clearAccountMappingCache();
             requestToken(true, function (err, token) {
                 notifyAuthChange();
                 if (cb) cb(err, token);
@@ -382,133 +348,15 @@
             var t = sessionStorage.getItem(TOKEN_KEY);
             clearStoredToken();
             tokenClient = null;
-            clearAccountMappingCache();
             notifyAuthChange();
-            if (!t) {
-                if (cb) cb(null);
-                return;
-            }
+            if (!t) { if (cb) cb(null); return; }
             fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(t), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-            })
-                .catch(function () {})
-                .then(function () {
-                    if (cb) cb(null);
-                });
+            }).catch(function () {}).then(function () { if (cb) cb(null); });
         },
 
-        uploadAccounts: function (accountsArray, cb) {
-            getAccessToken(function (err, token) {
-                if (err) return cb(err);
-                var envelope = {
-                    version: 1,
-                    savedAt: new Date().toISOString(),
-                    accounts: accountsArray
-                };
-                var jsonBody = JSON.stringify(envelope);
-                findFileId(token, function (e2, fileId) {
-                    if (e2) return cb(e2);
-                    if (fileId) patchFile(token, fileId, jsonBody, cb);
-                    else createFile(token, jsonBody, function (e3) { cb(e3); });
-                });
-            });
-        },
-
-        downloadAccounts: function (cb) {
-            getAccessToken(function (err, token) {
-                if (err) return cb(err);
-                findFileId(token, function (e2, fileId) {
-                    if (e2) return cb(e2);
-                    if (!fileId) return cb(null, null);
-                    fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(fileId) + '?alt=media', {
-                        headers: { Authorization: 'Bearer ' + token }
-                    })
-                        .then(function (r) {
-                            if (!r.ok) return r.text().then(function (t) { throw new Error(t || r.status); });
-                            return r.text();
-                        })
-                        .then(function (text) {
-                            cb(null, parseAccountsPayload(text));
-                        })
-                        .catch(cb);
-                });
-            });
-        },
-
-        /**
-         * Read a Google Doc the signed-in user can access. Plain text is flattened from the Docs API structure.
-         * Requires Google Docs API enabled in GCP and OAuth scope documents.readonly on the consent screen.
-         */
-        fetchGoogleDocPlainText: function (docId, cb) {
-            getAccessToken(function (err, token) {
-                if (err) return cb(err);
-                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(docId) + '?includeTabsContent=true', {
-                    headers: { Authorization: 'Bearer ' + token }
-                })
-                    .then(function (r) {
-                        return r.json().then(function (data) {
-                            if (!r.ok) {
-                                throw new Error(
-                                    (data.error && (data.error.message || data.error.status)) ||
-                                        'Could not read Google Doc (enable Docs API and re-consent scopes).'
-                                );
-                            }
-                            return extractPlainTextFromDoc(data);
-                        });
-                    })
-                    .then(function (plain) {
-                        cb(null, plain);
-                    })
-                    .catch(cb);
-            });
-        },
-
-        /** Preferred: parses Docs API structure (bullets, headings), not markdown text. */
-        fetchGoogleDocProfileParsed: function (docId, cb) {
-            getAccessToken(function (err, token) {
-                if (err) return cb(err);
-                fetch('https://docs.googleapis.com/v1/documents/' + encodeURIComponent(docId) + '?includeTabsContent=true', {
-                    headers: { Authorization: 'Bearer ' + token }
-                })
-                    .then(function (r) {
-                        return r.json().then(function (data) {
-                            if (!r.ok) {
-                                throw new Error(
-                                    (data.error && (data.error.message || data.error.status)) ||
-                                        'Could not read Google Doc (enable Docs API and re-consent scopes).'
-                                );
-                            }
-                            return extractProfileFromDocument(data);
-                        });
-                    })
-                    .then(function (parsed) {
-                        cb(null, parsed);
-                    })
-                    .catch(cb);
-            });
-        },
-
-        /** Loads account-mapping.doc from Drive root (or GOOGLE_ACCOUNT_MAPPING_DOC_ID). Cached ~5 min. */
-        fetchAccountMapping: function (cb) {
-            fetchAccountMappingData(cb);
-        },
-
-        invalidateAccountMappingCache: function () {
-            clearAccountMappingCache();
-        },
-
-        /**
-         * Resolves profile Google Doc ID for an account label using account-mapping.doc.
-         * cb(err, docId|null, mappingPayload?)
-         */
-        lookupProfileDocIdForAccount: function (accountName, cb) {
-            fetchAccountMappingData(function (err, data) {
-                if (err) return cb(err);
-                var k = String(accountName || '').trim().toLowerCase();
-                var row = data.byAccount[k];
-                cb(null, row ? row.docId : null, data);
-            });
-        }
+        pullFromDocs: pullFromDocs,
+        pushToDocs: pushToDocs
     };
 })(typeof window !== 'undefined' ? window : this);

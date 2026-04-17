@@ -69,7 +69,7 @@
                 </p>
                 <p id="drive-hint-local" class="hidden text-xs text-gray-600 mt-1 italic">Sign in with Google to sync the same backup across browsers.</p>
                 <p id="drive-script-error" class="hidden text-xs text-red-700 mt-1 max-w-xl">
-                    Google Drive code did not load (<code class="text-[11px]">AccountBrainDrive</code> missing). Open DevTools → Network and confirm <code class="text-[11px]">my-accounts-drive.js</code>, <code class="text-[11px]">google-doc-profile-parse.js</code>, and <code class="text-[11px]">google-account-mapping.js</code> return 200 from the same folder as this page (not blocked).
+                    Google Drive code did not load (<code class="text-[11px]">AccountBrainDrive</code> missing). Open DevTools → Network and confirm <code class="text-[11px]">my-accounts-drive.js</code> and <code class="text-[11px]">google-doc-profile-parse.js</code> return 200 from the same folder as this page (not blocked).
                 </p>
                 <p id="drive-oauth-missing" class="hidden text-xs text-amber-800 mt-1 max-w-xl">
                     Google sign-in is disabled because <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">window.GOOGLE_CLIENT_ID</code> is missing or invalid. Set it in <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">google-oauth-config.js</code> (must end in <code class="text-[11px]">.apps.googleusercontent.com</code>), hard-refresh, and add this site’s URL under Authorized JavaScript origins in Google Cloud Console → APIs &amp; Services → Credentials → your OAuth 2.0 Client ID.
@@ -94,9 +94,8 @@
                         <button type="button" id="btn-drive-push" class="text-sm font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg shadow-sm">Push to Drive</button>
                     </div>
                     <p id="drive-sync-hint" class="hidden text-[11px] text-gray-500 max-w-[16rem] leading-tight mt-1">
-                        <strong>Pull</strong> downloads your backup from Drive to this browser.
-                        <strong>Push</strong> uploads what's here to Drive.
-                        Edits you make on this page stay local until you Push.
+                        <strong>Pull</strong> reads your <em>[Account Profile]</em> Google Docs and updates this page.
+                        <strong>Push</strong> writes this page's data back to those same Docs.
                     </p>
                 </div>
                 <button type="button" id="btn-header-new"
@@ -174,10 +173,11 @@
 
                     <!-- Notes -->
                     <div class="section-card">
-                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2 mb-2"><span>📝</span> Additional Notes</h3>
-                        <textarea id="form-notes" rows="5" placeholder="Architecture context, competitive intel, relationship notes, recent wins/losses…"
-                            class="w-full bg-white border border-[#0A85EA]/35 rounded-lg px-3 py-2.5 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA] resize-y"></textarea>
-                        <p class="text-xs text-gray-500 mt-2 italic">Tip: Detailed meeting transcripts are auto-synced from Zoom/Teams into Google Drive.</p>
+                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2 mb-2">
+                            <span>📝</span> Notes
+                            <button type="button" id="add-note" class="ml-auto text-xs font-semibold text-primary hover:text-dark bg-[#0A85EA]/10 hover:bg-[#0A85EA]/20 px-3 py-1 rounded-lg transition-colors">+ Add Note</button>
+                        </h3>
+                        <div id="list-notes" class="space-y-2 mt-2"></div>
                     </div>
                 </div>
 
@@ -204,9 +204,8 @@
         })();
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="./google-doc-profile-parse.js?v=6"></script>
-    <script src="./google-account-mapping.js?v=6"></script>
-    <script src="./my-accounts-drive.js?v=6"></script>
+    <script src="./google-doc-profile-parse.js?v=7"></script>
+    <script src="./my-accounts-drive.js?v=7"></script>
     <script>
         (function () {
             var STORAGE_V3 = 'my-accounts-ai-assistant-v3';
@@ -250,6 +249,13 @@
                 return parseLegacyPlayerString(p);
             }
 
+            function migrateNotes(raw) {
+                if (Array.isArray(raw)) return raw.filter(function (n) { return n && n.text; });
+                var s = String(raw || '').trim();
+                if (!s) return [];
+                return [{ date: todayStr(), text: s }];
+            }
+
             function toV3(acct) {
                 if (!acct) return null;
                 if (Array.isArray(acct.keyPlayers)) {
@@ -260,13 +266,14 @@
                         keyPlayers: (acct.keyPlayers || []).map(normalizeKeyPlayer),
                         topInitiatives: (acct.topInitiatives || []).map(String),
                         nextSteps: (acct.nextSteps || []).map(String),
-                        additionalNotes: acct.additionalNotes != null ? String(acct.additionalNotes) : (acct.notes != null ? String(acct.notes) : '')
+                        additionalNotes: migrateNotes(acct.additionalNotes)
                     };
                 }
                 var imp = '';
                 if ((acct.players || 0) + (acct.initiatives || 0) + (acct.actionItems || 0) > 0) {
-                    imp = '[Imported] ' + (acct.players || 0) + ' players, ' + (acct.initiatives || 0) + ' initiatives, ' + (acct.actionItems || 0) + ' action items.\n\n';
+                    imp = '[Imported] ' + (acct.players || 0) + ' players, ' + (acct.initiatives || 0) + ' initiatives, ' + (acct.actionItems || 0) + ' action items.';
                 }
+                var legacyText = (imp + ' ' + (acct.notes || '')).trim();
                 return {
                     id: acct.id || ('acc-' + Date.now()),
                     name: acct.name || '',
@@ -274,7 +281,7 @@
                     keyPlayers: [],
                     topInitiatives: acct.priorityLine ? [String(acct.priorityLine)] : [],
                     nextSteps: [],
-                    additionalNotes: imp + (acct.notes || '')
+                    additionalNotes: legacyText ? [{ date: todayStr(), text: legacyText }] : []
                 };
             }
 
@@ -306,7 +313,7 @@
                         ],
                         topInitiatives: ['#1: Save Costs'],
                         nextSteps: [],
-                        additionalNotes: 'Cost optimization and platform consolidation discussion ongoing.'
+                        additionalNotes: [{ date: '2026-04-14', text: 'Cost optimization and platform consolidation discussion ongoing.' }]
                     },
                     {
                         id: 'seed-2',
@@ -319,7 +326,7 @@
                         ],
                         topInitiatives: ['#1: Evaluate WarpStream'],
                         nextSteps: ['Schedule architecture review with data team'],
-                        additionalNotes: 'Evaluating streaming options; competitive evaluation in progress.'
+                        additionalNotes: [{ date: '2026-04-14', text: 'Evaluating streaming options; competitive evaluation in progress.' }]
                     }
                 ];
             }
@@ -388,8 +395,10 @@
             function cardSummaryLine(acct) {
                 var ini = (acct.topInitiatives || []).map(function (s) { return String(s).trim(); }).filter(Boolean);
                 if (ini.length) return ini[0];
-                var n = (acct.additionalNotes || '').trim().split('\n')[0];
-                return n || '—';
+                var notes = acct.additionalNotes || [];
+                if (Array.isArray(notes) && notes.length) return notes[notes.length - 1].text.split('\n')[0];
+                if (typeof notes === 'string' && notes.trim()) return notes.trim().split('\n')[0];
+                return '\u2014';
             }
 
             function countPlayers(acct) {
@@ -539,6 +548,48 @@
                 });
             }
 
+            function makeNoteRow(date, text) {
+                var wrap = document.createElement('div');
+                wrap.className = 'note-row list-row border border-gray-200 rounded-lg p-3 bg-white flex flex-col sm:flex-row gap-2 items-stretch';
+                var dateInp = document.createElement('input');
+                dateInp.type = 'date';
+                dateInp.className = 'note-date shrink-0 w-36 ' + inputClass;
+                dateInp.value = date || todayStr();
+                var textArea = document.createElement('textarea');
+                textArea.className = 'note-text flex-1 min-w-0 bg-white border border-gray-300 rounded-lg px-3 py-2 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA] text-sm resize-y';
+                textArea.rows = 2;
+                textArea.placeholder = 'Meeting notes, context, updates\u2026';
+                textArea.value = text || '';
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'remove-row shrink-0 self-start text-gray-500 hover:text-red-400 px-2 py-1 text-lg leading-none';
+                btn.title = 'Remove';
+                btn.innerHTML = '&times;';
+                wrap.appendChild(dateInp);
+                wrap.appendChild(textArea);
+                wrap.appendChild(btn);
+                return wrap;
+            }
+
+            function fillNoteList(container, notes) {
+                container.innerHTML = '';
+                var list = Array.isArray(notes) ? notes : [];
+                list.forEach(function (n) {
+                    container.appendChild(makeNoteRow(n.date, n.text));
+                });
+            }
+
+            function collectNotes(container) {
+                return Array.prototype.slice.call(container.querySelectorAll('.note-row')).map(function (row) {
+                    var d = row.querySelector('.note-date');
+                    var t = row.querySelector('.note-text');
+                    return { date: (d && d.value) || todayStr(), text: (t && t.value || '').trim() };
+                }).filter(function (n) { return n.text; });
+            }
+
+            var notesEl = document.getElementById('list-notes');
+            bindListRemove(notesEl);
+
             function openModal(editId) {
                 var list = loadAccounts();
                 var isNew = !editId;
@@ -551,7 +602,7 @@
                     fillPlayerList(playersEl, []);
                     fillList(initiativesEl, [], 'Priority or concern');
                     fillList(stepsEl, [], 'Next step or commitment');
-                    document.getElementById('form-notes').value = '';
+                    fillNoteList(notesEl, []);
                 } else {
                     var acct = list.find(function (a) { return a.id === editId; });
                     if (!acct) return;
@@ -560,7 +611,7 @@
                     fillPlayerList(playersEl, acct.keyPlayers);
                     fillList(initiativesEl, acct.topInitiatives, 'Priority or concern');
                     fillList(stepsEl, acct.nextSteps, 'Next step or commitment');
-                    document.getElementById('form-notes').value = acct.additionalNotes || '';
+                    fillNoteList(notesEl, acct.additionalNotes);
                 }
 
                 updateInitiativeButtonState();
@@ -588,6 +639,12 @@
 
             document.getElementById('add-step').addEventListener('click', function () {
                 stepsEl.appendChild(makeRow('Next step or commitment', ''));
+            });
+
+            document.getElementById('add-note').addEventListener('click', function () {
+                notesEl.appendChild(makeNoteRow(todayStr(), ''));
+                var last = notesEl.querySelector('.note-row:last-child .note-text');
+                if (last) last.focus();
             });
 
             document.getElementById('form-save-top').addEventListener('click', function () {
@@ -674,7 +731,7 @@
                     keyPlayers: collectKeyPlayers(playersEl),
                     topInitiatives: collectLines(initiativesEl).slice(0, MAX_INITIATIVES),
                     nextSteps: collectLines(stepsEl),
-                    additionalNotes: (document.getElementById('form-notes').value || '').trim(),
+                    additionalNotes: collectNotes(notesEl),
                     updatedAt: todayStr()
                 };
 
@@ -750,7 +807,7 @@
                 }
                 if (intro) {
                     intro.textContent = cfg
-                        ? 'Click an account to view or edit. With Google sign-in, profiles can back up to your Google Drive (app data folder).'
+                        ? 'Click an account to view or edit. Pull/Push syncs with your Google Docs (named "[Account Profile] Name").'
                         : 'Click an account to view or edit. Your profiles are saved in this browser.';
                 }
             }
@@ -778,28 +835,7 @@
                         return;
                     }
                     updateDriveBar();
-                    window.AccountBrainDrive.downloadAccounts(function (e2, remote) {
-                        if (e2) {
-                            setDriveStatus('Signed in. Could not read Drive: ' + e2.message, true);
-                            return;
-                        }
-                        if (remote && remote.length) {
-                            var n = remote.length;
-                            if (confirm('Load ' + n + ' account(s) from Google Drive? This replaces data in this browser for this site.')) {
-                                var normalized = remote.map(toV3);
-                                localStorage.setItem(STORAGE_V3, JSON.stringify(normalized));
-                                setDriveStatus('Loaded from Drive. Saving profile also uploads changes.', false);
-                                render();
-                                return;
-                            }
-                            setDriveStatus('Signed in. Use Pull/Push to sync with Google Drive.', false);
-                            return;
-                        }
-                        window.AccountBrainDrive.uploadAccounts(loadAccounts(), function (e3) {
-                            if (e3) setDriveStatus('Signed in. Upload failed: ' + e3.message, true);
-                            else setDriveStatus('Signed in — created Drive backup from this browser.', false);
-                        });
-                    });
+                    setDriveStatus('Signed in. Use Pull to read Google Docs, Push to write back.', false);
                 });
             });
 
@@ -812,27 +848,38 @@
 
             document.getElementById('btn-drive-push').addEventListener('click', function () {
                 var list = loadAccounts();
-                setDriveStatus('Uploading to Drive…', false);
-                window.AccountBrainDrive.uploadAccounts(list, function (err) {
-                    if (err) setDriveStatus('Push failed: ' + err.message, true);
-                    else setDriveStatus('Backup saved to Google Drive.', false);
+                setDriveStatus('Writing ' + list.length + ' account(s) to Google Docs…', false);
+                window.AccountBrainDrive.pushToDocs(list, function (err, stats) {
+                    if (err) { setDriveStatus('Push failed: ' + err.message, true); return; }
+                    var msg = 'Push complete: ' + stats.updated + ' updated, ' + stats.created + ' created.';
+                    if (stats.errors && stats.errors.length) msg += ' Errors: ' + stats.errors.join('; ');
+                    setDriveStatus(msg, stats.errors && stats.errors.length > 0);
                 });
             });
 
             document.getElementById('btn-drive-pull').addEventListener('click', function () {
-                setDriveStatus('Downloading from Drive…', false);
-                window.AccountBrainDrive.downloadAccounts(function (err, remote) {
+                setDriveStatus('Reading Google Docs…', false);
+                window.AccountBrainDrive.pullFromDocs(function (err, profiles) {
                     if (err) {
                         setDriveStatus('Pull failed: ' + err.message, true);
                         return;
                     }
-                    if (!remote || !remote.length) {
-                        setDriveStatus('No backup file in Drive yet. Use Push to upload first.', false);
+                    if (!profiles || !profiles.length) {
+                        setDriveStatus('No "[Account Profile] *" docs found in Drive. Push first to create them.', false);
                         return;
                     }
-                    if (confirm('Replace local accounts with Drive backup (' + remote.length + ' account(s))?')) {
-                        localStorage.setItem(STORAGE_V3, JSON.stringify(remote.map(toV3)));
-                        setDriveStatus('Restored ' + remote.length + ' account(s) from Drive.', false);
+                    if (confirm('Replace local accounts with ' + profiles.length + ' profile(s) from Google Docs?')) {
+                        var merged = profiles.map(function (p) {
+                            return toV3({
+                                name: p.accountName,
+                                keyPlayers: p.keyPlayers,
+                                topInitiatives: p.topInitiatives || [],
+                                nextSteps: p.nextSteps || [],
+                                additionalNotes: p.additionalNotes || []
+                            });
+                        });
+                        localStorage.setItem(STORAGE_V3, JSON.stringify(merged));
+                        setDriveStatus('Pulled ' + profiles.length + ' account(s) from Google Docs.', false);
                         render();
                     }
                 });
