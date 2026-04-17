@@ -393,12 +393,24 @@
                 ];
             }
 
+            function isOldSeedData(list) {
+                if (!Array.isArray(list) || list.length !== 2) return false;
+                var names = list.map(function (a) { return (a.name || '').toLowerCase(); }).sort();
+                return names[0] === 'cisco' && names[1] === 'nvidia';
+            }
+
             function loadAccounts() {
                 try {
                     var r3 = localStorage.getItem(STORAGE_V3);
                     if (r3) {
                         var p3 = JSON.parse(r3);
-                        if (Array.isArray(p3)) return p3.map(toV3);
+                        if (Array.isArray(p3)) {
+                            if (isOldSeedData(p3)) {
+                                localStorage.removeItem(STORAGE_V3);
+                                return defaultAccounts();
+                            }
+                            return p3.map(toV3);
+                        }
                     }
                     var r2 = localStorage.getItem(STORAGE_V2);
                     if (r2) {

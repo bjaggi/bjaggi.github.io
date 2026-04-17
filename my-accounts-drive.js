@@ -332,10 +332,18 @@
                     }
                 }
                 if (!entries.length) {
-                    var hint = mapping ? 'account-mapping.doc was found but has 0 accounts. ' : 'No account-mapping.doc found in Drive. ';
-                    hint += 'Also searching for "[Account Profile] *" docs...';
-                    console.log('[AccountBrainDrive]', hint);
-                    return pullByDocName(token, cb);
+                    if (!mapping) {
+                        return cb(new Error(
+                            'No account-mapping.doc found in your Drive (root or Shared with me). ' +
+                            'Create a Google Doc named "account-mapping" with lines like:\n' +
+                            'Nvidia: https://docs.google.com/document/d/DOC_ID/edit'
+                        ));
+                    }
+                    return cb(new Error(
+                        'account-mapping.doc was found (ID: ' + mapping.mappingDocId + ') but parsed to 0 accounts. ' +
+                        'Each line should be: AccountName: https://docs.google.com/document/d/DOC_ID/edit — ' +
+                        'check the Console (F12) for parsing details.'
+                    ));
                 }
                 console.log('[AccountBrainDrive] pulling', entries.length, 'accounts from mapping doc');
                 var results = [];
@@ -362,39 +370,6 @@
                             cb(firstErr && !results.length ? firstErr : null, results);
                         }
                     });
-                });
-            });
-        });
-    }
-
-    function pullByDocName(token, cb) {
-        var query = "name contains '" + PROFILE_DOC_PREFIX.replace(/'/g, "\\'") + "' and trashed=false and mimeType='application/vnd.google-apps.document'";
-        driveSearch(token, query, function (e2, files) {
-            if (e2) return cb(e2);
-            if (!files.length) return cb(null, []);
-            var results = [];
-            var pending = files.length;
-            var firstErr = null;
-            files.forEach(function (file) {
-                readDocParsed(token, file.id, function (e3, parsed) {
-                    if (e3) {
-                        console.error('[AccountBrainDrive] pull read error for', file.name, e3);
-                        if (!firstErr) firstErr = e3;
-                    } else {
-                        results.push({
-                            docId: file.id,
-                            accountName: parsed.accountName || file.name.replace(PROFILE_DOC_PREFIX, '').trim(),
-                            keyPlayers: parsed.keyPlayers || [],
-                            topInitiatives: parsed.topInitiatives || [],
-                            nextSteps: parsed.nextSteps || [],
-                            additionalNotes: parsed.additionalNotes || []
-                        });
-                    }
-                    pending--;
-                    if (pending === 0) {
-                        console.log('[AccountBrainDrive] pull (by name) complete:', results.length);
-                        cb(firstErr && !results.length ? firstErr : null, results);
-                    }
                 });
             });
         });
