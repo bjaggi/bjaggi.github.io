@@ -11,12 +11,12 @@
     var TOKEN_KEY = 'ab_google_access_token';
     var EXP_KEY = 'ab_google_expires_at_ms';
     var SCOPE_TAG_KEY = 'ab_google_scope_tag';
-    var SCOPE_TAG_VALUE = 'drive+documents-v7';
+    var SCOPE_TAG_VALUE = 'drive+documents+calendar-v8';
     var PROFILE_DOC_PREFIX = '[Account Profile] ';
     var SCOPE =
-        'https://www.googleapis.com/auth/drive.file ' +
         'https://www.googleapis.com/auth/drive ' +
-        'https://www.googleapis.com/auth/documents';
+        'https://www.googleapis.com/auth/documents ' +
+        'https://www.googleapis.com/auth/calendar.readonly';
 
     function getClientId() {
         var id = global.GOOGLE_CLIENT_ID;
@@ -79,7 +79,11 @@
             scope: SCOPE,
             callback: function (resp) {
                 if (resp.error !== undefined) {
-                    if (pendingTokenCb) pendingTokenCb(new Error(resp.error_description || resp.error));
+                    var desc = resp.error_description || resp.error;
+                    if (/access_denied|consent|scope/i.test(desc)) {
+                        desc = SCOPE_ERROR_HINT + ' (' + desc + ')';
+                    }
+                    if (pendingTokenCb) pendingTokenCb(new Error(desc));
                     pendingTokenCb = null;
                     return;
                 }
@@ -115,6 +119,26 @@
         });
     }
 
+    // ─── Error helpers ───
+
+    var SCOPE_ERROR_HINT = 'Missing Google API scopes. Sign out, then sign back in to re-consent. ' +
+        'If it persists, check the OAuth consent screen scopes in Google Cloud Console (see setup guide at the bottom of this page).';
+
+    function isScopeError(status, data) {
+        if (status === 403 || status === 401) return true;
+        var msg = (data && data.error && (data.error.message || data.error.status || '')) || '';
+        if (/insufficient|scope|permission|forbidden|access.denied/i.test(msg)) return true;
+        return false;
+    }
+
+    function apiError(r, data, fallback) {
+        var msg = (data && data.error && data.error.message) || fallback || ('API error ' + r.status);
+        if (isScopeError(r.status, data)) {
+            return new Error(SCOPE_ERROR_HINT + ' (API ' + r.status + ': ' + msg + ')');
+        }
+        return new Error(msg);
+    }
+
     // ─── Drive helpers ───
 
     function driveSearch(token, query, cb) {
@@ -124,7 +148,7 @@
         fetch(url, { headers: { Authorization: 'Bearer ' + token } })
             .then(function (r) {
                 return r.json().then(function (data) {
-                    if (!r.ok) throw new Error((data.error && data.error.message) || 'Drive search failed');
+                    if (!r.ok) throw apiError(r, data, 'Drive search failed');
                     return data.files || [];
                 });
             })
@@ -145,7 +169,7 @@
         })
             .then(function (r) {
                 return r.json().then(function (data) {
-                    if (!r.ok) throw new Error((data.error && data.error.message) || 'Could not read doc');
+                    if (!r.ok) throw apiError(r, data, 'Could not read doc');
                     return DP.extractProfileFromDocument(data);
                 });
             })
@@ -159,7 +183,7 @@
         })
             .then(function (r) {
                 return r.json().then(function (data) {
-                    if (!r.ok) throw new Error((data.error && data.error.message) || 'Could not read doc');
+                    if (!r.ok) throw apiError(r, data, 'Could not read doc');
                     var roots = DP.collectContentRoots(data);
                     var maxEnd = 1;
                     for (var ri = 0; ri < roots.length; ri++) {
@@ -202,7 +226,7 @@
             })
                 .then(function (r) {
                     return r.json().then(function (data) {
-                        if (!r.ok) throw new Error((data.error && data.error.message) || 'Doc write failed');
+                        if (!r.ok) throw apiError(r, data, 'Doc write failed');
                         cb(null);
                     });
                 })
@@ -222,7 +246,7 @@
         })
             .then(function (r) {
                 return r.json().then(function (data) {
-                    if (!r.ok) throw new Error((data.error && data.error.message) || 'Could not create doc');
+                    if (!r.ok) throw apiError(r, data, 'Could not create doc');
                     var newDocId = data.documentId;
                     console.log('[AccountBrainDrive] created doc:', docTitle, newDocId);
                     writeDocContent(token, newDocId, text, function (e2) {

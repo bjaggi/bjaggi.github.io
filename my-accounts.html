@@ -75,6 +75,11 @@
                     Google sign-in is disabled because <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">window.GOOGLE_CLIENT_ID</code> is missing or invalid. Set it in <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">google-oauth-config.js</code> (must end in <code class="text-[11px]">.apps.googleusercontent.com</code>), hard-refresh, and add this site’s URL under Authorized JavaScript origins in Google Cloud Console → APIs &amp; Services → Credentials → your OAuth 2.0 Client ID.
                 </p>
                 <p id="drive-status" class="text-xs text-primary mt-2 min-h-[1rem]" role="status"></p>
+                <div id="scope-error-banner" class="hidden mt-2 p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800 max-w-xl">
+                    <strong>Missing API scopes.</strong> Google denied access — the required OAuth scopes are not enabled.
+                    Sign out and sign back in. If it still fails, your GCP project's OAuth consent screen is missing scopes.
+                    <a href="#setup-guide" class="underline font-semibold text-red-700">See setup guide below</a>.
+                </div>
             </div>
             <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3 shrink-0 items-stretch sm:items-end lg:items-stretch xl:items-end">
                 <div id="drive-auth-stack" class="flex flex-col gap-2 order-2 sm:order-1 lg:order-1">
@@ -106,6 +111,62 @@
         </header>
 
         <div id="accounts-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+        <!-- Setup guide -->
+        <details id="setup-guide" class="mt-12 mb-8 bg-white border border-gray-200 rounded-xl shadow-sm">
+            <summary class="cursor-pointer px-5 py-4 text-sm font-semibold text-dark select-none hover:bg-gray-50 rounded-xl">
+                Google Cloud OAuth Setup Guide
+            </summary>
+            <div class="px-5 pb-5 text-sm text-gray-700 space-y-4">
+                <p>If Push/Pull shows a <strong class="text-red-700">scope error</strong> or Google denies access, your GCP project's OAuth consent screen needs the correct scopes.</p>
+
+                <h4 class="font-semibold text-dark">1. Open your OAuth consent screen</h4>
+                <p>Go to <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank" rel="noopener" class="text-primary underline">Google Cloud Console &rarr; APIs &amp; Services &rarr; OAuth consent screen</a>.</p>
+
+                <h4 class="font-semibold text-dark">2. Add required scopes</h4>
+                <p>On the <strong>Scopes</strong> step, click <strong>"Add or Remove Scopes"</strong>. Search and add each of these one at a time:</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden">
+                        <thead>
+                            <tr class="bg-gray-50 text-left">
+                                <th class="px-3 py-2 font-semibold text-dark border-b border-gray-200">Scope to add</th>
+                                <th class="px-3 py-2 font-semibold text-dark border-b border-gray-200">What it looks like in the UI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-100">
+                                <td class="px-3 py-2 font-mono text-[11px] break-all">https://www.googleapis.com/auth/drive</td>
+                                <td class="px-3 py-2">"See, edit, create, and delete all of your Google Drive files"</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="px-3 py-2 font-mono text-[11px] break-all">https://www.googleapis.com/auth/documents</td>
+                                <td class="px-3 py-2">"See, edit, create, and delete all your Google Docs documents"</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono text-[11px] break-all">https://www.googleapis.com/auth/calendar.readonly</td>
+                                <td class="px-3 py-2">"See, download, and search your calendars" (read-only)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4 class="font-semibold text-dark">3. Enable the APIs</h4>
+                <p>In <a href="https://console.cloud.google.com/apis/library" target="_blank" rel="noopener" class="text-primary underline">APIs &amp; Services &rarr; Library</a>, make sure these are enabled:</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li><strong>Google Drive API</strong></li>
+                    <li><strong>Google Docs API</strong></li>
+                    <li><strong>Google Calendar API</strong> (for calendar.readonly)</li>
+                </ul>
+
+                <h4 class="font-semibold text-dark">4. Re-consent</h4>
+                <p>After updating scopes, <strong>sign out</strong> on this page and <strong>sign back in</strong>. Google will show a new consent prompt with the updated permissions. Accept all scopes.</p>
+
+                <h4 class="font-semibold text-dark">5. Authorized origins</h4>
+                <p>In <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" class="text-primary underline">APIs &amp; Services &rarr; Credentials</a>, click your OAuth 2.0 Client ID and make sure this URL is listed under <strong>Authorized JavaScript origins</strong>:</p>
+                <pre class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-[11px] font-mono overflow-x-auto" id="origin-url"></pre>
+                <script>document.getElementById('origin-url').textContent = location.origin;</script>
+            </div>
+        </details>
     </div>
 
     <!-- Account Brain Profile modal -->
@@ -204,8 +265,8 @@
         })();
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="./google-doc-profile-parse.js?v=7"></script>
-    <script src="./my-accounts-drive.js?v=7"></script>
+    <script src="./google-doc-profile-parse.js?v=8"></script>
+    <script src="./my-accounts-drive.js?v=8"></script>
     <script>
         (function () {
             var STORAGE_V3 = 'my-accounts-ai-assistant-v3';
@@ -371,6 +432,11 @@
                 el.classList.toggle('text-red-600', !!isError);
                 el.classList.toggle('text-primary', !isError && !!msg);
                 el.classList.toggle('text-gray-500', !isError && !msg);
+                var scopeBanner = document.getElementById('scope-error-banner');
+                var guide = document.getElementById('setup-guide');
+                var hasScopeErr = isError && /scope|permission|forbidden|403|401|access.denied|consent/i.test(msg);
+                if (scopeBanner) scopeBanner.classList.toggle('hidden', !hasScopeErr);
+                if (guide && hasScopeErr) guide.open = true;
             }
 
             function syncToDriveQuiet(list) {
