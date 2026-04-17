@@ -15,19 +15,26 @@
         return null;
     }
 
-    /** One paragraph / cell: linked runs contribute URL; plain runs contribute text. */
+    /** One paragraph / cell: linked runs contribute URL; plain runs contribute text.
+     *  Also handles richLink (smart chip) elements that Google Docs uses for doc links. */
     function flattenParagraphForMapping(para) {
         var els = (para && para.elements) || [];
         var parts = [];
         for (var i = 0; i < els.length; i++) {
-            if (!els[i].textRun) continue;
-            var tr = els[i].textRun;
+            var el = els[i];
+            if (el.richLink) {
+                var rl = el.richLink.richLinkProperties || el.richLink;
+                var uri = rl.uri || rl.url || '';
+                if (uri) {
+                    parts.push(uri);
+                }
+                continue;
+            }
+            if (!el.textRun) continue;
+            var tr = el.textRun;
             var url = tr.textStyle && tr.textStyle.link && tr.textStyle.link.url;
             var content = tr.content || '';
             if (url) {
-                // If content already embeds the doc URL (e.g. "Nvidia: https://docs.google.com/…"),
-                // keep it so the label isn't lost. Only substitute when content is
-                // pure display text like "Click here" or "Open profile".
                 if (/docs\.google\.com\/document\/d\//.test(content)) {
                     parts.push(content);
                 } else {
@@ -116,6 +123,11 @@
             for (var i = 0; i < obj.length; i++) deepCollectTextRuns(obj[i], out);
             return;
         }
+        if (obj.richLink) {
+            var rl = obj.richLink.richLinkProperties || obj.richLink;
+            var rUrl = rl.uri || rl.url || '';
+            if (rUrl) out.push({ content: '', linkUrl: rUrl });
+        }
         if (obj.textRun) {
             var tr = obj.textRun;
             var url = tr.textStyle && tr.textStyle.link && tr.textStyle.link.url;
@@ -123,7 +135,7 @@
         }
         var keys = Object.keys(obj);
         for (var k = 0; k < keys.length; k++) {
-            if (keys[k] !== 'textRun') deepCollectTextRuns(obj[keys[k]], out);
+            if (keys[k] !== 'textRun' && keys[k] !== 'richLink') deepCollectTextRuns(obj[keys[k]], out);
         }
     }
 

@@ -436,7 +436,112 @@ describe('google-account-mapping', () => {
         assert.equal(Object.keys(out.byAccount).length, 0);
     });
 
-    // ── 19. Mixed: some lines have labels, some don't ──
+    // ── 19. Smart chips (richLink) — Google Docs document chips ──
+
+    test('richLink (smart chip): extracts doc URL from richLink elements', () => {
+        var doc = makeRealisticTabDoc([
+            {
+                startIndex: 2,
+                endIndex: 90,
+                paragraph: {
+                    elements: [
+                        {
+                            startIndex: 2,
+                            endIndex: 10,
+                            textRun: { content: 'Nvidia: ', textStyle: {} }
+                        },
+                        {
+                            startIndex: 10,
+                            endIndex: 50,
+                            richLink: {
+                                richLinkId: 'rl1',
+                                richLinkProperties: {
+                                    title: '[Account Profile] Nvidia',
+                                    uri: 'https://docs.google.com/document/d/NV_SMARTCHIP/edit',
+                                    mimeType: 'application/vnd.google-apps.document'
+                                }
+                            }
+                        },
+                        {
+                            startIndex: 50,
+                            endIndex: 51,
+                            textRun: { content: '\n', textStyle: {} }
+                        }
+                    ],
+                    paragraphStyle: { namedStyleType: 'NORMAL_TEXT' }
+                }
+            },
+            {
+                startIndex: 52,
+                endIndex: 130,
+                paragraph: {
+                    elements: [
+                        {
+                            startIndex: 52,
+                            endIndex: 59,
+                            textRun: { content: 'Cisco: ', textStyle: {} }
+                        },
+                        {
+                            startIndex: 59,
+                            endIndex: 100,
+                            richLink: {
+                                richLinkId: 'rl2',
+                                richLinkProperties: {
+                                    title: '[Account Profile] Cisco',
+                                    uri: 'https://docs.google.com/document/d/CISCO_SMARTCHIP/edit',
+                                    mimeType: 'application/vnd.google-apps.document'
+                                }
+                            }
+                        },
+                        {
+                            startIndex: 100,
+                            endIndex: 101,
+                            textRun: { content: '\n', textStyle: {} }
+                        }
+                    ],
+                    paragraphStyle: { namedStyleType: 'NORMAL_TEXT' }
+                }
+            },
+            {
+                startIndex: 102,
+                endIndex: 200,
+                paragraph: {
+                    elements: [
+                        {
+                            startIndex: 102,
+                            endIndex: 113,
+                            textRun: { content: 'Qualcomm: ', textStyle: {} }
+                        },
+                        {
+                            startIndex: 113,
+                            endIndex: 160,
+                            richLink: {
+                                richLinkId: 'rl3',
+                                richLinkProperties: {
+                                    title: '[Account Profile] Qualcomm',
+                                    uri: 'https://docs.google.com/document/d/QCOM_SMARTCHIP/edit',
+                                    mimeType: 'application/vnd.google-apps.document'
+                                }
+                            }
+                        },
+                        {
+                            startIndex: 160,
+                            endIndex: 161,
+                            textRun: { content: '\n', textStyle: {} }
+                        }
+                    ],
+                    paragraphStyle: { namedStyleType: 'NORMAL_TEXT' }
+                }
+            }
+        ]);
+        var out = AM.parseAccountMappingFromDocument(doc);
+        assert.equal(Object.keys(out.byAccount).length, 3, 'should find all 3 accounts');
+        assert.equal(out.byAccount.nvidia.docId, 'NV_SMARTCHIP');
+        assert.equal(out.byAccount.cisco.docId, 'CISCO_SMARTCHIP');
+        assert.equal(out.byAccount.qualcomm.docId, 'QCOM_SMARTCHIP');
+    });
+
+    // ── 20. Mixed: some lines have labels, some don't ──
 
     test('mixed: heading + mapping lines + blank lines', () => {
         var doc = makeRealisticTabDoc([
