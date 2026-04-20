@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AWS MSK to Confluent Cloud Migration Estimator - Documentation</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://confluent-be.glean.com/embedded-search-latest.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -336,44 +335,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Glean AI Chat -->
-    <div class="container mx-auto px-4 pb-8" style="max-width:800px;">
-        <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
-            <button id="glean-toggle" onclick="toggleGleanChat()" style="width:100%;padding:0.75rem 1.5rem;background:#0A3D62;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:1rem;font-weight:600;">
-                <span>Ask Glean AI</span>
-                <span id="glean-chevron" style="transition:transform 0.2s;">&#9660;</span>
-            </button>
-            <div id="glean-chat-wrapper" style="display:none;">
-                <div id="glean-chat-container" style="position:relative;display:block;width:100%;height:600px;"></div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        var gleanChatOpen = false;
-        var gleanChatInitialised = false;
-
-        function toggleGleanChat() {
-            gleanChatOpen = !gleanChatOpen;
-            var wrapper = document.getElementById('glean-chat-wrapper');
-            var chevron = document.getElementById('glean-chevron');
-            wrapper.style.display = gleanChatOpen ? 'block' : 'none';
-            chevron.style.transform = gleanChatOpen ? 'rotate(180deg)' : '';
-
-            if (gleanChatOpen && !gleanChatInitialised) {
-                gleanChatInitialised = true;
-                var poll = setInterval(function () {
-                    if (window.EmbeddedSearch && window.EmbeddedSearch.renderChat) {
-                        clearInterval(poll);
-                        window.EmbeddedSearch.renderChat(
-                            document.getElementById('glean-chat-container')
-                        );
-                    }
-                }, 200);
-            }
-        }
-    </script>
 
     <!-- Visit Counter Script -->
     <script>

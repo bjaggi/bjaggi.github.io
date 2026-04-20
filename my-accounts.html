@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Accounts - AI Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://app.glean.com/embedded-search-latest.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -994,6 +995,50 @@
             updateDriveBar();
             render();
         })();
+    </script>
+
+    <!-- Glean AI Chat -->
+    <div style="max-width:800px;margin:2rem auto;padding:0 1rem;">
+        <div style="background:#fff;border-radius:0.5rem;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+            <button id="glean-toggle" onclick="toggleGleanChat()" style="width:100%;padding:0.75rem 1.5rem;background:#0A3D62;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:1rem;font-weight:600;border-radius:0.5rem;">
+                <span>Ask Glean AI</span>
+                <span id="glean-chevron" style="transition:transform 0.2s;">&#9660;</span>
+            </button>
+            <div id="glean-chat-wrapper" style="display:none;">
+                <div id="glean-chat-container" style="position:relative;display:block;width:100%;height:600px;"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        var gleanChatOpen = false;
+        var gleanChatInitialised = false;
+        function toggleGleanChat() {
+            gleanChatOpen = !gleanChatOpen;
+            var wrapper = document.getElementById('glean-chat-wrapper');
+            var chevron = document.getElementById('glean-chevron');
+            wrapper.style.display = gleanChatOpen ? 'block' : 'none';
+            chevron.style.transform = gleanChatOpen ? 'rotate(180deg)' : '';
+            if (gleanChatOpen && !gleanChatInitialised) {
+                gleanChatInitialised = true;
+                var container = document.getElementById('glean-chat-container');
+                var poll = setInterval(function () {
+                    var sdk = window.GleanWebSDK || window.EmbeddedSearch;
+                    if (sdk && sdk.renderChat) {
+                        clearInterval(poll);
+                        sdk.renderChat(container, {
+                            backend: 'https://confluent-be.glean.com',
+                            authMethod: 'sso'
+                        });
+                    }
+                }, 200);
+                setTimeout(function () {
+                    clearInterval(poll);
+                    if (!container.hasChildNodes()) {
+                        container.innerHTML = '<p style="padding:2rem;text-align:center;color:#666;">Could not load Glean Chat. Make sure you are on the Confluent network or VPN and try refreshing.</p>';
+                    }
+                }, 10000);
+            }
+        }
     </script>
 </body>
 </html>
