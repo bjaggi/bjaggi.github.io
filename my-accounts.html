@@ -223,7 +223,10 @@
                         <h2 id="modal-title" class="text-xl font-bold text-dark">New Account</h2>
                         <p class="text-gray-600 text-sm mt-0.5">Account Brain Profile</p>
                     </div>
-                    <div class="flex items-center gap-1 shrink-0">
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" id="btn-ai-insights" class="text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 border border-[#0A3D62] text-dark hover:bg-gray-100">
+                            <span aria-hidden="true">✨</span> AI Insights
+                        </button>
                         <button type="button" id="form-save-top" class="bg-primary hover:bg-[#0870c4] text-white text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5">
                             <span aria-hidden="true">💾</span> Save
                         </button>
@@ -237,6 +240,15 @@
                         <label for="form-name" class="block text-sm font-medium text-dark mb-2">Account Name <span class="text-red-600">*</span></label>
                         <input id="form-name" type="text" required placeholder="e.g. Ulta Beauty, Target, Walmart"
                             class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]">
+                    </div>
+
+                    <!-- AI Insights panel -->
+                    <div id="ai-insights-panel" class="section-card hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>✨</span> AI Insights <span class="text-xs font-normal text-gray-500">powered by Glean</span></h3>
+                            <button type="button" id="btn-close-insights" class="text-gray-400 hover:text-dark text-lg leading-none px-1">&times;</button>
+                        </div>
+                        <div id="ai-insights-chat" style="position:relative;display:block;width:100%;height:500px;border-radius:0.5rem;overflow:hidden;"></div>
                     </div>
 
                     <!-- Key players -->
@@ -742,6 +754,8 @@
                 }
 
                 updateInitiativeButtonState();
+                document.getElementById('ai-insights-panel').classList.add('hidden');
+                document.getElementById('ai-insights-chat').innerHTML = '';
                 overlay.classList.remove('hidden');
                 overlay.setAttribute('aria-hidden', 'false');
                 overlay.scrollTop = 0;
@@ -775,6 +789,46 @@
 
             document.getElementById('form-save-top').addEventListener('click', function () {
                 form.requestSubmit();
+            });
+
+            var insightsPanel = document.getElementById('ai-insights-panel');
+            var insightsChat = document.getElementById('ai-insights-chat');
+            var insightsChatHandle = null;
+
+            document.getElementById('btn-ai-insights').addEventListener('click', function () {
+                var accountName = (document.getElementById('form-name').value || '').trim();
+                if (!accountName) {
+                    alert('Enter an account name first.');
+                    document.getElementById('form-name').focus();
+                    return;
+                }
+                insightsPanel.classList.remove('hidden');
+                insightsChat.innerHTML = '';
+                insightsChatHandle = null;
+
+                var prompt = 'Based on the latest earnings report for ' + accountName +
+                    ', what are the CEO\'s top strategic initiatives and priorities? ' +
+                    'Then suggest specific ways Confluent (real-time data streaming, Apache Kafka, Flink) ' +
+                    'can help with each of those initiatives. Be concise and actionable.';
+
+                var sdk = window.GleanWebSDK || window.EmbeddedSearch;
+                if (sdk && sdk.renderChat) {
+                    insightsChatHandle = sdk.renderChat(insightsChat, {
+                        backend: 'https://confluent-be.glean.com',
+                        authMethod: 'sso',
+                        initialMessage: prompt,
+                        key: 'account-insights'
+                    });
+                } else {
+                    insightsChat.innerHTML = '<p style="padding:1rem;color:#666;">Glean SDK not loaded. Refresh the page and try again.</p>';
+                }
+                insightsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+
+            document.getElementById('btn-close-insights').addEventListener('click', function () {
+                insightsPanel.classList.add('hidden');
+                insightsChat.innerHTML = '';
+                insightsChatHandle = null;
             });
 
             document.getElementById('modal-close-x').addEventListener('click', closeModal);
