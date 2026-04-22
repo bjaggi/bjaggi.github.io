@@ -213,15 +213,15 @@
     </div>
 
     <!-- Account Brain Profile modal -->
-    <div id="modal-overlay" class="fixed inset-0 bg-black/40 z-[2000] hidden items-center justify-center p-4" aria-hidden="true">
-        <div id="modal-panel" class="bg-white border border-gray-200 rounded-xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl" role="dialog" aria-labelledby="modal-title">
-            <form id="account-form" class="p-6 md:p-8">
+    <div id="modal-overlay" class="fixed inset-0 bg-white z-[2000] hidden overflow-y-auto" aria-hidden="true">
+        <div id="modal-panel" class="max-w-4xl w-full mx-auto min-h-full" role="dialog" aria-labelledby="modal-title">
+            <form id="account-form" class="pt-0 px-6 pb-6 md:px-8 md:pb-8">
                 <input type="hidden" id="form-id" value="">
 
-                <div class="flex items-start justify-between gap-4 mb-6">
+                <div class="sticky top-0 bg-white z-10 flex items-center justify-between gap-4 py-4 mb-4 border-b border-gray-200">
                     <div>
                         <h2 id="modal-title" class="text-xl font-bold text-dark">New Account</h2>
-                        <p class="text-gray-600 text-sm mt-1">Account Brain Profile</p>
+                        <p class="text-gray-600 text-sm mt-0.5">Account Brain Profile</p>
                     </div>
                     <div class="flex items-center gap-1 shrink-0">
                         <button type="button" id="form-save-top" class="bg-primary hover:bg-[#0870c4] text-white text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5">
@@ -738,14 +738,13 @@
 
                 updateInitiativeButtonState();
                 overlay.classList.remove('hidden');
-                overlay.classList.add('flex');
                 overlay.setAttribute('aria-hidden', 'false');
+                overlay.scrollTop = 0;
                 document.getElementById('form-name').focus();
             }
 
             function closeModal() {
                 overlay.classList.add('hidden');
-                overlay.classList.remove('flex');
                 overlay.setAttribute('aria-hidden', 'true');
             }
 
@@ -775,10 +774,6 @@
 
             document.getElementById('modal-close-x').addEventListener('click', closeModal);
             document.getElementById('form-cancel').addEventListener('click', closeModal);
-
-            overlay.addEventListener('click', function (e) {
-                if (e.target === overlay) closeModal();
-            });
 
             function render() {
                 var list = loadAccounts();
