@@ -90,6 +90,8 @@
                         <tbody id="summary-body"></tbody>
                     </table>
                 </div>
+                <!-- Nodes Summary -->
+                <h3 class="text-md font-semibold text-dark mt-2 mb-2">Nodes</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
                     <div class="bg-white border border-gray-100 rounded p-3">
                         <div class="font-semibold">Non Production</div>
@@ -104,16 +106,51 @@
                     <div class="bg-white border border-gray-100 rounded p-3">
                         <label class="block text-sm text-dark mb-1" for="price-nonprod">Price per node in Non Production ($)</label>
                         <input id="price-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Non Prod Cost: <span id="total-nonprod-cost" class="font-semibold">$0</span></div>
+                        <div class="mt-2 text-sm">Total Non Prod Node Cost: <span id="total-nonprod-cost" class="font-semibold">$0</span></div>
                     </div>
                     <div class="bg-white border border-gray-100 rounded p-3">
                         <label class="block text-sm text-dark mb-1" for="price-prod">Price per node in Production ($)</label>
                         <input id="price-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Prod Cost: <span id="total-prod-cost" class="font-semibold">$0</span></div>
+                        <div class="mt-2 text-sm">Total Prod Node Cost: <span id="total-prod-cost" class="font-semibold">$0</span></div>
                     </div>
                 </div>
-                <div class="mt-4 text-sm text-dark">
-                    Total Amount: <span id="total-amount" class="font-semibold">$0</span>
+                <div class="mt-3 text-sm text-dark">
+                    Total Node Cost: <span id="total-amount" class="font-semibold">$0</span>
+                </div>
+
+                <!-- Connector Pack Summary -->
+                <hr class="my-4 border-gray-200">
+                <h3 class="text-md font-semibold text-dark mb-2">CP Connector Packs</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <div class="font-semibold">Non Production</div>
+                        <div id="summary-cp-nonprod" class="text-xl">0</div>
+                    </div>
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <div class="font-semibold">Production</div>
+                        <div id="summary-cp-prod" class="text-xl">0</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark mt-4">
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-cp-nonprod">Price per connector pack in Non Production ($)</label>
+                        <input id="price-cp-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Non Prod CP Cost: <span id="total-cp-nonprod-cost" class="font-semibold">$0</span></div>
+                    </div>
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-cp-prod">Price per connector pack in Production ($)</label>
+                        <input id="price-cp-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Prod CP Cost: <span id="total-cp-prod-cost" class="font-semibold">$0</span></div>
+                    </div>
+                </div>
+                <div class="mt-3 text-sm text-dark">
+                    Total Connector Pack Cost: <span id="total-cp-amount" class="font-semibold">$0</span>
+                </div>
+
+                <!-- Grand Total -->
+                <hr class="my-4 border-gray-200">
+                <div class="mt-2 text-dark text-lg font-bold">
+                    Grand Total: <span id="grand-total" class="text-primary">$0</span>
                 </div>
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
@@ -142,6 +179,13 @@
         const totalNonProdCostEl = document.getElementById('total-nonprod-cost');
         const totalProdCostEl = document.getElementById('total-prod-cost');
         const totalAmountEl = document.getElementById('total-amount');
+        const priceCpNonProdInput = document.getElementById('price-cp-nonprod');
+        const priceCpProdInput = document.getElementById('price-cp-prod');
+        const totalCpNonProdCostEl = document.getElementById('total-cp-nonprod-cost');
+        const totalCpProdCostEl = document.getElementById('total-cp-prod-cost');
+        const totalCpAmountEl = document.getElementById('total-cp-amount');
+        const grandTotalEl = document.getElementById('grand-total');
+        const CONNECTOR_PACK_SERVICE = 'CP Connector Pack';
         const STORAGE_KEY = 'cp-cost-estimator-state';
         const services = [
             { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, billedNonProd: 0, billedProd: 0, defaultEnabled: true },
@@ -156,7 +200,8 @@
             { name: 'Control Center', nonProd: 1, prod: 1 },
             { name: 'Confluent Operator', nonProd: 1, prod: 1 },
             { name: 'CP Flink Nodes', nonProd: 3, prod: 3 },
-            { name: 'CP Flink Nodes in 2 DC', nonProd: 6, prod: 6 }
+            { name: 'CP Flink Nodes in 2 DC', nonProd: 6, prod: 6 },
+            { name: 'CP Connector Pack', nonProd: 1, prod: 1 }
         ];
 
         const defaultClusters = [
@@ -228,8 +273,12 @@
         const updateSummary = () => {
             const summaryNonProdEl = document.getElementById('summary-nonprod');
             const summaryProdEl = document.getElementById('summary-prod');
+            const summaryCpNonProdEl = document.getElementById('summary-cp-nonprod');
+            const summaryCpProdEl = document.getElementById('summary-cp-prod');
             let summaryNonProd = 0;
             let summaryProd = 0;
+            let cpNonProd = 0;
+            let cpProd = 0;
 
             const clusterCards = Array.from(clustersContainer.children);
             const tableCards = Array.from(tablesContainer.children);
@@ -249,33 +298,50 @@
                 const env = clusterCard.querySelector('.env-select')?.value || 'prod';
                 const rows = tableCard.querySelectorAll('tbody tr[data-service]');
                 rows.forEach((row) => {
+                    const serviceName = row.getAttribute('data-service');
                     const toggle = row.querySelector('.service-toggle');
                     if (!toggle || !toggle.checked) return;
                     const billedInput = row.querySelector(env === 'prod' ? '.prod-col .billed-input' : '.nonprod-col .billed-input');
                     const value = Number(billedInput?.value || 0);
                     if (Number.isNaN(value)) return;
+                    const isCP = serviceName === CONNECTOR_PACK_SERVICE;
                     if (env === 'prod') {
-                        summaryProd += value;
+                        if (isCP) cpProd += value; else summaryProd += value;
                     } else {
-                        summaryNonProd += value;
+                        if (isCP) cpNonProd += value; else summaryNonProd += value;
                     }
                 });
             });
 
             if (summaryNonProdEl) summaryNonProdEl.textContent = summaryNonProd.toString();
             if (summaryProdEl) summaryProdEl.textContent = summaryProd.toString();
+            if (summaryCpNonProdEl) summaryCpNonProdEl.textContent = cpNonProd.toString();
+            if (summaryCpProdEl) summaryCpProdEl.textContent = cpProd.toString();
+
+            const formatCurrency = (value) => {
+                const rounded = Math.round(value);
+                return `$${rounded.toLocaleString('en-US')}`;
+            };
 
             const nonProdRate = Number(priceNonProdInput?.value || 0);
             const prodRate = Number(priceProdInput?.value || 0);
             const nonProdCost = (Number.isNaN(nonProdRate) ? 0 : nonProdRate) * summaryNonProd;
             const prodCost = (Number.isNaN(prodRate) ? 0 : prodRate) * summaryProd;
-            const formatCurrency = (value) => {
-                const rounded = Math.round(value);
-                return `$${rounded.toLocaleString('en-US')}`;
-            };
             if (totalNonProdCostEl) totalNonProdCostEl.textContent = formatCurrency(nonProdCost);
             if (totalProdCostEl) totalProdCostEl.textContent = formatCurrency(prodCost);
-            if (totalAmountEl) totalAmountEl.textContent = formatCurrency(nonProdCost + prodCost);
+            const totalNodeCost = nonProdCost + prodCost;
+            if (totalAmountEl) totalAmountEl.textContent = formatCurrency(totalNodeCost);
+
+            const cpNonProdRate = Number(priceCpNonProdInput?.value || 0);
+            const cpProdRate = Number(priceCpProdInput?.value || 0);
+            const cpNonProdCost = (Number.isNaN(cpNonProdRate) ? 0 : cpNonProdRate) * cpNonProd;
+            const cpProdCost = (Number.isNaN(cpProdRate) ? 0 : cpProdRate) * cpProd;
+            if (totalCpNonProdCostEl) totalCpNonProdCostEl.textContent = formatCurrency(cpNonProdCost);
+            if (totalCpProdCostEl) totalCpProdCostEl.textContent = formatCurrency(cpProdCost);
+            const totalCpCost = cpNonProdCost + cpProdCost;
+            if (totalCpAmountEl) totalCpAmountEl.textContent = formatCurrency(totalCpCost);
+
+            if (grandTotalEl) grandTotalEl.textContent = formatCurrency(totalNodeCost + totalCpCost);
 
             if (summaryBody) {
                 services.forEach((service) => {
@@ -293,7 +359,6 @@
                         return Number.isNaN(value) ? 0 : value;
                     });
 
-                    const rowTotal = rowValues.reduce((sum, value) => sum + value, 0);
                     const rowHtml = `
                         <tr>
                             <td class="px-4 py-2 border">${service.name}</td>
@@ -526,6 +591,8 @@
         });
         priceNonProdInput.addEventListener('input', updateSummary);
         priceProdInput.addEventListener('input', updateSummary);
+        priceCpNonProdInput.addEventListener('input', updateSummary);
+        priceCpProdInput.addEventListener('input', updateSummary);
 
         renderClusters();
     </script>
