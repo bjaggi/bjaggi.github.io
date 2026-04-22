@@ -285,14 +285,9 @@
                     </div>
                 </div>
 
-                <p class="text-xs text-gray-600 mt-6 mb-3">Profiles auto-upload to 🧠 Account Brain on next sync.</p>
-
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                    <button type="submit" class="flex-1 bg-primary hover:bg-[#0870c4] text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2">
-                        <span aria-hidden="true">💾</span> Save Profile
-                    </button>
+                <div class="flex items-center gap-3 mt-6">
                     <button type="button" id="form-cancel" class="text-sm text-primary hover:text-dark underline px-2">Cancel</button>
-                    <button type="button" id="form-delete" class="hidden text-sm text-red-600 hover:text-red-700 underline sm:ml-auto">Remove account</button>
+                    <button type="button" id="form-delete" class="hidden text-sm text-red-600 hover:text-red-700 underline ml-auto">Remove account</button>
                 </div>
             </form>
         </div>
@@ -495,17 +490,27 @@
                 if (guide && hasScopeErr) guide.open = true;
             }
 
-            function syncToDriveQuiet(list) {
-                if (!window.AccountBrainDrive || !window.AccountBrainDrive.hasSessionToken()) return;
-                window.AccountBrainDrive.uploadAccounts(list, function (err) {
-                    if (err) setDriveStatus('Drive sync failed: ' + err.message, true);
-                    else setDriveStatus('Synced to Google Drive', false);
-                });
-            }
-
             function saveAccounts(list) {
                 localStorage.setItem(STORAGE_V3, JSON.stringify(list));
-                syncToDriveQuiet(list);
+                if (window.AccountBrainDrive && window.AccountBrainDrive.hasSessionToken()) {
+                    setDriveStatus('Saving to Google Docs…', false);
+                    window.AccountBrainDrive.pushToDocs(list, function (err, stats) {
+                        if (err) { setDriveStatus('Push failed: ' + err.message, true); return; }
+                        var msg = 'Saved: ' + stats.updated + ' updated, ' + stats.created + ' created.';
+                        if (stats.errors && stats.errors.length) msg += ' Errors: ' + stats.errors.join('; ');
+                        setDriveStatus(msg, stats.errors && stats.errors.length > 0);
+                    });
+                }
+            }
+
+            function deduplicateByName(list) {
+                var seen = {};
+                return list.filter(function (a) {
+                    var k = (a.name || '').toLowerCase();
+                    if (seen[k]) return false;
+                    seen[k] = true;
+                    return true;
+                });
             }
 
             function escapeHtml(s) {
@@ -842,6 +847,15 @@
                 if (!name) return;
 
                 var list = loadAccounts();
+                var nameLower = name.toLowerCase();
+                var dup = list.find(function (a) {
+                    return a.name && a.name.toLowerCase() === nameLower && a.id !== id;
+                });
+                if (dup) {
+                    alert('An account named "' + dup.name + '" already exists. Please use a different name.');
+                    document.getElementById('form-name').focus();
+                    return;
+                }
                 var entry = {
                     id: id || ('acc-' + Date.now()),
                     name: name,
@@ -962,7 +976,7 @@
                             setDriveStatus('Signed in. No account profiles found in Drive.', false);
                             return;
                         }
-                        var merged = profiles.map(function (p) {
+                        var merged = deduplicateByName(profiles.map(function (p) {
                             return toV3({
                                 name: p.accountName,
                                 keyPlayers: p.keyPlayers,
@@ -970,9 +984,9 @@
                                 nextSteps: p.nextSteps || [],
                                 additionalNotes: p.additionalNotes || []
                             });
-                        });
+                        }));
                         localStorage.setItem(STORAGE_V3, JSON.stringify(merged));
-                        setDriveStatus('Signed in — loaded ' + profiles.length + ' account(s) from Google Docs.', false);
+                        setDriveStatus('Signed in — loaded ' + merged.length + ' account(s) from Google Docs.', false);
                         render();
                     });
                 });
@@ -1010,7 +1024,7 @@
                         return;
                     }
                     if (confirm('Replace local accounts with ' + profiles.length + ' profile(s) from Google Docs?')) {
-                        var merged = profiles.map(function (p) {
+                        var merged = deduplicateByName(profiles.map(function (p) {
                             return toV3({
                                 name: p.accountName,
                                 keyPlayers: p.keyPlayers,
@@ -1018,9 +1032,9 @@
                                 nextSteps: p.nextSteps || [],
                                 additionalNotes: p.additionalNotes || []
                             });
-                        });
+                        }));
                         localStorage.setItem(STORAGE_V3, JSON.stringify(merged));
-                        setDriveStatus('Pulled ' + profiles.length + ' account(s) from Google Docs.', false);
+                        setDriveStatus('Pulled ' + merged.length + ' account(s) from Google Docs.', false);
                         render();
                     }
                 });

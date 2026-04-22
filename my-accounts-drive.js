@@ -366,8 +366,19 @@
                         }
                         pending--;
                         if (pending === 0) {
-                            console.log('[AccountBrainDrive] pull complete:', results.length, 'of', entries.length);
-                            cb(firstErr && !results.length ? firstErr : null, results);
+                            var deduped = [];
+                            var seen = {};
+                            for (var di = results.length - 1; di >= 0; di--) {
+                                var nk = (results[di].accountName || '').toLowerCase();
+                                if (seen[nk]) {
+                                    console.warn('[AccountBrainDrive] duplicate account name "' + results[di].accountName + '" — keeping first occurrence');
+                                    continue;
+                                }
+                                seen[nk] = true;
+                                deduped.unshift(results[di]);
+                            }
+                            console.log('[AccountBrainDrive] pull complete:', deduped.length, 'unique of', entries.length, 'entries');
+                            cb(firstErr && !deduped.length ? firstErr : null, deduped);
                         }
                     });
                 });
@@ -381,6 +392,17 @@
         getAccessToken(function (err, token) {
             if (err) return cb(err);
             if (!accountsArray.length) return cb(null, { created: 0, updated: 0 });
+            var nameCounts = {};
+            var dupes = [];
+            accountsArray.forEach(function (a) {
+                var k = (a.name || '').trim().toLowerCase();
+                if (!k) return;
+                nameCounts[k] = (nameCounts[k] || 0) + 1;
+                if (nameCounts[k] === 2) dupes.push(a.name);
+            });
+            if (dupes.length) {
+                return cb(new Error('Duplicate account name(s): ' + dupes.join(', ') + '. Rename or remove duplicates before pushing.'));
+            }
             fetchMappingDoc(token, function (e2, mapping) {
                 var byAccount = (mapping && mapping.byAccount) || {};
                 var nameQuery = "name contains '" + PROFILE_DOC_PREFIX.replace(/'/g, "\\'") + "' and trashed=false and mimeType='application/vnd.google-apps.document'";
