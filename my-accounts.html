@@ -295,6 +295,48 @@
                         </h3>
                         <div id="list-notes" class="space-y-2 mt-2"></div>
                     </div>
+
+                    <!-- Use Cases -->
+                    <div class="section-card">
+                        <div class="flex items-start justify-between gap-3 mb-2">
+                            <div>
+                                <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>💡</span> Use Cases</h3>
+                                <p class="text-gray-600 text-xs mt-1 italic">What are this account's primary use cases for Confluent / data streaming?</p>
+                            </div>
+                            <button type="button" id="add-usecase" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg">+ Add</button>
+                        </div>
+                        <div id="list-usecases" class="space-y-2 mt-3"></div>
+                    </div>
+
+                    <!-- Architecture -->
+                    <div class="section-card">
+                        <div class="mb-2">
+                            <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🏗️</span> Architecture</h3>
+                            <p class="text-gray-600 text-xs mt-1 italic">Describe the current or target architecture. Optionally attach a diagram.</p>
+                        </div>
+                        <textarea id="form-architecture-text" rows="4" placeholder="e.g. Event-driven microservices on K8s with Kafka bridging legacy CDC from Oracle to real-time analytics in Snowflake…"
+                            class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-dark text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]"></textarea>
+                        <div class="mt-3">
+                            <label class="block text-xs font-medium text-dark mb-1">Architecture Diagram (image URL or paste a link)</label>
+                            <input id="form-architecture-image" type="url" placeholder="https://... (paste an image URL or Google Drive link)"
+                                class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-dark text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]">
+                            <div id="architecture-preview" class="mt-2 hidden">
+                                <img id="architecture-preview-img" src="" alt="Architecture diagram" class="max-w-full rounded-lg border border-gray-200 shadow-sm" style="max-height:400px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Path to Value Realization -->
+                    <div class="section-card">
+                        <div class="flex items-start justify-between gap-3 mb-2">
+                            <div>
+                                <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🚀</span> Path to Value Realization</h3>
+                                <p class="text-gray-600 text-xs mt-1 italic">Key milestones and steps to deliver value with Confluent at this account.</p>
+                            </div>
+                            <button type="button" id="add-valuepath" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg">+ Add</button>
+                        </div>
+                        <div id="list-valuepath" class="space-y-2 mt-3"></div>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-3 mt-6">
@@ -378,7 +420,11 @@
                         keyPlayers: (acct.keyPlayers || []).map(normalizeKeyPlayer),
                         topInitiatives: (acct.topInitiatives || []).map(String),
                         nextSteps: (acct.nextSteps || []).map(String),
-                        additionalNotes: migrateNotes(acct.additionalNotes)
+                        additionalNotes: migrateNotes(acct.additionalNotes),
+                        useCases: (acct.useCases || []).map(String),
+                        architectureText: acct.architectureText || '',
+                        architectureImage: acct.architectureImage || '',
+                        valuePath: (acct.valuePath || []).map(String)
                     };
                 }
                 var imp = '';
@@ -729,6 +775,25 @@
             var notesEl = document.getElementById('list-notes');
             bindListRemove(notesEl);
 
+            var usecasesEl = document.getElementById('list-usecases');
+            var valuepathEl = document.getElementById('list-valuepath');
+            bindListRemove(usecasesEl);
+            bindListRemove(valuepathEl);
+
+            var archImageInput = document.getElementById('form-architecture-image');
+            var archPreview = document.getElementById('architecture-preview');
+            var archPreviewImg = document.getElementById('architecture-preview-img');
+            archImageInput.addEventListener('input', function () {
+                var url = (archImageInput.value || '').trim();
+                if (url) {
+                    archPreviewImg.src = url;
+                    archPreview.classList.remove('hidden');
+                } else {
+                    archPreview.classList.add('hidden');
+                    archPreviewImg.src = '';
+                }
+            });
+
             function openModal(editId) {
                 var list = loadAccounts();
                 var isNew = !editId;
@@ -742,6 +807,12 @@
                     fillList(initiativesEl, [], 'Priority or concern');
                     fillList(stepsEl, [], 'Next step or commitment');
                     fillNoteList(notesEl, []);
+                    fillList(usecasesEl, [], 'e.g. Real-time fraud detection, CDC from Oracle');
+                    document.getElementById('form-architecture-text').value = '';
+                    document.getElementById('form-architecture-image').value = '';
+                    archPreview.classList.add('hidden');
+                    archPreviewImg.src = '';
+                    fillList(valuepathEl, [], 'e.g. POC in Q2, production rollout Q3');
                 } else {
                     var acct = list.find(function (a) { return a.id === editId; });
                     if (!acct) return;
@@ -751,6 +822,17 @@
                     fillList(initiativesEl, acct.topInitiatives, 'Priority or concern');
                     fillList(stepsEl, acct.nextSteps, 'Next step or commitment');
                     fillNoteList(notesEl, acct.additionalNotes);
+                    fillList(usecasesEl, acct.useCases || [], 'e.g. Real-time fraud detection, CDC from Oracle');
+                    document.getElementById('form-architecture-text').value = acct.architectureText || '';
+                    document.getElementById('form-architecture-image').value = acct.architectureImage || '';
+                    if (acct.architectureImage) {
+                        archPreviewImg.src = acct.architectureImage;
+                        archPreview.classList.remove('hidden');
+                    } else {
+                        archPreview.classList.add('hidden');
+                        archPreviewImg.src = '';
+                    }
+                    fillList(valuepathEl, acct.valuePath || [], 'e.g. POC in Q2, production rollout Q3');
                 }
 
                 updateInitiativeButtonState();
@@ -779,6 +861,14 @@
 
             document.getElementById('add-step').addEventListener('click', function () {
                 stepsEl.appendChild(makeRow('Next step or commitment', ''));
+            });
+
+            document.getElementById('add-usecase').addEventListener('click', function () {
+                usecasesEl.appendChild(makeRow('e.g. Real-time fraud detection, CDC from Oracle', ''));
+            });
+
+            document.getElementById('add-valuepath').addEventListener('click', function () {
+                valuepathEl.appendChild(makeRow('e.g. POC in Q2, production rollout Q3', ''));
             });
 
             document.getElementById('add-note').addEventListener('click', function () {
@@ -857,6 +947,8 @@
                     if (act > 0) {
                         actionRow = '<li class="text-gray-600 text-sm">✅ ' + act + ' action item' + (act !== 1 ? 's' : '') + '</li>';
                     }
+                    var uc = (acct.useCases || []).filter(Boolean).length;
+                    var ucRow = uc > 0 ? '<li class="text-gray-600 text-sm">💡 ' + uc + ' use case' + (uc !== 1 ? 's' : '') + '</li>' : '';
 
                     card.innerHTML =
                         '<div class="flex justify-between items-start mb-2">' +
@@ -868,6 +960,7 @@
                         '<li class="text-gray-600 text-sm">👥 ' + pl + ' player' + (pl !== 1 ? 's' : '') + '</li>' +
                         '<li class="text-gray-600 text-sm">🎯 ' + ini + ' initiative' + (ini !== 1 ? 's' : '') + '</li>' +
                         actionRow +
+                        ucRow +
                         '</ul>' +
                         '<p class="mt-4 text-sm text-gray-600 italic border-t border-gray-100 pt-3">' + priority + '</p>';
 
@@ -917,6 +1010,10 @@
                     topInitiatives: collectLines(initiativesEl).slice(0, MAX_INITIATIVES),
                     nextSteps: collectLines(stepsEl),
                     additionalNotes: collectNotes(notesEl),
+                    useCases: collectLines(usecasesEl),
+                    architectureText: (document.getElementById('form-architecture-text').value || '').trim(),
+                    architectureImage: (document.getElementById('form-architecture-image').value || '').trim(),
+                    valuePath: collectLines(valuepathEl),
                     updatedAt: todayStr()
                 };
 
@@ -1030,14 +1127,26 @@
                             setDriveStatus('Signed in. No account profiles found in Drive.', false);
                             return;
                         }
+                        var localAccounts = loadAccounts();
+                        var localByName = {};
+                        localAccounts.forEach(function (a) { localByName[(a.name || '').toLowerCase()] = a; });
                         var merged = deduplicateByName(profiles.map(function (p) {
-                            return toV3({
+                            var pulled = toV3({
                                 name: p.accountName,
                                 keyPlayers: p.keyPlayers,
                                 topInitiatives: p.topInitiatives || [],
                                 nextSteps: p.nextSteps || [],
                                 additionalNotes: p.additionalNotes || []
                             });
+                            var local = localByName[(pulled.name || '').toLowerCase()];
+                            if (local) {
+                                pulled.id = local.id;
+                                pulled.useCases = local.useCases || [];
+                                pulled.architectureText = local.architectureText || '';
+                                pulled.architectureImage = local.architectureImage || '';
+                                pulled.valuePath = local.valuePath || [];
+                            }
+                            return pulled;
                         }));
                         localStorage.setItem(STORAGE_V3, JSON.stringify(merged));
                         setDriveStatus('Signed in — loaded ' + merged.length + ' account(s) from Google Docs.', false);
@@ -1078,14 +1187,26 @@
                         return;
                     }
                     if (confirm('Replace local accounts with ' + profiles.length + ' profile(s) from Google Docs?')) {
+                        var localAccounts = loadAccounts();
+                        var localByName = {};
+                        localAccounts.forEach(function (a) { localByName[(a.name || '').toLowerCase()] = a; });
                         var merged = deduplicateByName(profiles.map(function (p) {
-                            return toV3({
+                            var pulled = toV3({
                                 name: p.accountName,
                                 keyPlayers: p.keyPlayers,
                                 topInitiatives: p.topInitiatives || [],
                                 nextSteps: p.nextSteps || [],
                                 additionalNotes: p.additionalNotes || []
                             });
+                            var local = localByName[(pulled.name || '').toLowerCase()];
+                            if (local) {
+                                pulled.id = local.id;
+                                pulled.useCases = local.useCases || [];
+                                pulled.architectureText = local.architectureText || '';
+                                pulled.architectureImage = local.architectureImage || '';
+                                pulled.valuePath = local.valuePath || [];
+                            }
+                            return pulled;
                         }));
                         localStorage.setItem(STORAGE_V3, JSON.stringify(merged));
                         setDriveStatus('Pulled ' + merged.length + ' account(s) from Google Docs.', false);
