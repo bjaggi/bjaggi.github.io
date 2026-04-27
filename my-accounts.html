@@ -52,6 +52,29 @@
             box-shadow: 0 1px 2px rgba(10, 61, 98, 0.06);
         }
         #modal-overlay { scroll-behavior: smooth; }
+        .section-card[data-collapsible] .section-head { cursor: pointer; user-select: none; }
+        .section-card[data-collapsible] .section-head .chevron {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.25rem;
+            height: 1.25rem;
+            font-size: 0.625rem;
+            color: #9ca3af;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        .section-card[data-collapsible].collapsed .section-head .chevron { transform: rotate(-90deg); }
+        .section-card[data-collapsible] .section-body {
+            overflow: hidden;
+            transition: max-height 0.25s ease, opacity 0.2s ease;
+            max-height: 2000px;
+            opacity: 1;
+        }
+        .section-card[data-collapsible].collapsed .section-body {
+            max-height: 0;
+            opacity: 0;
+        }
         .form-sidebar-nav a {
             display: flex;
             align-items: center;
@@ -290,90 +313,127 @@
                         </div>
 
                         <!-- Key players -->
-                        <div id="sec-key-players" class="section-card scroll-mt-24">
-                            <div class="flex items-start justify-between gap-3 mb-2">
-                                <div>
-                                    <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>👥</span> Key Players &amp; Roles</h3>
-                                    <p class="text-gray-600 text-xs mt-1 italic">Add the people who matter — use Name, Title, and Other for context.</p>
+                        <div id="sec-key-players" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>👥</span> Key Players &amp; Roles</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">Add the people who matter — use Name, Title, and Other for context.</p>
+                                    </div>
                                 </div>
-                                <button type="button" id="add-player" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg">+ Add</button>
+                                <button type="button" id="add-player" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg" onclick="event.stopPropagation()">+ Add</button>
                             </div>
-                            <div id="list-players" class="space-y-2 mt-3"></div>
+                            <div class="section-body">
+                                <div id="list-players" class="space-y-2 mt-3"></div>
+                            </div>
                         </div>
 
                         <!-- Initiatives max 3 -->
-                        <div id="sec-initiatives" class="section-card scroll-mt-24">
-                            <div class="flex items-start justify-between gap-3 mb-2">
-                                <div>
-                                    <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🎯</span> Top 3 Initiatives / Concerns</h3>
-                                    <p class="text-gray-600 text-xs mt-1 italic">What are this account&apos;s top strategic priorities or pain points?</p>
+                        <div id="sec-initiatives" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🎯</span> Top 3 Initiatives / Concerns</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">What are this account&apos;s top strategic priorities or pain points?</p>
+                                    </div>
                                 </div>
-                                <button type="button" id="add-initiative" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg">+ Add (max 3)</button>
+                                <button type="button" id="add-initiative" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg" onclick="event.stopPropagation()">+ Add (max 3)</button>
                             </div>
-                            <div id="list-initiatives" class="space-y-2 mt-3"></div>
+                            <div class="section-body">
+                                <div id="list-initiatives" class="space-y-2 mt-3"></div>
+                            </div>
                         </div>
 
                         <!-- Use Cases -->
-                        <div id="sec-use-cases" class="section-card scroll-mt-24">
-                            <div class="flex items-start justify-between gap-3 mb-2">
-                                <div>
-                                    <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>💡</span> Use Cases</h3>
-                                    <p class="text-gray-600 text-xs mt-1 italic">What are this account's primary use cases for Confluent / data streaming?</p>
+                        <div id="sec-use-cases" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>💡</span> Use Cases</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">What are this account's primary use cases for Confluent / data streaming?</p>
+                                    </div>
                                 </div>
-                                <button type="button" id="add-usecase" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg">+ Add</button>
+                                <button type="button" id="add-usecase" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg" onclick="event.stopPropagation()">+ Add</button>
                             </div>
-                            <div id="list-usecases" class="space-y-2 mt-3"></div>
+                            <div class="section-body">
+                                <div id="list-usecases" class="space-y-2 mt-3"></div>
+                            </div>
                         </div>
 
                         <!-- Architecture -->
-                        <div id="sec-architecture" class="section-card scroll-mt-24">
-                            <div class="mb-2">
-                                <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🏗️</span> Architecture</h3>
-                                <p class="text-gray-600 text-xs mt-1 italic">Describe the current or target architecture. Optionally attach a diagram.</p>
+                        <div id="sec-architecture" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🏗️</span> Architecture</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">Describe the current or target architecture. Optionally attach a diagram.</p>
+                                    </div>
+                                </div>
                             </div>
-                            <textarea id="form-architecture-text" rows="4" placeholder="e.g. Event-driven microservices on K8s with Kafka bridging legacy CDC from Oracle to real-time analytics in Snowflake…"
-                                class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-dark text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]"></textarea>
-                            <div class="mt-3">
-                                <label class="block text-xs font-medium text-dark mb-1">Architecture Diagram (image URL or paste a link)</label>
-                                <input id="form-architecture-image" type="url" placeholder="https://... (paste an image URL or Google Drive link)"
-                                    class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-dark text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]">
-                                <div id="architecture-preview" class="mt-2 hidden">
-                                    <img id="architecture-preview-img" src="" alt="Architecture diagram" class="max-w-full rounded-lg border border-gray-200 shadow-sm" style="max-height:400px;">
+                            <div class="section-body">
+                                <textarea id="form-architecture-text" rows="4" placeholder="e.g. Event-driven microservices on K8s with Kafka bridging legacy CDC from Oracle to real-time analytics in Snowflake…"
+                                    class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-dark text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]"></textarea>
+                                <div class="mt-3">
+                                    <label class="block text-xs font-medium text-dark mb-1">Architecture Diagram (image URL or paste a link)</label>
+                                    <input id="form-architecture-image" type="url" placeholder="https://... (paste an image URL or Google Drive link)"
+                                        class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-dark text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]">
+                                    <div id="architecture-preview" class="mt-2 hidden">
+                                        <img id="architecture-preview-img" src="" alt="Architecture diagram" class="max-w-full rounded-lg border border-gray-200 shadow-sm" style="max-height:400px;">
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Path to Value Realization -->
-                        <div id="sec-value-path" class="section-card scroll-mt-24">
-                            <div class="flex items-start justify-between gap-3 mb-2">
-                                <div>
-                                    <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🚀</span> Path to Value Realization</h3>
-                                    <p class="text-gray-600 text-xs mt-1 italic">Key milestones and steps to deliver value with Confluent at this account.</p>
+                        <div id="sec-value-path" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🚀</span> Path to Value Realization</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">Key milestones and steps to deliver value with Confluent at this account.</p>
+                                    </div>
                                 </div>
-                                <button type="button" id="add-valuepath" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg">+ Add</button>
+                                <button type="button" id="add-valuepath" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg" onclick="event.stopPropagation()">+ Add</button>
                             </div>
-                            <div id="list-valuepath" class="space-y-2 mt-3"></div>
+                            <div class="section-body">
+                                <div id="list-valuepath" class="space-y-2 mt-3"></div>
+                            </div>
                         </div>
 
                         <!-- Next steps -->
-                        <div id="sec-next-steps" class="section-card scroll-mt-24">
-                            <div class="flex items-start justify-between gap-3 mb-2">
-                                <div>
-                                    <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>✅</span> Next Steps / Action Items</h3>
-                                    <p class="text-gray-600 text-xs mt-1 italic">Track follow-ups, commitments, and next steps here.</p>
+                        <div id="sec-next-steps" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>✅</span> Next Steps / Action Items</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">Track follow-ups, commitments, and next steps here.</p>
+                                    </div>
                                 </div>
-                                <button type="button" id="add-step" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg">+ Add</button>
+                                <button type="button" id="add-step" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg" onclick="event.stopPropagation()">+ Add</button>
                             </div>
-                            <div id="list-steps" class="space-y-2 mt-3"></div>
+                            <div class="section-body">
+                                <div id="list-steps" class="space-y-2 mt-3"></div>
+                            </div>
                         </div>
 
                         <!-- Notes -->
-                        <div id="sec-notes" class="section-card scroll-mt-24">
-                            <h3 class="text-dark font-semibold text-sm flex items-center gap-2 mb-2">
-                                <span>📝</span> Notes
-                                <button type="button" id="add-note" class="ml-auto text-xs font-semibold text-primary hover:text-dark bg-[#0A85EA]/10 hover:bg-[#0A85EA]/20 px-3 py-1 rounded-lg transition-colors">+ Add Note</button>
-                            </h3>
-                            <div id="list-notes" class="space-y-2 mt-2"></div>
+                        <div id="sec-notes" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head mb-2">
+                                <h3 class="text-dark font-semibold text-sm flex items-center gap-2">
+                                    <span class="chevron">&#9660;</span>
+                                    <span>📝</span> Notes
+                                    <button type="button" id="add-note" class="ml-auto text-xs font-semibold text-primary hover:text-dark bg-[#0A85EA]/10 hover:bg-[#0A85EA]/20 px-3 py-1 rounded-lg transition-colors" onclick="event.stopPropagation()">+ Add Note</button>
+                                </h3>
+                            </div>
+                            <div class="section-body">
+                                <div id="list-notes" class="space-y-2 mt-2"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1259,6 +1319,17 @@
             }
             updateDriveBar();
             render();
+        })();
+    </script>
+    <script>
+        (function () {
+            document.querySelectorAll('.section-card[data-collapsible]').forEach(function (card) {
+                var head = card.querySelector('.section-head');
+                if (!head) return;
+                head.addEventListener('click', function () {
+                    card.classList.toggle('collapsed');
+                });
+            });
         })();
     </script>
     <script>
