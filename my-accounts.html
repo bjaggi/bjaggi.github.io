@@ -604,14 +604,14 @@
                                 localStorage.removeItem(STORAGE_V3);
                                 return defaultAccounts();
                             }
-                            return p3.map(toV3);
+                            return deduplicateByName(p3.map(toV3));
                         }
                     }
                     var r2 = localStorage.getItem(STORAGE_V2);
                     if (r2) {
                         var p2 = JSON.parse(r2);
                         if (Array.isArray(p2) && p2.length) {
-                            var m2 = p2.map(toV3);
+                            var m2 = deduplicateByName(p2.map(toV3));
                             saveAccounts(m2);
                             localStorage.removeItem(STORAGE_V2);
                             return m2;
@@ -621,7 +621,7 @@
                     if (r1) {
                         var p1 = JSON.parse(r1);
                         if (Array.isArray(p1) && p1.length) {
-                            var m1 = migrateFromV1(p1).map(toV3);
+                            var m1 = deduplicateByName(migrateFromV1(p1).map(toV3));
                             saveAccounts(m1);
                             localStorage.removeItem(STORAGE_V1);
                             return m1;
@@ -648,6 +648,7 @@
             }
 
             function saveAccounts(list) {
+                list = deduplicateByName(list);
                 localStorage.setItem(STORAGE_V3, JSON.stringify(list));
                 if (window.AccountBrainDrive && window.AccountBrainDrive.hasSessionToken()) {
                     setDriveStatus('Saving to Google Docs…', false);
