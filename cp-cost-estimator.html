@@ -12,17 +12,13 @@
             color: #0A3D62;
         }
         .logo-container {
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            z-index: 1000;
+            padding: 0.75rem 1rem;
             background: white;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
         }
         .logo-container img {
-            height: 40px;
+            height: 36px;
             width: auto;
         }
         .text-primary {
@@ -49,13 +45,13 @@
     </style>
 </head>
 <body>
-    <div class="logo-container">
+    <div class="logo-container flex items-center gap-4">
         <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
             <img src="assets/image.png" alt="Confluent Logo">
         </a>
-        <a href="index.html" class="text-primary text-sm block mt-2">← Back to HomePage</a>
+        <a href="index.html" class="text-primary text-sm hover:text-dark">← Back to HomePage</a>
     </div>
-    <div class="container mx-auto px-4 py-10">
+    <div class="container mx-auto px-4 py-8">
         <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
             <h1 class="text-2xl font-bold text-dark mb-3">CP Cost Estimator</h1>
             <p class="text-dark mb-6">Estimate CP node counts and billed nodes per cluster environment.</p>
