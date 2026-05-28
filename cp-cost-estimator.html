@@ -174,107 +174,120 @@
                 <h2 class="text-lg font-semibold text-dark mb-2">Pricing</h2>
 
                 <!-- Nodes -->
-                <h3 class="text-md font-semibold text-dark mt-2 mb-2">Nodes</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
-                    <div class="bg-white border border-gray-100 rounded p-3">
-                        <div class="font-semibold">Non Production</div>
-                        <div id="summary-nonprod" class="text-xl">0</div>
+                <div class="mb-2">
+                    <button id="toggle-nodes" type="button" onclick="document.getElementById('nodes-detail').classList.toggle('hidden'); document.getElementById('nodes-chevron').classList.toggle('-rotate-90')" class="flex items-center gap-2 text-md font-semibold text-dark mt-2 mb-2 cursor-pointer hover:text-primary transition-colors">
+                        <svg id="nodes-chevron" class="w-4 h-4 transform transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                        Nodes
+                    </button>
+                    <div id="nodes-detail">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <div class="font-semibold">Non Production</div>
+                                <div id="summary-nonprod" class="text-xl">0</div>
+                            </div>
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <div class="font-semibold">Production</div>
+                                <div id="summary-prod" class="text-xl">0</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark mt-4">
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-nonprod">Price per node in Non Production ($)</label>
+                                <input id="price-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Non Prod Node Cost: <span id="total-nonprod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-prod">Price per node in Production ($)</label>
+                                <input id="price-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Prod Node Cost: <span id="total-prod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white border border-gray-100 rounded p-3">
-                        <div class="font-semibold">Production</div>
-                        <div id="summary-prod" class="text-xl">0</div>
+                    <div class="mt-3 text-sm text-dark font-semibold">
+                        Total Node Cost: <span id="total-amount" class="font-semibold">$0</span>
                     </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark mt-4">
-                    <div class="bg-white border border-gray-100 rounded p-3">
-                        <label class="block text-sm text-dark mb-1" for="price-nonprod">Price per node in Non Production ($)</label>
-                        <input id="price-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Non Prod Node Cost: <span id="total-nonprod-cost" class="font-semibold">$0</span></div>
-                    </div>
-                    <div class="bg-white border border-gray-100 rounded p-3">
-                        <label class="block text-sm text-dark mb-1" for="price-prod">Price per node in Production ($)</label>
-                        <input id="price-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Prod Node Cost: <span id="total-prod-cost" class="font-semibold">$0</span></div>
-                    </div>
-                </div>
-                <div class="mt-3 text-sm text-dark">
-                    Total Node Cost: <span id="total-amount" class="font-semibold">$0</span>
                 </div>
 
                 <!-- Connectors -->
                 <hr class="my-4 border-gray-200">
-                <h3 class="text-md font-semibold text-dark mb-2">Connectors</h3>
-                <div class="overflow-x-auto mb-4">
-                    <table class="w-full text-sm text-left border border-gray-200">
-                        <thead class="bg-gray-50 text-dark">
-                            <tr>
-                                <th class="px-4 py-2 border">Item</th>
-                                <th class="px-4 py-2 border">Count</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="px-4 py-2 border">Number of Premium Connectors</td>
-                                <td class="px-4 py-2 border" id="summary-connector-premium">0</td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2 border">Number of Non-Premium Connectors</td>
-                                <td class="px-4 py-2 border" id="summary-connector-non-premium">0</td>
-                            </tr>
-                            <tr>
-                                <td class="px-4 py-2 border">CP Connector Pack</td>
-                                <td class="px-4 py-2 border" id="summary-connector-cp-pack">0</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <!-- Premium Connectors pricing -->
-                <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Premium Connectors</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
-                    <div class="bg-white border border-gray-100 rounded p-3">
-                        <label class="block text-sm text-dark mb-1" for="price-prem-nonprod">Price per Premium Connector in Non Production ($)</label>
-                        <input id="price-prem-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Non Prod Premium Cost: <span id="total-prem-nonprod-cost" class="font-semibold">$0</span></div>
-                    </div>
-                    <div class="bg-white border border-gray-100 rounded p-3">
-                        <label class="block text-sm text-dark mb-1" for="price-prem-prod">Price per Premium Connector in Production ($)</label>
-                        <input id="price-prem-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Prod Premium Cost: <span id="total-prem-prod-cost" class="font-semibold">$0</span></div>
-                    </div>
-                </div>
+                <div class="mb-2">
+                    <button id="toggle-connectors" type="button" onclick="document.getElementById('connectors-detail').classList.toggle('hidden'); document.getElementById('connectors-chevron').classList.toggle('-rotate-90')" class="flex items-center gap-2 text-md font-semibold text-dark mb-2 cursor-pointer hover:text-primary transition-colors">
+                        <svg id="connectors-chevron" class="w-4 h-4 transform transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                        Connectors
+                    </button>
+                    <div id="connectors-detail">
+                        <div class="overflow-x-auto mb-4">
+                            <table class="w-full text-sm text-left border border-gray-200">
+                                <thead class="bg-gray-50 text-dark">
+                                    <tr>
+                                        <th class="px-4 py-2 border">Item</th>
+                                        <th class="px-4 py-2 border">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="px-4 py-2 border">Number of Premium Connectors</td>
+                                        <td class="px-4 py-2 border" id="summary-connector-premium">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-2 border">Number of Non-Premium Connectors</td>
+                                        <td class="px-4 py-2 border" id="summary-connector-non-premium">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-2 border">CP Connector Pack</td>
+                                        <td class="px-4 py-2 border" id="summary-connector-cp-pack">0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Premium Connectors pricing -->
+                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Premium Connectors</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-prem-nonprod">Price per Premium Connector in Non Production ($)</label>
+                                <input id="price-prem-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Non Prod Premium Cost: <span id="total-prem-nonprod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-prem-prod">Price per Premium Connector in Production ($)</label>
+                                <input id="price-prem-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Prod Premium Cost: <span id="total-prem-prod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                        </div>
 
-                <!-- Non-Premium Connectors pricing -->
-                <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Non-Premium Connectors</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
-                    <div class="bg-white border border-gray-100 rounded p-3">
-                        <label class="block text-sm text-dark mb-1" for="price-nonprem-nonprod">Price per Non-Premium Connector in Non Production ($)</label>
-                        <input id="price-nonprem-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Non Prod Non-Premium Cost: <span id="total-nonprem-nonprod-cost" class="font-semibold">$0</span></div>
-                    </div>
-                    <div class="bg-white border border-gray-100 rounded p-3">
-                        <label class="block text-sm text-dark mb-1" for="price-nonprem-prod">Price per Non-Premium Connector in Production ($)</label>
-                        <input id="price-nonprem-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Prod Non-Premium Cost: <span id="total-nonprem-prod-cost" class="font-semibold">$0</span></div>
-                    </div>
-                </div>
+                        <!-- Non-Premium Connectors pricing -->
+                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Non-Premium Connectors</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-nonprem-nonprod">Price per Non-Premium Connector in Non Production ($)</label>
+                                <input id="price-nonprem-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Non Prod Non-Premium Cost: <span id="total-nonprem-nonprod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-nonprem-prod">Price per Non-Premium Connector in Production ($)</label>
+                                <input id="price-nonprem-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Prod Non-Premium Cost: <span id="total-nonprem-prod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                        </div>
 
-                <!-- CP Connector Pack pricing -->
-                <h4 class="text-sm font-semibold text-dark mt-4 mb-2">CP Connector Pack</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
-                    <div class="bg-white border border-gray-100 rounded p-3">
-                        <label class="block text-sm text-dark mb-1" for="price-cp-nonprod">Price per CP Connector Pack in Non Production ($)</label>
-                        <input id="price-cp-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Non Prod CP Cost: <span id="total-cp-nonprod-cost" class="font-semibold">$0</span></div>
+                        <!-- CP Connector Pack pricing -->
+                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">CP Connector Pack</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-cp-nonprod">Price per CP Connector Pack in Non Production ($)</label>
+                                <input id="price-cp-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Non Prod CP Cost: <span id="total-cp-nonprod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-cp-prod">Price per CP Connector Pack in Production ($)</label>
+                                <input id="price-cp-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Prod CP Cost: <span id="total-cp-prod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white border border-gray-100 rounded p-3">
-                        <label class="block text-sm text-dark mb-1" for="price-cp-prod">Price per CP Connector Pack in Production ($)</label>
-                        <input id="price-cp-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                        <div class="mt-2 text-sm">Total Prod CP Cost: <span id="total-cp-prod-cost" class="font-semibold">$0</span></div>
+                    <div class="mt-4 text-sm text-dark font-semibold">
+                        Total Connector Cost: <span id="total-cp-amount" class="font-semibold">$0</span>
                     </div>
-                </div>
-
-                <div class="mt-4 text-sm text-dark font-semibold">
-                    Total Connector Cost: <span id="total-cp-amount" class="font-semibold">$0</span>
                 </div>
 
                 <!-- Grand Total -->
