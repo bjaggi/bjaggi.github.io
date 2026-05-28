@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CP Cost Estimator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #F5F9FF;
+            color: #0A3D62;
+        }
+        .logo-container {
+            padding: 0.75rem 1rem;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        .logo-container img {
+            height: 36px;
+            width: auto;
+        }
+        .text-primary {
+            color: #0A85EA;
+        }
+        .text-dark {
+            color: #0A3D62;
+        }
+        .bg-primary {
+            background-color: #0A85EA;
+        }
+        .bg-dark {
+            background-color: #0A3D62;
+        }
+        .hover\:bg-dark:hover {
+            background-color: #0A3D62;
+        }
+        .toc-sidebar {
+            position: sticky;
+            top: 1rem;
+            align-self: start;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+        }
+        .toc-sidebar a {
+            display: block;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.8125rem;
+            color: #6b7280;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            border-left: 2px solid transparent;
+        }
+        .toc-sidebar a:hover {
+            color: #0A3D62;
+            background: rgba(10, 133, 234, 0.06);
+        }
+        .toc-sidebar a.toc-sub {
+            padding-left: 1.5rem;
+            font-size: 0.75rem;
+        }
+        @media (max-width: 1023px) {
+            .toc-sidebar { display: none; }
+        }
+        @media print {
+            .no-print,
+            .logo-container,
+            .toc-sidebar {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-container flex items-center gap-4">
+        <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
+            <img src="assets/image.png" alt="Confluent Logo">
+        </a>
+        <a href="index.html" class="text-primary text-sm hover:text-dark">← Back to HomePage</a>
+    </div>
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto flex gap-6">
+            <!-- Table of Contents Sidebar -->
+            <nav id="toc-nav" class="toc-sidebar hidden lg:block w-48 shrink-0 no-print">
+                <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                    <h3 class="text-xs font-bold text-dark uppercase tracking-wide mb-2">Contents</h3>
+                    <div id="toc-links" class="space-y-0.5"></div>
+                </div>
+            </nav>
+            <!-- Main Content -->
+            <div class="flex-1 min-w-0 bg-white shadow-lg rounded-lg p-8">
+            <h1 class="text-2xl font-bold text-dark mb-3">CP Cost Estimator</h1>
+            <p class="text-dark mb-6">Estimate CP node counts and billed nodes per cluster environment.</p>
+            <div class="mb-6 border border-gray-200 rounded-lg p-3" style="color: #800000; font-weight: 700;">
+                <div>1: Disaster Recovery (DR) nodes are priced at 50% of the Production price</div>
+                <div>2: UAT, Staging, Perf is considered as Non-Prod</div>
+                <div>3: Dev is free</div>
+                <div>4: <a href="https://confluentinc.atlassian.net/wiki/spaces/PM/pages/3351249960/End+Free+CP+-+Field+Enablement+and+FAQs#Bundle-SKUs" target="_blank" rel="noopener noreferrer" style="color: #0A85EA; text-decoration: underline;">Connect workers and Connectors to be sold in a Pack</a></div>
+            </div>
+            <p class="text-sm text-dark mb-6 text-center opacity-80">Tip: Hard refresh on Mac with Cmd + Shift + R.</p>
+
+            <div id="sec-scoping" class="mb-8 border border-gray-200 rounded-lg p-4 no-print scroll-mt-4">
+                <h2 class="text-lg font-semibold text-dark mb-3">CP Scoping &amp; Sizing</h2>
+                <div class="flex flex-col sm:flex-row gap-4 items-end">
+                    <div class="flex-1">
+                        <label class="block text-sm text-dark mb-1" for="cluster-count">Number of clusters</label>
+                        <input id="cluster-count" type="number" min="1" value="3" class="w-full border border-gray-300 rounded px-3 py-2">
+                    </div>
+                </div>
+                <div id="clusters-container" class="mt-4 space-y-4"></div>
+            </div>
+
+            <div id="tables-container" class="space-y-6 mb-6"></div>
+
+            <!-- Connectors -->
+            <div id="sec-connectors" class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-6 scroll-mt-4">
+                <h2 class="text-lg font-semibold text-dark mb-3">Connectors</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border border-gray-200">
+                        <thead class="bg-gray-50 text-dark">
+                            <tr>
+                                <th class="px-4 py-2 border">Item</th>
+                                <th class="px-4 py-2 border">Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-4 py-2 border">Number of Premium Connectors</td>
+                                <td class="px-4 py-2 border">
+                                    <input id="connector-premium" type="number" min="0" value="0" class="w-24 border border-gray-300 rounded px-2 py-1 text-center">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 border">
+                                    <div>Number of Non-Premium Connectors</div>
+                                    <div class="text-xs mt-1" style="color: #800000; font-weight: 600;">If not already priced in a pack</div>
+                                </td>
+                                <td class="px-4 py-2 border">
+                                    <input id="connector-non-premium" type="number" min="0" value="0" class="w-24 border border-gray-300 rounded px-2 py-1 text-center">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 border">
+                                    <div>CP Connector Pack</div>
+                                    <a href="https://confluentinc.atlassian.net/wiki/spaces/PM/pages/3351249960/End+Free+CP+-+Field+Enablement+and+FAQs#Bundle-SKUs" target="_blank" rel="noopener noreferrer" class="text-primary text-xs hover:underline">Connector Pack Guide</a>
+                                </td>
+                                <td class="px-4 py-2 border">
+                                    <input id="connector-cp-pack" type="number" min="0" value="0" class="w-24 border border-gray-300 rounded px-2 py-1 text-center">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="sec-summary" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 scroll-mt-4">
+                <h2 class="text-lg font-semibold text-dark mb-2">Billed Nodes Summary</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border border-gray-200" id="summary-table">
+                        <thead class="bg-gray-50 text-dark">
+                            <tr id="summary-header">
+                                <th class="px-4 py-2 border">Component</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pricing -->
+            <div id="sec-pricing" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 scroll-mt-4">
+                <h2 class="text-lg font-semibold text-dark mb-2">Pricing</h2>
+
+                <!-- Nodes -->
+                <h3 class="text-md font-semibold text-dark mt-2 mb-2">Nodes</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <div class="font-semibold">Non Production</div>
+                        <div id="summary-nonprod" class="text-xl">0</div>
+                    </div>
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <div class="font-semibold">Production</div>
+                        <div id="summary-prod" class="text-xl">0</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark mt-4">
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-nonprod">Price per node in Non Production ($)</label>
+                        <input id="price-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Non Prod Node Cost: <span id="total-nonprod-cost" class="font-semibold">$0</span></div>
+                    </div>
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-prod">Price per node in Production ($)</label>
+                        <input id="price-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Prod Node Cost: <span id="total-prod-cost" class="font-semibold">$0</span></div>
+                    </div>
+                </div>
+                <div class="mt-3 text-sm text-dark">
+                    Total Node Cost: <span id="total-amount" class="font-semibold">$0</span>
+                </div>
+
+                <!-- Connectors -->
+                <hr class="my-4 border-gray-200">
+                <h3 class="text-md font-semibold text-dark mb-2">Connectors</h3>
+                <div class="overflow-x-auto mb-4">
+                    <table class="w-full text-sm text-left border border-gray-200">
+                        <thead class="bg-gray-50 text-dark">
+                            <tr>
+                                <th class="px-4 py-2 border">Item</th>
+                                <th class="px-4 py-2 border">Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-4 py-2 border">Number of Premium Connectors</td>
+                                <td class="px-4 py-2 border" id="summary-connector-premium">0</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 border">Number of Non-Premium Connectors</td>
+                                <td class="px-4 py-2 border" id="summary-connector-non-premium">0</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 border">CP Connector Pack</td>
+                                <td class="px-4 py-2 border" id="summary-connector-cp-pack">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Premium Connectors pricing -->
+                <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Premium Connectors</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-prem-nonprod">Price per Premium Connector in Non Production ($)</label>
+                        <input id="price-prem-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Non Prod Premium Cost: <span id="total-prem-nonprod-cost" class="font-semibold">$0</span></div>
+                    </div>
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-prem-prod">Price per Premium Connector in Production ($)</label>
+                        <input id="price-prem-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Prod Premium Cost: <span id="total-prem-prod-cost" class="font-semibold">$0</span></div>
+                    </div>
+                </div>
+
+                <!-- Non-Premium Connectors pricing -->
+                <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Non-Premium Connectors</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-nonprem-nonprod">Price per Non-Premium Connector in Non Production ($)</label>
+                        <input id="price-nonprem-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Non Prod Non-Premium Cost: <span id="total-nonprem-nonprod-cost" class="font-semibold">$0</span></div>
+                    </div>
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-nonprem-prod">Price per Non-Premium Connector in Production ($)</label>
+                        <input id="price-nonprem-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Prod Non-Premium Cost: <span id="total-nonprem-prod-cost" class="font-semibold">$0</span></div>
+                    </div>
+                </div>
+
+                <!-- CP Connector Pack pricing -->
+                <h4 class="text-sm font-semibold text-dark mt-4 mb-2">CP Connector Pack</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-cp-nonprod">Price per CP Connector Pack in Non Production ($)</label>
+                        <input id="price-cp-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Non Prod CP Cost: <span id="total-cp-nonprod-cost" class="font-semibold">$0</span></div>
+                    </div>
+                    <div class="bg-white border border-gray-100 rounded p-3">
+                        <label class="block text-sm text-dark mb-1" for="price-cp-prod">Price per CP Connector Pack in Production ($)</label>
+                        <input id="price-cp-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                        <div class="mt-2 text-sm">Total Prod CP Cost: <span id="total-cp-prod-cost" class="font-semibold">$0</span></div>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-sm text-dark font-semibold">
+                    Total Connector Cost: <span id="total-cp-amount" class="font-semibold">$0</span>
+                </div>
+
+                <!-- Grand Total -->
+                <hr class="my-4 border-gray-200">
+                <div class="mt-2 text-dark text-lg font-bold">
+                    Grand Total: <span id="grand-total" class="text-primary">$0</span>
+                </div>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                <h2 class="text-lg font-semibold text-dark mb-2">Notes</h2>
+                <textarea id="notes" class="w-full border border-gray-300 rounded px-3 py-2 min-h-[140px]" placeholder="Add any notes here..."></textarea>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <a href="index.html" class="text-primary underline">← Back to Landing Page</a>
+                    <a href="https://github.com/bjaggi" class="text-primary underline" target="_blank" rel="noopener noreferrer">GitHub: @bjaggi</a>
+                </div>
+                <button id="download-pdf" class="bg-primary text-white px-4 py-2 rounded hover:bg-dark">Download PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const clusterCountInput = document.getElementById('cluster-count');
+        const clustersContainer = document.getElementById('clusters-container');
+        const tablesContainer = document.getElementById('tables-container');
+        const downloadPdfButton = document.getElementById('download-pdf');
+        const summaryHeader = document.getElementById('summary-header');
+        const summaryBody = document.getElementById('summary-body');
+        const priceNonProdInput = document.getElementById('price-nonprod');
+        const priceProdInput = document.getElementById('price-prod');
+        const totalNonProdCostEl = document.getElementById('total-nonprod-cost');
+        const totalProdCostEl = document.getElementById('total-prod-cost');
+        const totalAmountEl = document.getElementById('total-amount');
+        const pricePremNonProdInput = document.getElementById('price-prem-nonprod');
+        const pricePremProdInput = document.getElementById('price-prem-prod');
+        const totalPremNonProdCostEl = document.getElementById('total-prem-nonprod-cost');
+        const totalPremProdCostEl = document.getElementById('total-prem-prod-cost');
+        const priceNonPremNonProdInput = document.getElementById('price-nonprem-nonprod');
+        const priceNonPremProdInput = document.getElementById('price-nonprem-prod');
+        const totalNonPremNonProdCostEl = document.getElementById('total-nonprem-nonprod-cost');
+        const totalNonPremProdCostEl = document.getElementById('total-nonprem-prod-cost');
+        const priceCpNonProdInput = document.getElementById('price-cp-nonprod');
+        const priceCpProdInput = document.getElementById('price-cp-prod');
+        const totalCpNonProdCostEl = document.getElementById('total-cp-nonprod-cost');
+        const totalCpProdCostEl = document.getElementById('total-cp-prod-cost');
+        const totalCpAmountEl = document.getElementById('total-cp-amount');
+        const grandTotalEl = document.getElementById('grand-total');
+        const connectorPremiumInput = document.getElementById('connector-premium');
+        const connectorNonPremiumInput = document.getElementById('connector-non-premium');
+        const connectorCpPackInput = document.getElementById('connector-cp-pack');
+        const CONNECTOR_PACK_SERVICE = 'CP Connector Pack';
+        const STORAGE_KEY = 'cp-cost-estimator-state';
+        const services = [
+            { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, billedNonProd: 0, billedProd: 0, defaultEnabled: true },
+            { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 3, prod: 3, billedNonProd: 0, billedProd: 0, note: 'Recommended num of nodes are 3 or 5, and the tie breaker 3rd or 5th node should be in the 3rd DC' },
+            { name: 'Kafka Broker', nonProd: 3, prod: 4, defaultEnabled: true, note: 'Num of brokers is based on anticipated CP cluster load (default is the smallest recommended config). See eventsizer.io for details' },
+            { name: 'Kafka Broker - Stretch Across 2 DC', nonProd: 4, prod: 4, note: 'Num of brokers is based on anticipated CP cluster load (default is the smallest recommended config). See eventsizer.io for details' },
+            { name: 'Kafka Broker - MRC Across 2 DC', nonProd: 6, prod: 6, note: 'Num of brokers is based on anticipated CP cluster load (default is the smallest recommended config). See eventsizer.io for details' },
+            { name: 'Schema Registry', nonProd: 1, prod: 2 },
+            { name: 'REST Proxy', nonProd: 1, prod: 2 },
+            { name: 'ksqlDB', nonProd: 1, prod: 2 },
+            { name: 'Kafka Connect', nonProd: 1, prod: 2, warnNote: 'Disable this if Connect Workers are already priced under a connector pack, only for add-on Worker nodes leave it enabled' },
+            { name: 'Control Center', nonProd: 1, prod: 1 },
+            { name: 'Confluent Operator', nonProd: 1, prod: 1 },
+            { name: 'CP Flink Nodes', nonProd: 3, prod: 3 },
+            { name: 'CP Flink Nodes in 2 DC', nonProd: 6, prod: 6 }
+        ];
+
+        const defaultClusters = [
+            { name: 'prod', env: 'prod' },
+            { name: 'dev', env: 'nonprod' },
+            { name: 'uat', env: 'nonprod' }
+        ];
+
+        const loadState = () => {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const collectState = () => {
+            const clusters = [];
+            const clusterCards = Array.from(clustersContainer.children);
+            const tableCards = Array.from(tablesContainer.children);
+
+            clusterCards.forEach((clusterCard, index) => {
+                const tableCard = tableCards[index];
+                if (!tableCard) return;
+                const nameInput = clusterCard.querySelector('input[type="text"]');
+                const envSelect = clusterCard.querySelector('.env-select');
+                const rows = Array.from(tableCard.querySelectorAll('tbody tr[data-service]'));
+                const servicesState = {};
+
+                rows.forEach((row) => {
+                    const serviceName = row.getAttribute('data-service');
+                    if (!serviceName) return;
+                    const nonProdInput = row.querySelector('.nonprod-col .node-input');
+                    const nonProdBilledInput = row.querySelector('.nonprod-col .billed-input');
+                    const prodInput = row.querySelector('.prod-col .node-input');
+                    const prodBilledInput = row.querySelector('.prod-col .billed-input');
+                    const toggle = row.querySelector('.service-toggle');
+
+                    servicesState[serviceName] = {
+                        nonProd: nonProdInput?.value ?? '',
+                        billedNonProd: nonProdBilledInput?.value ?? '',
+                        prod: prodInput?.value ?? '',
+                        billedProd: prodBilledInput?.value ?? '',
+                        enabled: toggle?.checked ?? false
+                    };
+                });
+
+                clusters.push({
+                    name: nameInput?.value ?? '',
+                    env: envSelect?.value ?? 'prod',
+                    services: servicesState
+                });
+            });
+
+            return {
+                count: Math.max(1, Number(clusterCountInput.value) || 1),
+                clusters,
+                connectors: {
+                    premium: Number(connectorPremiumInput?.value || 0),
+                    nonPremium: Number(connectorNonPremiumInput?.value || 0),
+                    cpPack: Number(connectorCpPackInput?.value || 0)
+                }
+            };
+        };
+
+        const saveState = () => {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(collectState()));
+            } catch (error) {
+                console.warn('Unable to persist CP cost estimator state.', error);
+            }
+        };
+
+        const updateSummary = () => {
+            const summaryNonProdEl = document.getElementById('summary-nonprod');
+            const summaryProdEl = document.getElementById('summary-prod');
+            const summaryConnPremiumEl = document.getElementById('summary-connector-premium');
+            const summaryConnNonPremiumEl = document.getElementById('summary-connector-non-premium');
+            const summaryConnCpPackEl = document.getElementById('summary-connector-cp-pack');
+            let summaryNonProd = 0;
+            let summaryProd = 0;
+
+            const clusterCards = Array.from(clustersContainer.children);
+            const tableCards = Array.from(tablesContainer.children);
+            const clusterNames = clusterCards.map((clusterCard, idx) => {
+                const name = clusterCard.querySelector('input[type="text"]')?.value?.trim();
+                return name || `Cluster ${idx + 1}`;
+            });
+
+            if (summaryHeader && summaryBody) {
+                summaryHeader.innerHTML = `<th class="px-4 py-2 border">Component</th>${clusterNames.map(name => `<th class="px-4 py-2 border">${name}</th>`).join('')}`;
+                summaryBody.innerHTML = '';
+            }
+
+            clusterCards.forEach((clusterCard, idx) => {
+                const tableCard = tableCards[idx];
+                if (!tableCard) return;
+                const env = clusterCard.querySelector('.env-select')?.value || 'prod';
+                const rows = tableCard.querySelectorAll('tbody tr[data-service]');
+                rows.forEach((row) => {
+                    const toggle = row.querySelector('.service-toggle');
+                    if (!toggle || !toggle.checked) return;
+                    const billedInput = row.querySelector(env === 'prod' ? '.prod-col .billed-input' : '.nonprod-col .billed-input');
+                    const value = Number(billedInput?.value || 0);
+                    if (Number.isNaN(value)) return;
+                    if (env === 'prod') summaryProd += value;
+                    else summaryNonProd += value;
+                });
+            });
+
+            if (summaryNonProdEl) summaryNonProdEl.textContent = summaryNonProd.toString();
+            if (summaryProdEl) summaryProdEl.textContent = summaryProd.toString();
+
+            const connPremium = Number(connectorPremiumInput?.value || 0);
+            const connNonPremium = Number(connectorNonPremiumInput?.value || 0);
+            const connCpPack = Number(connectorCpPackInput?.value || 0);
+            if (summaryConnPremiumEl) summaryConnPremiumEl.textContent = (isNaN(connPremium) ? 0 : connPremium).toString();
+            if (summaryConnNonPremiumEl) summaryConnNonPremiumEl.textContent = (isNaN(connNonPremium) ? 0 : connNonPremium).toString();
+            if (summaryConnCpPackEl) summaryConnCpPackEl.textContent = (isNaN(connCpPack) ? 0 : connCpPack).toString();
+
+            const formatCurrency = (value) => {
+                const rounded = Math.round(value);
+                return `$${rounded.toLocaleString('en-US')}`;
+            };
+
+            const nonProdRate = Number(priceNonProdInput?.value || 0);
+            const prodRate = Number(priceProdInput?.value || 0);
+            const nonProdCost = (Number.isNaN(nonProdRate) ? 0 : nonProdRate) * summaryNonProd;
+            const prodCost = (Number.isNaN(prodRate) ? 0 : prodRate) * summaryProd;
+            if (totalNonProdCostEl) totalNonProdCostEl.textContent = formatCurrency(nonProdCost);
+            if (totalProdCostEl) totalProdCostEl.textContent = formatCurrency(prodCost);
+            const totalNodeCost = nonProdCost + prodCost;
+            if (totalAmountEl) totalAmountEl.textContent = formatCurrency(totalNodeCost);
+
+            const premCount = isNaN(connPremium) ? 0 : connPremium;
+            const nonPremCount = isNaN(connNonPremium) ? 0 : connNonPremium;
+            const cpPackCount = isNaN(connCpPack) ? 0 : connCpPack;
+
+            const premNpRate = Number(pricePremNonProdInput?.value || 0);
+            const premPRate = Number(pricePremProdInput?.value || 0);
+            const premNpCost = (Number.isNaN(premNpRate) ? 0 : premNpRate) * premCount;
+            const premPCost = (Number.isNaN(premPRate) ? 0 : premPRate) * premCount;
+            if (totalPremNonProdCostEl) totalPremNonProdCostEl.textContent = formatCurrency(premNpCost);
+            if (totalPremProdCostEl) totalPremProdCostEl.textContent = formatCurrency(premPCost);
+
+            const nonPremNpRate = Number(priceNonPremNonProdInput?.value || 0);
+            const nonPremPRate = Number(priceNonPremProdInput?.value || 0);
+            const nonPremNpCost = (Number.isNaN(nonPremNpRate) ? 0 : nonPremNpRate) * nonPremCount;
+            const nonPremPCost = (Number.isNaN(nonPremPRate) ? 0 : nonPremPRate) * nonPremCount;
+            if (totalNonPremNonProdCostEl) totalNonPremNonProdCostEl.textContent = formatCurrency(nonPremNpCost);
+            if (totalNonPremProdCostEl) totalNonPremProdCostEl.textContent = formatCurrency(nonPremPCost);
+
+            const cpNpRate = Number(priceCpNonProdInput?.value || 0);
+            const cpPRate = Number(priceCpProdInput?.value || 0);
+            const cpNpCost = (Number.isNaN(cpNpRate) ? 0 : cpNpRate) * cpPackCount;
+            const cpPCost = (Number.isNaN(cpPRate) ? 0 : cpPRate) * cpPackCount;
+            if (totalCpNonProdCostEl) totalCpNonProdCostEl.textContent = formatCurrency(cpNpCost);
+            if (totalCpProdCostEl) totalCpProdCostEl.textContent = formatCurrency(cpPCost);
+
+            const totalCpCost = premNpCost + premPCost + nonPremNpCost + nonPremPCost + cpNpCost + cpPCost;
+            if (totalCpAmountEl) totalCpAmountEl.textContent = formatCurrency(totalCpCost);
+
+            if (grandTotalEl) grandTotalEl.textContent = formatCurrency(totalNodeCost + totalCpCost);
+
+            if (summaryBody) {
+                services.forEach((service) => {
+                    const rowValues = clusterCards.map((clusterCard, idx) => {
+                        const tableCard = tableCards[idx];
+                        if (!tableCard) return 0;
+                        const env = clusterCard.querySelector('.env-select')?.value || 'prod';
+                        const rows = Array.from(tableCard.querySelectorAll('tbody tr[data-service]'));
+                        const row = rows.find(r => r.getAttribute('data-service') === service.name);
+                        if (!row) return 0;
+                        const toggle = row.querySelector('.service-toggle');
+                        if (!toggle || !toggle.checked) return 0;
+                        const billedInput = row.querySelector(env === 'prod' ? '.prod-col .billed-input' : '.nonprod-col .billed-input');
+                        const value = Number(billedInput?.value || 0);
+                        return Number.isNaN(value) ? 0 : value;
+                    });
+
+                    const rowHtml = `
+                        <tr>
+                            <td class="px-4 py-2 border">${service.name}</td>
+                            ${rowValues.map(value => `<td class="px-4 py-2 border">${value}</td>`).join('')}
+                        </tr>
+                    `;
+                    summaryBody.insertAdjacentHTML('beforeend', rowHtml);
+                });
+
+                const totals = clusterCards.map((clusterCard, idx) => {
+                    const tableCard = tableCards[idx];
+                    if (!tableCard) return 0;
+                    const env = clusterCard.querySelector('.env-select')?.value || 'prod';
+                    const rows = Array.from(tableCard.querySelectorAll('tbody tr[data-service]'));
+                    return rows.reduce((sum, row) => {
+                        const toggle = row.querySelector('.service-toggle');
+                        if (!toggle || !toggle.checked) return sum;
+                        const billedInput = row.querySelector(env === 'prod' ? '.prod-col .billed-input' : '.nonprod-col .billed-input');
+                        const value = Number(billedInput?.value || 0);
+                        return sum + (Number.isNaN(value) ? 0 : value);
+                    }, 0);
+                });
+
+                const totalsRow = `
+                    <tr class="font-semibold bg-gray-50">
+                        <td class="px-4 py-2 border">TOTAL</td>
+                        ${totals.map(value => `<td class="px-4 py-2 border">${value}</td>`).join('')}
+                    </tr>
+                `;
+                summaryBody.insertAdjacentHTML('beforeend', totalsRow);
+            }
+        };
+
+        const updateTOC = () => {
+            const tocLinks = document.getElementById('toc-links');
+            if (!tocLinks) return;
+            const tableCards = Array.from(tablesContainer.children);
+            const clusterCards = Array.from(clustersContainer.children);
+            let html = '<a href="#sec-scoping">CP Scoping &amp; Sizing</a>';
+            clusterCards.forEach((card, idx) => {
+                const name = card.querySelector('input[type="text"]')?.value?.trim();
+                const label = name || `Cluster ${idx + 1}`;
+                html += `<a href="#sec-cluster-${idx}" class="toc-sub">${label}</a>`;
+            });
+            html += '<a href="#sec-connectors">Connectors</a>';
+            html += '<a href="#sec-summary">Billed Nodes Summary</a>';
+            html += '<a href="#sec-pricing">Pricing</a>';
+            tocLinks.innerHTML = html;
+        };
+
+        const renderClusters = () => {
+            const storedState = loadState();
+            const initialState = storedState || { clusters: defaultClusters, count: defaultClusters.length };
+            const existingState = collectState().clusters.length ? collectState() : initialState;
+            const count = Math.max(1, Number(clusterCountInput.value) || existingState.count || defaultClusters.length);
+            if (existingState.connectors) {
+                connectorPremiumInput.value = existingState.connectors.premium ?? 0;
+                connectorNonPremiumInput.value = existingState.connectors.nonPremium ?? 0;
+                connectorCpPackInput.value = existingState.connectors.cpPack ?? 0;
+            }
+            clustersContainer.innerHTML = '';
+            tablesContainer.innerHTML = '';
+
+            for (let i = 0; i < count; i += 1) {
+                const clusterState = existingState.clusters[i] || defaultClusters[i] || {};
+                const servicesState = clusterState.services || {};
+                const wrapper = document.createElement('div');
+                wrapper.className = 'border border-gray-100 rounded-lg p-4 bg-gray-50';
+
+                wrapper.innerHTML = `
+                    <div class="flex flex-col sm:flex-row gap-4 items-end">
+                        <div class="flex-1">
+                            <label class="block text-sm text-dark mb-1">Cluster name</label>
+                            <input type="text" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="e.g., prod-cluster-1" value="${clusterState.name || ''}">
+                        </div>
+                        <div class="w-full sm:w-48">
+                            <label class="block text-sm text-dark mb-1">Environment</label>
+                            <select class="w-full border border-gray-300 rounded px-3 py-2 env-select">
+                                <option value="prod" ${clusterState.env === 'prod' ? 'selected' : ''}>Production</option>
+                                <option value="nonprod" ${clusterState.env === 'nonprod' ? 'selected' : ''}>Non Production</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+
+                clustersContainer.appendChild(wrapper);
+
+                const tableWrapper = document.createElement('div');
+                tableWrapper.className = 'bg-white shadow-lg rounded-lg p-4 border border-gray-100 scroll-mt-4';
+                tableWrapper.id = `sec-cluster-${i}`;
+                tableWrapper.innerHTML = `
+                    <h3 class="text-lg font-semibold text-dark mb-3 cluster-title">Cluster ${i + 1} Configuration</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left border border-gray-200 cluster-table">
+                            <thead class="bg-gray-50 text-dark">
+                                <tr>
+                                    <th class="px-4 py-2 border">Services</th>
+                                    <th class="px-4 py-2 border value-col">Number of Nodes</th>
+                                    <th class="px-4 py-2 border value-col">Number of Billed Nodes</th>
+                                    <th class="px-4 py-2 border value-col">Number of Nodes</th>
+                                    <th class="px-4 py-2 border value-col">Number of Billed Nodes</th>
+                                    <th class="px-4 py-2 border">Enable</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${services.map(service => {
+                                    const saved = servicesState[service.name] || {};
+                                    const nonProdValue = saved.nonProd ?? service.nonProd;
+                                    const billedNonProdValue = saved.billedNonProd ?? service.billedNonProd ?? service.nonProd;
+                                    const prodValue = saved.prod ?? service.prod;
+                                    const billedProdValue = saved.billedProd ?? service.billedProd ?? service.prod;
+                                    const enabled = typeof saved.enabled === 'boolean' ? saved.enabled : !!service.defaultEnabled;
+                                    return `
+                                    <tr data-service="${service.name}">
+                                        <td class="px-4 py-2 border">
+                                            <div>${service.name}</div>
+                                            ${service.note ? `<div class="text-xs text-gray-500 mt-1">${service.note}</div>` : ''}
+                                            ${service.warnNote ? `<div class="text-xs mt-1" style="color: #800000; font-weight: 600;">${service.warnNote}</div>` : ''}
+                                        </td>
+                                        <td class="px-4 py-2 border nonprod-col">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${nonProdValue}">
+                                        </td>
+                                        <td class="px-4 py-2 border nonprod-col">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center billed-input" value="${billedNonProdValue}">
+                                        </td>
+                                        <td class="px-4 py-2 border prod-col">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${prodValue}">
+                                        </td>
+                                        <td class="px-4 py-2 border prod-col">
+                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center billed-input" value="${billedProdValue}">
+                                        </td>
+                                        <td class="px-4 py-2 border text-center">
+                                            <input type="checkbox" class="service-toggle" ${enabled ? 'checked' : ''}>
+                                        </td>
+                                    </tr>
+                                `}).join('')}
+                                <tr class="font-semibold bg-gray-50">
+                                    <td class="px-4 py-2 border">Total Nodes</td>
+                                    <td class="px-4 py-2 border text-center total-col">0</td>
+                                    <td class="px-4 py-2 border text-center total-col">0</td>
+                                    <td class="px-4 py-2 border text-center total-col">0</td>
+                                    <td class="px-4 py-2 border text-center total-col">0</td>
+                                    <td class="px-4 py-2 border"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                tablesContainer.appendChild(tableWrapper);
+
+                const envSelect = wrapper.querySelector('.env-select');
+                const nameInput = wrapper.querySelector('input[type="text"]');
+                const titleEl = tableWrapper.querySelector('.cluster-title');
+                const nonProdCols = tableWrapper.querySelectorAll('.nonprod-col, .value-col:nth-child(2), .value-col:nth-child(3), .total-col:nth-child(2), .total-col:nth-child(3)');
+                const prodCols = tableWrapper.querySelectorAll('.prod-col, .value-col:nth-child(4), .value-col:nth-child(5), .total-col:nth-child(4), .total-col:nth-child(5)');
+                const nodeInputs = tableWrapper.querySelectorAll('.node-input');
+                const billedInputs = tableWrapper.querySelectorAll('.billed-input');
+                const toggleInputs = tableWrapper.querySelectorAll('.service-toggle');
+                const totalCols = tableWrapper.querySelectorAll('.total-col');
+
+                const updateColumns = () => {
+                    const isProd = envSelect.value === 'prod';
+                    nonProdCols.forEach(col => col.style.display = isProd ? 'none' : '');
+                    prodCols.forEach(col => col.style.display = isProd ? '' : 'none');
+                };
+
+                const updateTotal = () => {
+                    const isProd = envSelect.value === 'prod';
+                    let nodeTotal = 0;
+                    let billedTotal = 0;
+
+                    nodeInputs.forEach((input) => {
+                        const cell = input.closest('td');
+                        const isProdCell = cell?.classList.contains('prod-col');
+                        const isNonProdCell = cell?.classList.contains('nonprod-col');
+                        if ((isProd && !isProdCell) || (!isProd && !isNonProdCell)) {
+                            return;
+                        }
+                        const row = input.closest('tr');
+                        const toggle = row?.querySelector('.service-toggle');
+                        if (toggle && !toggle.checked) {
+                            return;
+                        }
+                        const rawValue = input.value;
+                        const value = Number(rawValue === '' ? 0 : rawValue);
+                        nodeTotal += Number.isNaN(value) ? 0 : value;
+                    });
+
+                    billedInputs.forEach((input) => {
+                        const cell = input.closest('td');
+                        const isProdCell = cell?.classList.contains('prod-col');
+                        const isNonProdCell = cell?.classList.contains('nonprod-col');
+                        const row = input.closest('tr');
+                        const toggle = row?.querySelector('.service-toggle');
+                        if (toggle && !toggle.checked) {
+                            return;
+                        }
+                        const rawValue = input.value;
+                        const value = Number(rawValue === '' ? 0 : rawValue);
+                        if (Number.isNaN(value)) {
+                            return;
+                        }
+                        if (isProdCell && isProd) billedTotal += value;
+                        if (isNonProdCell && !isProd) billedTotal += value;
+                    });
+
+                    totalCols.forEach((col, idx) => {
+                        const isBilled = idx % 2 === 1;
+                        col.textContent = (isBilled ? billedTotal : nodeTotal).toString();
+                    });
+                    updateSummary();
+                    saveState();
+                };
+
+                const updateTitle = () => {
+                    const name = nameInput.value.trim();
+                    titleEl.textContent = name ? `${name} Configuration` : `Cluster ${i + 1} Configuration`;
+                    updateTOC();
+                };
+
+                envSelect.addEventListener('change', () => {
+                    updateColumns();
+                    updateTotal();
+                });
+                nameInput.addEventListener('input', () => {
+                    updateTitle();
+                    saveState();
+                });
+                nodeInputs.forEach(input => {
+                    input.addEventListener('input', updateTotal);
+                    input.addEventListener('change', updateTotal);
+                    input.addEventListener('blur', updateTotal);
+                });
+                billedInputs.forEach(input => {
+                    input.addEventListener('input', updateTotal);
+                    input.addEventListener('change', updateTotal);
+                    input.addEventListener('blur', updateTotal);
+                });
+                toggleInputs.forEach(toggle => {
+                    toggle.addEventListener('change', updateTotal);
+                });
+                updateColumns();
+                updateTitle();
+                updateTotal();
+            }
+            saveState();
+            updateSummary();
+            updateTOC();
+        };
+
+        clusterCountInput.addEventListener('change', renderClusters);
+        clusterCountInput.addEventListener('input', renderClusters);
+
+        downloadPdfButton.addEventListener('click', () => {
+            window.print();
+        });
+        priceNonProdInput.addEventListener('input', updateSummary);
+        priceProdInput.addEventListener('input', updateSummary);
+        pricePremNonProdInput.addEventListener('input', updateSummary);
+        pricePremProdInput.addEventListener('input', updateSummary);
+        priceNonPremNonProdInput.addEventListener('input', updateSummary);
+        priceNonPremProdInput.addEventListener('input', updateSummary);
+        priceCpNonProdInput.addEventListener('input', updateSummary);
+        priceCpProdInput.addEventListener('input', updateSummary);
+        connectorPremiumInput.addEventListener('input', () => { updateSummary(); saveState(); });
+        connectorNonPremiumInput.addEventListener('input', () => { updateSummary(); saveState(); });
+        connectorCpPackInput.addEventListener('input', () => { updateSummary(); saveState(); });
+
+        renderClusters();
+    </script>
+</body>
+</html>

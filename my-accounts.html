@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Accounts - AI Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://app.glean.com/embedded-search-latest.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #F5F9FF;
+            color: #0A3D62;
+        }
+        .logo-container {
+            padding: 0.75rem 1rem;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        .logo-container img {
+            height: 36px;
+            width: auto;
+        }
+        .text-primary {
+            color: #0A85EA;
+        }
+        .text-dark {
+            color: #0A3D62;
+        }
+        .bg-primary {
+            background-color: #0A85EA;
+        }
+        .hover\:bg-primary-dark:hover {
+            background-color: #0870c4;
+        }
+        .hover\:text-dark:hover {
+            color: #0A3D62;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #0A3D62;
+        }
+        .section-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 1px 2px rgba(10, 61, 98, 0.06);
+        }
+        #modal-overlay { scroll-behavior: smooth; }
+        .section-card[data-collapsible] .section-head { cursor: pointer; user-select: none; }
+        .section-card[data-collapsible] .section-head .chevron {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.25rem;
+            height: 1.25rem;
+            font-size: 0.625rem;
+            color: #9ca3af;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        .section-card[data-collapsible].collapsed .section-head .chevron { transform: rotate(-90deg); }
+        .section-card[data-collapsible] .section-body {
+            overflow: hidden;
+            transition: max-height 0.25s ease, opacity 0.2s ease;
+            max-height: 2000px;
+            opacity: 1;
+        }
+        .section-card[data-collapsible].collapsed .section-body {
+            max-height: 0;
+            opacity: 0;
+        }
+        .form-sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.8125rem;
+            line-height: 1.25rem;
+            color: #6b7280;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            border-left: 2px solid transparent;
+        }
+        .form-sidebar-nav a:hover {
+            color: #0A3D62;
+            background: rgba(10, 133, 234, 0.06);
+        }
+        .form-sidebar-nav a.active {
+            color: #0A85EA;
+            background: rgba(10, 133, 234, 0.1);
+            border-left-color: #0A85EA;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="logo-container flex items-center gap-4">
+        <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
+            <img src="assets/image.png" alt="Confluent Logo">
+        </a>
+        <a href="index.html" class="text-primary text-sm hover:text-dark">← Back to HomePage</a>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <header class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8">
+            <div class="min-w-0 flex-1">
+                <h1 class="text-2xl md:text-3xl font-bold text-dark tracking-tight">Your Accounts</h1>
+                <p id="accounts-intro" class="text-dark text-sm mt-2 max-w-xl opacity-90">
+                    Click an account to view or edit. Your profiles are saved in this browser.
+                </p>
+                <p id="drive-hint-local" class="hidden text-xs text-gray-600 mt-1 italic">Sign in with Google to sync the same backup across browsers.</p>
+                <p id="drive-script-error" class="hidden text-xs text-red-700 mt-1 max-w-xl">
+                    Google Drive code did not load (<code class="text-[11px]">AccountBrainDrive</code> missing). Open DevTools → Network and confirm <code class="text-[11px]">my-accounts-drive.js</code> and <code class="text-[11px]">google-doc-profile-parse.js</code> return 200 from the same folder as this page (not blocked).
+                </p>
+                <p id="drive-oauth-missing" class="hidden text-xs text-amber-800 mt-1 max-w-xl">
+                    Google sign-in is disabled because <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">window.GOOGLE_CLIENT_ID</code> is missing or invalid. Set it in <code class="text-[11px] bg-amber-50 px-1 rounded border border-amber-200">google-oauth-config.js</code> (must end in <code class="text-[11px]">.apps.googleusercontent.com</code>), hard-refresh, and add this site’s URL under Authorized JavaScript origins in Google Cloud Console → APIs &amp; Services → Credentials → your OAuth 2.0 Client ID.
+                </p>
+                <p id="drive-status" class="text-xs text-primary mt-2 min-h-[1rem]" role="status"></p>
+                <div id="scope-error-banner" class="hidden mt-2 p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800 max-w-xl">
+                    <strong>Missing API scopes.</strong> Google denied access — the required OAuth scopes are not enabled.
+                    Sign out and sign back in. If it still fails, your GCP project's OAuth consent screen is missing scopes.
+                    <a href="#setup-guide" class="underline font-semibold text-red-700">See setup guide below</a>.
+                </div>
+            </div>
+            <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3 shrink-0 items-stretch sm:items-end lg:items-stretch xl:items-end">
+                <div id="drive-auth-stack" class="flex flex-col gap-2 order-2 sm:order-1 lg:order-1">
+                    <p class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Google Drive &amp; Docs</p>
+                    <div class="flex flex-wrap gap-2 justify-end sm:justify-start lg:justify-end">
+                        <button type="button" id="btn-google-signin"
+                            class="bg-white text-gray-900 hover:bg-gray-100 font-medium px-4 py-2 rounded-lg text-sm border border-gray-300 flex items-center gap-2">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                            Sign in with Google
+                        </button>
+                        <button type="button" id="btn-google-signout" class="hidden text-sm font-medium text-dark hover:bg-gray-50 px-3 py-2 rounded-lg border border-gray-300 bg-white">
+                            Sign out
+                        </button>
+                    </div>
+                    <div id="drive-sync-row" class="hidden flex flex-wrap gap-2 justify-end sm:justify-start lg:justify-end">
+                        <button type="button" id="btn-drive-pull" class="text-sm font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg shadow-sm">Pull from Drive</button>
+                        <button type="button" id="btn-drive-push" class="text-sm font-medium text-dark bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg shadow-sm">Push to Drive</button>
+                    </div>
+                    <p id="drive-sync-hint" class="hidden text-[11px] text-gray-500 max-w-[16rem] leading-tight mt-1">
+                        <strong>Pull</strong> reads your <em>[Account Profile]</em> Google Docs and updates this page.
+                        <strong>Push</strong> writes this page's data back to those same Docs.
+                    </p>
+                </div>
+                <button type="button" id="btn-header-new"
+                    class="order-1 sm:order-2 lg:order-2 xl:order-2 shrink-0 bg-primary hover:bg-[#0870c4] text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg transition-colors">
+                    + New Account
+                </button>
+            </div>
+        </header>
+
+        <div id="accounts-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+        <!-- Glean AI Chat -->
+        <div class="mt-12 mb-4" style="background:#fff;border-radius:0.75rem;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+            <button id="glean-toggle" onclick="toggleGleanChat()" style="width:100%;padding:0.75rem 1.25rem;background:#0A3D62;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:0.95rem;font-weight:600;border-radius:0.75rem;">
+                <span>Ask Glean AI</span>
+                <span id="glean-chevron" style="transition:transform 0.2s;">&#9660;</span>
+            </button>
+            <div id="glean-chat-wrapper" style="display:none;">
+                <div id="glean-chat-container" style="position:relative;display:block;width:100%;height:600px;"></div>
+            </div>
+        </div>
+        <script>
+            var gleanChatOpen = false;
+            var gleanChatInitialised = false;
+            function toggleGleanChat() {
+                gleanChatOpen = !gleanChatOpen;
+                var wrapper = document.getElementById('glean-chat-wrapper');
+                var chevron = document.getElementById('glean-chevron');
+                wrapper.style.display = gleanChatOpen ? 'block' : 'none';
+                chevron.style.transform = gleanChatOpen ? 'rotate(180deg)' : '';
+                if (gleanChatOpen && !gleanChatInitialised) {
+                    gleanChatInitialised = true;
+                    var container = document.getElementById('glean-chat-container');
+                    var poll = setInterval(function () {
+                        var sdk = window.GleanWebSDK || window.EmbeddedSearch;
+                        if (sdk && sdk.renderChat) {
+                            clearInterval(poll);
+                            sdk.renderChat(container, {
+                                backend: 'https://confluent-be.glean.com',
+                                authMethod: 'sso'
+                            });
+                        }
+                    }, 200);
+                    setTimeout(function () {
+                        clearInterval(poll);
+                        if (!container.hasChildNodes()) {
+                            container.innerHTML = '<p style="padding:2rem;text-align:center;color:#666;">Could not load Glean Chat. Make sure you are on the Confluent network or VPN and try refreshing.</p>';
+                        }
+                    }, 10000);
+                }
+            }
+        </script>
+
+        <!-- Setup guide -->
+        <details id="setup-guide" class="mt-4 mb-8 bg-white border border-gray-200 rounded-xl shadow-sm">
+            <summary class="cursor-pointer px-5 py-4 text-sm font-semibold text-dark select-none hover:bg-gray-50 rounded-xl">
+                Google Cloud OAuth Setup Guide
+            </summary>
+            <div class="px-5 pb-5 text-sm text-gray-700 space-y-4">
+                <p>If Push/Pull shows a <strong class="text-red-700">scope error</strong> or Google denies access, your GCP project's OAuth consent screen needs the correct scopes.</p>
+
+                <h4 class="font-semibold text-dark">1. Open your OAuth consent screen</h4>
+                <p>Go to <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank" rel="noopener" class="text-primary underline">Google Cloud Console &rarr; APIs &amp; Services &rarr; OAuth consent screen</a>.</p>
+
+                <h4 class="font-semibold text-dark">2. Add required scopes</h4>
+                <p>On the <strong>Scopes</strong> step, click <strong>"Add or Remove Scopes"</strong>. Search and add each of these one at a time:</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden">
+                        <thead>
+                            <tr class="bg-gray-50 text-left">
+                                <th class="px-3 py-2 font-semibold text-dark border-b border-gray-200">Scope to add</th>
+                                <th class="px-3 py-2 font-semibold text-dark border-b border-gray-200">What it looks like in the UI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-100">
+                                <td class="px-3 py-2 font-mono text-[11px] break-all">https://www.googleapis.com/auth/drive</td>
+                                <td class="px-3 py-2">"See, edit, create, and delete all of your Google Drive files"</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="px-3 py-2 font-mono text-[11px] break-all">https://www.googleapis.com/auth/documents</td>
+                                <td class="px-3 py-2">"See, edit, create, and delete all your Google Docs documents"</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono text-[11px] break-all">https://www.googleapis.com/auth/calendar.readonly</td>
+                                <td class="px-3 py-2">"See, download, and search your calendars" (read-only)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4 class="font-semibold text-dark">3. Enable the APIs</h4>
+                <p>In <a href="https://console.cloud.google.com/apis/library" target="_blank" rel="noopener" class="text-primary underline">APIs &amp; Services &rarr; Library</a>, make sure these are enabled:</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li><strong>Google Drive API</strong></li>
+                    <li><strong>Google Docs API</strong></li>
+                    <li><strong>Google Calendar API</strong> (for calendar.readonly)</li>
+                </ul>
+
+                <h4 class="font-semibold text-dark">4. Re-consent</h4>
+                <p>After updating scopes, <strong>sign out</strong> on this page and <strong>sign back in</strong>. Google will show a new consent prompt with the updated permissions. Accept all scopes.</p>
+
+                <h4 class="font-semibold text-dark">5. Authorized origins</h4>
+                <p>In <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" class="text-primary underline">APIs &amp; Services &rarr; Credentials</a>, click your OAuth 2.0 Client ID and make sure this URL is listed under <strong>Authorized JavaScript origins</strong>:</p>
+                <pre class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-[11px] font-mono overflow-x-auto" id="origin-url"></pre>
+                <script>document.getElementById('origin-url').textContent = location.origin;</script>
+            </div>
+        </details>
+    </div>
+
+    <!-- Account Brain Profile modal -->
+    <div id="modal-overlay" class="fixed inset-0 z-[2000] hidden overflow-y-auto" style="background-color:#F5F9FF;" aria-hidden="true">
+            <div id="modal-panel" class="max-w-5xl w-full mx-auto min-h-full" role="dialog" aria-labelledby="modal-title">
+            <form id="account-form" class="pt-0 px-6 pb-6 md:px-8 md:pb-8">
+                <input type="hidden" id="form-id" value="">
+
+                <div class="sticky top-0 z-10 flex items-center justify-between gap-4 py-4 mb-4 border-b border-gray-200" style="background-color:#F5F9FF;">
+                    <div>
+                        <h2 id="modal-title" class="text-xl font-bold text-dark">New Account</h2>
+                        <p class="text-gray-600 text-sm mt-0.5">Account Brain Profile</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" id="btn-ai-insights" class="text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 border border-[#0A3D62] text-dark hover:bg-gray-100">
+                            <span aria-hidden="true">✨</span> AI Insights
+                        </button>
+                        <button type="button" id="form-save-top" class="bg-primary hover:bg-[#0870c4] text-white text-sm font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5">
+                            <span aria-hidden="true">💾</span> Save
+                        </button>
+                        <button type="button" id="modal-close-x" class="text-gray-500 hover:text-dark text-2xl leading-none px-2 py-1 rounded-lg hover:bg-gray-100" aria-label="Close">&times;</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-6">
+                    <!-- Sidebar nav (hidden on small screens) -->
+                    <nav id="form-sidebar" class="form-sidebar-nav hidden md:flex flex-col gap-0.5 shrink-0 w-44 sticky top-20 self-start">
+                        <a href="#sec-account-name">📋 Account Name</a>
+                        <a href="#sec-key-players">👥 Key Players</a>
+                        <a href="#sec-initiatives">🎯 Initiatives</a>
+                        <a href="#sec-use-cases">💡 Use Cases</a>
+                        <a href="#sec-architecture">🏗️ Architecture</a>
+                        <a href="#sec-attachments">📎 Attachments</a>
+                        <a href="#sec-value-path">🚀 Value Path</a>
+                        <a href="#sec-next-steps">✅ Next Steps</a>
+                        <a href="#sec-notes">📝 Notes</a>
+                    </nav>
+
+                    <!-- Form sections -->
+                    <div class="space-y-5 flex-1 min-w-0">
+                        <!-- Account name -->
+                        <div id="sec-account-name" class="section-card scroll-mt-24">
+                            <label for="form-name" class="block text-sm font-medium text-dark mb-2">Account Name <span class="text-red-600">*</span></label>
+                            <input id="form-name" type="text" required placeholder="e.g. Ulta Beauty, Target, Walmart"
+                                class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]">
+                        </div>
+
+                        <!-- AI Insights panel -->
+                        <div id="ai-insights-panel" class="section-card hidden">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>✨</span> AI Insights <span class="text-xs font-normal text-gray-500">powered by Glean</span></h3>
+                                <button type="button" id="btn-close-insights" class="text-gray-400 hover:text-dark text-lg leading-none px-1">&times;</button>
+                            </div>
+                            <div id="ai-insights-chat" style="position:relative;display:block;width:100%;height:500px;border-radius:0.5rem;overflow:hidden;"></div>
+                        </div>
+
+                        <!-- Key players -->
+                        <div id="sec-key-players" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>👥</span> Key Players &amp; Roles</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">Add the people who matter — use Name, Title, and Other for context.</p>
+                                    </div>
+                                </div>
+                                <button type="button" id="add-player" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg" onclick="event.stopPropagation()">+ Add</button>
+                            </div>
+                            <div class="section-body">
+                                <div id="list-players" class="space-y-2 mt-3"></div>
+                            </div>
+                        </div>
+
+                        <!-- Initiatives max 3 -->
+                        <div id="sec-initiatives" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🎯</span> Top 3 Initiatives / Concerns</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">What are this account&apos;s top strategic priorities or pain points?</p>
+                                    </div>
+                                </div>
+                                <button type="button" id="add-initiative" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg" onclick="event.stopPropagation()">+ Add (max 3)</button>
+                            </div>
+                            <div class="section-body">
+                                <div id="list-initiatives" class="space-y-2 mt-3"></div>
+                            </div>
+                        </div>
+
+                        <!-- Use Cases -->
+                        <div id="sec-use-cases" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>💡</span> Use Cases</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">What are this account's primary use cases for Confluent / data streaming?</p>
+                                    </div>
+                                </div>
+                                <button type="button" id="add-usecase" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg" onclick="event.stopPropagation()">+ Add</button>
+                            </div>
+                            <div class="section-body">
+                                <div id="list-usecases" class="space-y-2 mt-3"></div>
+                            </div>
+                        </div>
+
+                        <!-- Architecture -->
+                        <div id="sec-architecture" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🏗️</span> Architecture</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">Describe the current or target architecture. Optionally attach a diagram.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-body">
+                                <textarea id="form-architecture-text" rows="4" placeholder="e.g. Event-driven microservices on K8s with Kafka bridging legacy CDC from Oracle to real-time analytics in Snowflake…"
+                                    class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-dark text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]"></textarea>
+                                <div class="mt-3">
+                                    <label class="block text-xs font-medium text-dark mb-1">Architecture Diagram (image URL or paste a link)</label>
+                                    <input id="form-architecture-image" type="url" placeholder="https://... (paste an image URL or Google Drive link)"
+                                        class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-dark text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA]">
+                                    <div id="architecture-preview" class="mt-2 hidden">
+                                        <img id="architecture-preview-img" src="" alt="Architecture diagram" class="max-w-full rounded-lg border border-gray-200 shadow-sm" style="max-height:400px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Attachments -->
+                        <div id="sec-attachments" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>📎</span> Attachments</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">Upload files or images to Google Drive for this account.</p>
+                                    </div>
+                                </div>
+                                <label id="btn-upload-attachment" class="shrink-0 text-xs font-medium text-white bg-primary hover:bg-[#0870c4] px-2.5 py-1.5 rounded-lg cursor-pointer flex items-center gap-1" onclick="event.stopPropagation()">
+                                    <span aria-hidden="true">⬆</span> Upload
+                                    <input type="file" id="attachment-file-input" multiple class="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.json,.xml,.zip">
+                                </label>
+                            </div>
+                            <div class="section-body">
+                                <div id="attachment-upload-status" class="text-xs text-primary mb-2 min-h-[1rem]"></div>
+                                <div id="attachment-signin-hint" class="hidden text-xs text-gray-500 italic py-2">Sign in with Google to upload and manage attachments.</div>
+                                <div id="list-attachments" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                            </div>
+                        </div>
+
+                        <!-- Path to Value Realization -->
+                        <div id="sec-value-path" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>🚀</span> Path to Value Realization</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">Key milestones and steps to deliver value with Confluent at this account.</p>
+                                    </div>
+                                </div>
+                                <button type="button" id="add-valuepath" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg" onclick="event.stopPropagation()">+ Add</button>
+                            </div>
+                            <div class="section-body">
+                                <div id="list-valuepath" class="space-y-2 mt-3"></div>
+                            </div>
+                        </div>
+
+                        <!-- Next steps -->
+                        <div id="sec-next-steps" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head flex items-start justify-between gap-3 mb-2">
+                                <div class="flex items-start gap-2">
+                                    <span class="chevron mt-0.5">&#9660;</span>
+                                    <div>
+                                        <h3 class="text-dark font-semibold text-sm flex items-center gap-2"><span>✅</span> Next Steps / Action Items</h3>
+                                        <p class="text-gray-600 text-xs mt-1 italic">Track follow-ups, commitments, and next steps here.</p>
+                                    </div>
+                                </div>
+                                <button type="button" id="add-step" class="shrink-0 text-xs font-medium text-dark border border-gray-300 hover:bg-gray-50 bg-white px-2.5 py-1.5 rounded-lg" onclick="event.stopPropagation()">+ Add</button>
+                            </div>
+                            <div class="section-body">
+                                <div id="list-steps" class="space-y-2 mt-3"></div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div id="sec-notes" class="section-card scroll-mt-24" data-collapsible>
+                            <div class="section-head mb-2">
+                                <h3 class="text-dark font-semibold text-sm flex items-center gap-2">
+                                    <span class="chevron">&#9660;</span>
+                                    <span>📝</span> Notes
+                                    <button type="button" id="add-note" class="ml-auto text-xs font-semibold text-primary hover:text-dark bg-[#0A85EA]/10 hover:bg-[#0A85EA]/20 px-3 py-1 rounded-lg transition-colors" onclick="event.stopPropagation()">+ Add Note</button>
+                                </h3>
+                            </div>
+                            <div class="section-body">
+                                <div id="list-notes" class="space-y-2 mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 mt-6">
+                    <button type="button" id="form-cancel" class="text-sm text-primary hover:text-dark underline px-2">Cancel</button>
+                    <button type="button" id="form-delete" class="hidden text-sm text-red-600 hover:text-red-700 underline ml-auto">Remove account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="./google-oauth-config.js?v=6"></script>
+    <script>
+        (function () {
+            var id = window.GOOGLE_CLIENT_ID;
+            if (typeof id !== 'string' || id.indexOf('.apps.googleusercontent.com') === -1) {
+                window.GOOGLE_CLIENT_ID = '391245638390-2ll2p95i0a6a1e1qj005rsk9kgbtskfd.apps.googleusercontent.com';
+            }
+        })();
+    </script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="./google-doc-profile-parse.js?v=10"></script>
+    <script src="./google-account-mapping.js?v=10"></script>
+    <script src="./my-accounts-drive.js?v=10"></script>
+    <script>
+        (function () {
+            var STORAGE_V3 = 'my-accounts-ai-assistant-v3';
+            var STORAGE_V2 = 'my-accounts-ai-assistant-v2';
+            var STORAGE_V1 = 'my-accounts-ai-assistant-v1';
+
+            var MAX_INITIATIVES = 3;
+
+            function todayStr() {
+                return new Date().toISOString().slice(0, 10);
+            }
+
+            function previewNotes(text, maxLen) {
+                var t = (text || '').replace(/\s+/g, ' ').trim();
+                if (t.length <= maxLen) return t;
+                return t.slice(0, maxLen).trim() + '…';
+            }
+
+            function parseLegacyPlayerString(s) {
+                var str = String(s == null ? '' : s).trim();
+                if (!str) return { name: '', title: '', other: '' };
+                var parts = str.split(/\s*[—–-]\s*/);
+                if (parts.length >= 2) {
+                    return {
+                        name: parts[0].trim(),
+                        title: parts.slice(1).join(' — ').trim(),
+                        other: ''
+                    };
+                }
+                return { name: str, title: '', other: '' };
+            }
+
+            function normalizeKeyPlayer(p) {
+                if (p && typeof p === 'object' && !Array.isArray(p)) {
+                    return {
+                        name: String(p.name != null ? p.name : '').trim(),
+                        title: String(p.title != null ? p.title : '').trim(),
+                        other: String(p.other != null ? p.other : '').trim()
+                    };
+                }
+                return parseLegacyPlayerString(p);
+            }
+
+            function migrateNotes(raw) {
+                if (Array.isArray(raw)) return raw.filter(function (n) { return n && n.text; });
+                var s = String(raw || '').trim();
+                if (!s) return [];
+                return [{ date: todayStr(), text: s }];
+            }
+
+            function toV3(acct) {
+                if (!acct) return null;
+                if (Array.isArray(acct.keyPlayers)) {
+                    return {
+                        id: acct.id || ('acc-' + Date.now()),
+                        name: acct.name || '',
+                        updatedAt: acct.updatedAt || todayStr(),
+                        keyPlayers: (acct.keyPlayers || []).map(normalizeKeyPlayer),
+                        topInitiatives: (acct.topInitiatives || []).map(String),
+                        nextSteps: (acct.nextSteps || []).map(String),
+                        additionalNotes: migrateNotes(acct.additionalNotes),
+                        useCases: (acct.useCases || []).map(String),
+                        architectureText: acct.architectureText || '',
+                        architectureImage: acct.architectureImage || '',
+                        valuePath: (acct.valuePath || []).map(String),
+                        attachments: (acct.attachments || []).filter(function (a) { return a && a.driveFileId; })
+                    };
+                }
+                var imp = '';
+                if ((acct.players || 0) + (acct.initiatives || 0) + (acct.actionItems || 0) > 0) {
+                    imp = '[Imported] ' + (acct.players || 0) + ' players, ' + (acct.initiatives || 0) + ' initiatives, ' + (acct.actionItems || 0) + ' action items.';
+                }
+                var legacyText = (imp + ' ' + (acct.notes || '')).trim();
+                return {
+                    id: acct.id || ('acc-' + Date.now()),
+                    name: acct.name || '',
+                    updatedAt: acct.updatedAt || todayStr(),
+                    keyPlayers: [],
+                    topInitiatives: acct.priorityLine ? [String(acct.priorityLine)] : [],
+                    nextSteps: [],
+                    additionalNotes: legacyText ? [{ date: todayStr(), text: legacyText }] : []
+                };
+            }
+
+            function migrateFromV1(oldList) {
+                return oldList.map(function (a) {
+                    return {
+                        id: a.id || ('mig-' + Math.random().toString(36).slice(2)),
+                        name: a.name || 'Account',
+                        players: 0,
+                        initiatives: 0,
+                        actionItems: 0,
+                        priorityLine: previewNotes(a.notes || '', 72) || '—',
+                        notes: a.notes || '',
+                        updatedAt: todayStr()
+                    };
+                });
+            }
+
+            function defaultAccounts() {
+                return [
+                    {
+                        id: 'seed-1',
+                        name: 'ACME Corp',
+                        updatedAt: '2026-04-14',
+                        keyPlayers: [
+                            { name: 'Alex Chen', title: 'Champion', other: '' },
+                            { name: 'Jamie Rivera', title: 'Platform lead', other: '' },
+                            { name: 'Pat Kim', title: 'Procurement', other: '' }
+                        ],
+                        topInitiatives: ['#1: Save Costs'],
+                        nextSteps: [],
+                        additionalNotes: [{ date: '2026-04-14', text: 'Cost optimization and platform consolidation discussion ongoing.' }]
+                    },
+                    {
+                        id: 'seed-2',
+                        name: 'My Fav Bank',
+                        updatedAt: '2026-04-14',
+                        keyPlayers: [
+                            { name: 'Sam Okonkwo', title: 'Engineering', other: '' },
+                            { name: 'Jordan Lee', title: 'Architect', other: '' },
+                            { name: 'Michael Keats', title: '', other: '' }
+                        ],
+                        topInitiatives: ['#1: Evaluate WarpStream'],
+                        nextSteps: ['Schedule architecture review with data team'],
+                        additionalNotes: [{ date: '2026-04-14', text: 'Evaluating streaming options; competitive evaluation in progress.' }]
+                    }
+                ];
+            }
+
+            function isOldSeedData(list) {
+                if (!Array.isArray(list) || list.length !== 2) return false;
+                var names = list.map(function (a) { return (a.name || '').toLowerCase(); }).sort();
+                return names[0] === 'cisco' && names[1] === 'nvidia';
+            }
+
+            function loadAccounts() {
+                try {
+                    var r3 = localStorage.getItem(STORAGE_V3);
+                    if (r3) {
+                        var p3 = JSON.parse(r3);
+                        if (Array.isArray(p3)) {
+                            if (isOldSeedData(p3)) {
+                                localStorage.removeItem(STORAGE_V3);
+                                return defaultAccounts();
+                            }
+                            return deduplicateByName(p3.map(toV3));
+                        }
+                    }
+                    var r2 = localStorage.getItem(STORAGE_V2);
+                    if (r2) {
+                        var p2 = JSON.parse(r2);
+                        if (Array.isArray(p2) && p2.length) {
+                            var m2 = deduplicateByName(p2.map(toV3));
+                            saveAccounts(m2);
+                            localStorage.removeItem(STORAGE_V2);
+                            return m2;
+                        }
+                    }
+                    var r1 = localStorage.getItem(STORAGE_V1);
+                    if (r1) {
+                        var p1 = JSON.parse(r1);
+                        if (Array.isArray(p1) && p1.length) {
+                            var m1 = deduplicateByName(migrateFromV1(p1).map(toV3));
+                            saveAccounts(m1);
+                            localStorage.removeItem(STORAGE_V1);
+                            return m1;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Could not read accounts', e);
+                }
+                return defaultAccounts();
+            }
+
+            function setDriveStatus(msg, isError) {
+                var el = document.getElementById('drive-status');
+                if (!el) return;
+                el.textContent = msg || '';
+                el.classList.toggle('text-red-600', !!isError);
+                el.classList.toggle('text-primary', !isError && !!msg);
+                el.classList.toggle('text-gray-500', !isError && !msg);
+                var scopeBanner = document.getElementById('scope-error-banner');
+                var guide = document.getElementById('setup-guide');
+                var hasScopeErr = isError && /scope|permission|forbidden|403|401|access.denied|consent/i.test(msg);
+                if (scopeBanner) scopeBanner.classList.toggle('hidden', !hasScopeErr);
+                if (guide && hasScopeErr) guide.open = true;
+            }
+
+            function saveAccounts(list) {
+                list = deduplicateByName(list);
+                localStorage.setItem(STORAGE_V3, JSON.stringify(list));
+                if (window.AccountBrainDrive && window.AccountBrainDrive.hasSessionToken()) {
+                    setDriveStatus('Saving to Google Docs…', false);
+                    window.AccountBrainDrive.pushToDocs(list, function (err, stats) {
+                        if (err) { setDriveStatus('Push failed: ' + err.message, true); return; }
+                        var msg = 'Saved: ' + stats.updated + ' updated, ' + stats.created + ' created.';
+                        if (stats.errors && stats.errors.length) msg += ' Errors: ' + stats.errors.join('; ');
+                        setDriveStatus(msg, stats.errors && stats.errors.length > 0);
+                    });
+                }
+            }
+
+            function deduplicateByName(list) {
+                var seen = {};
+                return list.filter(function (a) {
+                    var k = (a.name || '').toLowerCase();
+                    if (seen[k]) return false;
+                    seen[k] = true;
+                    return true;
+                });
+            }
+
+            function escapeHtml(s) {
+                var div = document.createElement('div');
+                div.textContent = s == null ? '' : String(s);
+                return div.innerHTML;
+            }
+
+            function cardSummaryLine(acct) {
+                var ini = (acct.topInitiatives || []).map(function (s) { return String(s).trim(); }).filter(Boolean);
+                if (ini.length) return ini[0];
+                var notes = acct.additionalNotes || [];
+                if (Array.isArray(notes) && notes.length) return notes[notes.length - 1].text.split('\n')[0];
+                if (typeof notes === 'string' && notes.trim()) return notes.trim().split('\n')[0];
+                return '\u2014';
+            }
+
+            function countPlayers(acct) {
+                return (acct.keyPlayers || []).filter(function (kp) {
+                    var o = normalizeKeyPlayer(kp);
+                    return !!(o.name || o.title || o.other);
+                }).length;
+            }
+            function countInitiatives(acct) {
+                return (acct.topInitiatives || []).filter(function (s) { return String(s).trim(); }).length;
+            }
+            function countSteps(acct) {
+                return (acct.nextSteps || []).filter(function (s) { return String(s).trim(); }).length;
+            }
+
+            var inputClass = 'flex-1 min-w-0 bg-white border border-gray-300 rounded-lg px-3 py-2 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA] text-sm';
+
+            function makeRow(placeholder, value) {
+                var wrap = document.createElement('div');
+                wrap.className = 'flex gap-2 items-center list-row';
+                var inp = document.createElement('input');
+                inp.type = 'text';
+                inp.className = 'list-line ' + inputClass;
+                inp.placeholder = placeholder;
+                inp.value = value || '';
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'remove-row shrink-0 text-gray-500 hover:text-red-400 px-2 py-1 text-lg leading-none';
+                btn.title = 'Remove';
+                btn.innerHTML = '&times;';
+                wrap.appendChild(inp);
+                wrap.appendChild(btn);
+                return wrap;
+            }
+
+            function makePlayerRow(name, title, other) {
+                var wrap = document.createElement('div');
+                wrap.className =
+                    'player-row list-row border border-gray-200 rounded-lg p-3 bg-white flex flex-col sm:flex-row gap-3 items-stretch sm:items-end';
+                var grid = document.createElement('div');
+                grid.className = 'grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1 min-w-0';
+
+                function addField(labelText, inputClassSuffix, val, ph) {
+                    var box = document.createElement('div');
+                    box.className = 'min-w-0';
+                    var lab = document.createElement('label');
+                    lab.className = 'block text-xs font-medium text-gray-600 mb-1';
+                    lab.textContent = labelText;
+                    var inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.className = inputClassSuffix + ' w-full ' + inputClass;
+                    inp.placeholder = ph;
+                    inp.value = val || '';
+                    box.appendChild(lab);
+                    box.appendChild(inp);
+                    grid.appendChild(box);
+                }
+
+                addField('Name', 'kp-name', name, 'e.g. Sam Okonkwo');
+                addField('Title', 'kp-title', title, 'e.g. Engineering');
+                addField('Other', 'kp-other', other, 'Notes, influence, etc.');
+
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className =
+                    'remove-row shrink-0 self-end sm:self-center text-gray-500 hover:text-red-400 px-2 py-2 text-lg leading-none sm:mb-0.5';
+                btn.title = 'Remove';
+                btn.innerHTML = '&times;';
+
+                wrap.appendChild(grid);
+                wrap.appendChild(btn);
+                return wrap;
+            }
+
+            function collectKeyPlayers(container) {
+                return Array.prototype.slice
+                    .call(container.querySelectorAll('.player-row'))
+                    .map(function (row) {
+                        var n = row.querySelector('.kp-name');
+                        var t = row.querySelector('.kp-title');
+                        var o = row.querySelector('.kp-other');
+                        return {
+                            name: (n && n.value ? n.value : '').trim(),
+                            title: (t && t.value ? t.value : '').trim(),
+                            other: (o && o.value ? o.value : '').trim()
+                        };
+                    })
+                    .filter(function (kp) {
+                        return kp.name || kp.title || kp.other;
+                    });
+            }
+
+            function fillPlayerList(container, keyPlayers) {
+                container.innerHTML = '';
+                var list = keyPlayers && keyPlayers.length ? keyPlayers.map(normalizeKeyPlayer) : [];
+                list.forEach(function (kp) {
+                    container.appendChild(makePlayerRow(kp.name, kp.title, kp.other));
+                });
+            }
+
+            function collectLines(container) {
+                return Array.prototype.slice.call(container.querySelectorAll('input.list-line')).map(function (inp) {
+                    return inp.value.trim();
+                }).filter(Boolean);
+            }
+
+            function initiativeCount(container) {
+                return container.querySelectorAll('.list-row').length;
+            }
+
+            function updateInitiativeButtonState() {
+                var el = document.getElementById('list-initiatives');
+                var btn = document.getElementById('add-initiative');
+                if (!el || !btn) return;
+                btn.disabled = initiativeCount(el) >= MAX_INITIATIVES;
+                btn.classList.toggle('opacity-40', btn.disabled);
+                btn.classList.toggle('cursor-not-allowed', btn.disabled);
+            }
+
+            function bindListRemove(container) {
+                container.addEventListener('click', function (e) {
+                    if (e.target.closest('.remove-row')) {
+                        var row = e.target.closest('.player-row') || e.target.closest('.list-row');
+                        if (row) row.remove();
+                        if (container.id === 'list-initiatives') updateInitiativeButtonState();
+                    }
+                });
+            }
+
+            var playersEl = document.getElementById('list-players');
+            var initiativesEl = document.getElementById('list-initiatives');
+            var stepsEl = document.getElementById('list-steps');
+            bindListRemove(playersEl);
+            bindListRemove(initiativesEl);
+            bindListRemove(stepsEl);
+
+            var overlay = document.getElementById('modal-overlay');
+            var form = document.getElementById('account-form');
+            var modalTitle = document.getElementById('modal-title');
+            var btnDelete = document.getElementById('form-delete');
+
+            function fillList(container, values, placeholder) {
+                container.innerHTML = '';
+                var list = values && values.length ? values : [];
+                list.forEach(function (v) {
+                    container.appendChild(makeRow(placeholder, v));
+                });
+            }
+
+            function makeNoteRow(date, text) {
+                var wrap = document.createElement('div');
+                wrap.className = 'note-row list-row border border-gray-200 rounded-lg p-3 bg-white flex flex-col sm:flex-row gap-2 items-stretch';
+                var dateInp = document.createElement('input');
+                dateInp.type = 'date';
+                dateInp.className = 'note-date shrink-0 w-36 ' + inputClass;
+                dateInp.value = date || todayStr();
+                var textArea = document.createElement('textarea');
+                textArea.className = 'note-text flex-1 min-w-0 bg-white border border-gray-300 rounded-lg px-3 py-2 text-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A85EA]/30 focus:border-[#0A85EA] text-sm resize-y';
+                textArea.rows = 2;
+                textArea.placeholder = 'Meeting notes, context, updates\u2026';
+                textArea.value = text || '';
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'remove-row shrink-0 self-start text-gray-500 hover:text-red-400 px-2 py-1 text-lg leading-none';
+                btn.title = 'Remove';
+                btn.innerHTML = '&times;';
+                wrap.appendChild(dateInp);
+                wrap.appendChild(textArea);
+                wrap.appendChild(btn);
+                return wrap;
+            }
+
+            function fillNoteList(container, notes) {
+                container.innerHTML = '';
+                var list = Array.isArray(notes) ? notes : [];
+                list.forEach(function (n) {
+                    container.appendChild(makeNoteRow(n.date, n.text));
+                });
+            }
+
+            function collectNotes(container) {
+                return Array.prototype.slice.call(container.querySelectorAll('.note-row')).map(function (row) {
+                    var d = row.querySelector('.note-date');
+                    var t = row.querySelector('.note-text');
+                    return { date: (d && d.value) || todayStr(), text: (t && t.value || '').trim() };
+                }).filter(function (n) { return n.text; });
+            }
+
+            var notesEl = document.getElementById('list-notes');
+            bindListRemove(notesEl);
+
+            var usecasesEl = document.getElementById('list-usecases');
+            var valuepathEl = document.getElementById('list-valuepath');
+            bindListRemove(usecasesEl);
+            bindListRemove(valuepathEl);
+
+            var attachmentsEl = document.getElementById('list-attachments');
+            var attachmentFileInput = document.getElementById('attachment-file-input');
+            var attachmentStatus = document.getElementById('attachment-upload-status');
+            var attachmentSigninHint = document.getElementById('attachment-signin-hint');
+            var currentAttachments = [];
+
+            function fileIcon(mimeType) {
+                if (/^image\//.test(mimeType)) return '🖼️';
+                if (/pdf/.test(mimeType)) return '📄';
+                if (/spreadsheet|excel|csv/.test(mimeType)) return '📊';
+                if (/presentation|powerpoint/.test(mimeType)) return '📽️';
+                if (/document|word/.test(mimeType)) return '📝';
+                return '📁';
+            }
+
+            function formatFileSize(bytes) {
+                var b = parseInt(bytes, 10);
+                if (!b || isNaN(b)) return '';
+                if (b < 1024) return b + ' B';
+                if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+                return (b / 1048576).toFixed(1) + ' MB';
+            }
+
+            function renderAttachments(list) {
+                currentAttachments = list || [];
+                attachmentsEl.innerHTML = '';
+                var hasDrive = window.AccountBrainDrive && window.AccountBrainDrive.hasSessionToken();
+                attachmentSigninHint.classList.toggle('hidden', hasDrive || currentAttachments.length > 0);
+                if (!currentAttachments.length && hasDrive) {
+                    attachmentsEl.innerHTML = '<p class="text-xs text-gray-400 italic col-span-2 py-2">No files uploaded yet.</p>';
+                    return;
+                }
+                currentAttachments.forEach(function (att, idx) {
+                    var card = document.createElement('div');
+                    card.className = 'flex items-center gap-3 p-2.5 bg-gray-50 border border-gray-200 rounded-lg';
+                    var isImg = /^image\//.test(att.mimeType);
+                    var thumb = '';
+                    if (isImg && att.thumbnailLink) {
+                        thumb = '<img src="' + att.thumbnailLink + '" alt="" class="w-10 h-10 rounded object-cover border border-gray-200 shrink-0">';
+                    } else {
+                        thumb = '<span class="text-2xl shrink-0 w-10 text-center">' + fileIcon(att.mimeType) + '</span>';
+                    }
+                    var sizeStr = formatFileSize(att.size);
+                    card.innerHTML = thumb +
+                        '<div class="min-w-0 flex-1">' +
+                            '<a href="' + (att.webViewLink || '#') + '" target="_blank" rel="noopener" class="text-sm font-medium text-primary hover:text-dark block truncate" title="' + att.name + '">' + att.name + '</a>' +
+                            '<span class="text-[11px] text-gray-400">' + (att.uploadedAt || '') + (sizeStr ? ' · ' + sizeStr : '') + '</span>' +
+                        '</div>' +
+                        '<button type="button" data-att-idx="' + idx + '" class="att-remove shrink-0 text-gray-400 hover:text-red-500 text-lg px-1" title="Remove">&times;</button>';
+                    attachmentsEl.appendChild(card);
+                });
+            }
+
+            attachmentsEl.addEventListener('click', function (e) {
+                var btn = e.target.closest('.att-remove');
+                if (!btn) return;
+                var idx = parseInt(btn.getAttribute('data-att-idx'), 10);
+                var att = currentAttachments[idx];
+                if (!att) return;
+                if (!confirm('Delete "' + att.name + '" from Google Drive?')) return;
+                btn.textContent = '…';
+                btn.disabled = true;
+                if (window.AccountBrainDrive && att.driveFileId) {
+                    window.AccountBrainDrive.deleteAttachment(att.driveFileId, function (err) {
+                        if (err) console.warn('Delete attachment error:', err);
+                        currentAttachments.splice(idx, 1);
+                        renderAttachments(currentAttachments);
+                        saveAttachmentsToAccount();
+                    });
+                } else {
+                    currentAttachments.splice(idx, 1);
+                    renderAttachments(currentAttachments);
+                    saveAttachmentsToAccount();
+                }
+            });
+
+            function saveAttachmentsToAccount() {
+                var id = document.getElementById('form-id').value;
+                if (!id) return;
+                var list = loadAccounts();
+                var acct = list.find(function (a) { return a.id === id; });
+                if (acct) {
+                    acct.attachments = currentAttachments;
+                    saveAccounts(list);
+                }
+            }
+
+            attachmentFileInput.addEventListener('change', function () {
+                var files = Array.from(this.files);
+                if (!files.length) return;
+                this.value = '';
+                var ad = window.AccountBrainDrive;
+                if (!ad || !ad.hasSessionToken()) {
+                    attachmentStatus.textContent = 'Sign in with Google first to upload files.';
+                    attachmentStatus.classList.add('text-red-600');
+                    attachmentStatus.classList.remove('text-primary');
+                    return;
+                }
+                var accountName = (document.getElementById('form-name').value || '').trim();
+                if (!accountName) {
+                    attachmentStatus.textContent = 'Enter an account name before uploading.';
+                    attachmentStatus.classList.add('text-red-600');
+                    attachmentStatus.classList.remove('text-primary');
+                    return;
+                }
+                var pending = files.length;
+                var uploaded = 0;
+                attachmentStatus.textContent = 'Uploading ' + pending + ' file(s)…';
+                attachmentStatus.classList.remove('text-red-600');
+                attachmentStatus.classList.add('text-primary');
+                files.forEach(function (file) {
+                    ad.uploadAttachment(accountName, file, function (err, meta) {
+                        if (err) {
+                            console.error('Upload error:', err);
+                            attachmentStatus.textContent = 'Upload failed: ' + err.message;
+                            attachmentStatus.classList.add('text-red-600');
+                        } else {
+                            uploaded++;
+                            currentAttachments.push(meta);
+                            renderAttachments(currentAttachments);
+                            saveAttachmentsToAccount();
+                        }
+                        pending--;
+                        if (pending === 0 && uploaded > 0) {
+                            attachmentStatus.textContent = uploaded + ' file(s) uploaded to Google Drive.';
+                            attachmentStatus.classList.remove('text-red-600');
+                        }
+                    });
+                });
+            });
+
+            var archImageInput = document.getElementById('form-architecture-image');
+            var archPreview = document.getElementById('architecture-preview');
+            var archPreviewImg = document.getElementById('architecture-preview-img');
+            archImageInput.addEventListener('input', function () {
+                var url = (archImageInput.value || '').trim();
+                if (url) {
+                    archPreviewImg.src = url;
+                    archPreview.classList.remove('hidden');
+                } else {
+                    archPreview.classList.add('hidden');
+                    archPreviewImg.src = '';
+                }
+            });
+
+            function openModal(editId) {
+                var list = loadAccounts();
+                var isNew = !editId;
+                modalTitle.textContent = isNew ? 'New Account' : 'Edit Account';
+                document.getElementById('form-id').value = isNew ? '' : editId;
+                btnDelete.classList.toggle('hidden', isNew);
+
+                if (isNew) {
+                    document.getElementById('form-name').value = '';
+                    fillPlayerList(playersEl, []);
+                    fillList(initiativesEl, [], 'Priority or concern');
+                    fillList(stepsEl, [], 'Next step or commitment');
+                    fillNoteList(notesEl, []);
+                    fillList(usecasesEl, [], 'e.g. Real-time fraud detection, CDC from Oracle');
+                    document.getElementById('form-architecture-text').value = '';
+                    document.getElementById('form-architecture-image').value = '';
+                    archPreview.classList.add('hidden');
+                    archPreviewImg.src = '';
+                    renderAttachments([]);
+                    attachmentStatus.textContent = '';
+                    fillList(valuepathEl, [], 'e.g. POC in Q2, production rollout Q3');
+                } else {
+                    var acct = list.find(function (a) { return a.id === editId; });
+                    if (!acct) return;
+                    acct = toV3(acct);
+                    document.getElementById('form-name').value = acct.name || '';
+                    fillPlayerList(playersEl, acct.keyPlayers);
+                    fillList(initiativesEl, acct.topInitiatives, 'Priority or concern');
+                    fillList(stepsEl, acct.nextSteps, 'Next step or commitment');
+                    fillNoteList(notesEl, acct.additionalNotes);
+                    fillList(usecasesEl, acct.useCases || [], 'e.g. Real-time fraud detection, CDC from Oracle');
+                    document.getElementById('form-architecture-text').value = acct.architectureText || '';
+                    document.getElementById('form-architecture-image').value = acct.architectureImage || '';
+                    if (acct.architectureImage) {
+                        archPreviewImg.src = acct.architectureImage;
+                        archPreview.classList.remove('hidden');
+                    } else {
+                        archPreview.classList.add('hidden');
+                        archPreviewImg.src = '';
+                    }
+                    renderAttachments(acct.attachments || []);
+                    attachmentStatus.textContent = '';
+                    fillList(valuepathEl, acct.valuePath || [], 'e.g. POC in Q2, production rollout Q3');
+                }
+
+                updateInitiativeButtonState();
+                document.getElementById('ai-insights-panel').classList.add('hidden');
+                document.getElementById('ai-insights-chat').innerHTML = '';
+                overlay.classList.remove('hidden');
+                overlay.setAttribute('aria-hidden', 'false');
+                overlay.scrollTop = 0;
+                document.getElementById('form-name').focus();
+            }
+
+            function closeModal() {
+                overlay.classList.add('hidden');
+                overlay.setAttribute('aria-hidden', 'true');
+            }
+
+            document.getElementById('add-player').addEventListener('click', function () {
+                playersEl.appendChild(makePlayerRow('', '', ''));
+            });
+
+            document.getElementById('add-initiative').addEventListener('click', function () {
+                if (initiativeCount(initiativesEl) >= MAX_INITIATIVES) return;
+                initiativesEl.appendChild(makeRow('Priority or concern', ''));
+                updateInitiativeButtonState();
+            });
+
+            document.getElementById('add-step').addEventListener('click', function () {
+                stepsEl.appendChild(makeRow('Next step or commitment', ''));
+            });
+
+            document.getElementById('add-usecase').addEventListener('click', function () {
+                usecasesEl.appendChild(makeRow('e.g. Real-time fraud detection, CDC from Oracle', ''));
+            });
+
+            document.getElementById('add-valuepath').addEventListener('click', function () {
+                valuepathEl.appendChild(makeRow('e.g. POC in Q2, production rollout Q3', ''));
+            });
+
+            document.getElementById('add-note').addEventListener('click', function () {
+                notesEl.appendChild(makeNoteRow(todayStr(), ''));
+                var last = notesEl.querySelector('.note-row:last-child .note-text');
+                if (last) last.focus();
+            });
+
+            document.getElementById('form-save-top').addEventListener('click', function () {
+                form.requestSubmit();
+            });
+
+            var insightsPanel = document.getElementById('ai-insights-panel');
+            var insightsChat = document.getElementById('ai-insights-chat');
+            var insightsChatHandle = null;
+
+            document.getElementById('btn-ai-insights').addEventListener('click', function () {
+                var accountName = (document.getElementById('form-name').value || '').trim();
+                if (!accountName) {
+                    alert('Enter an account name first.');
+                    document.getElementById('form-name').focus();
+                    return;
+                }
+                insightsPanel.classList.remove('hidden');
+                insightsChat.innerHTML = '';
+                insightsChatHandle = null;
+
+                var prompt = 'Based on the latest earnings report for ' + accountName +
+                    ', what are the CEO\'s top strategic initiatives and priorities? ' +
+                    'Then suggest specific ways Confluent (real-time data streaming, Apache Kafka, Flink) ' +
+                    'can help with each of those initiatives. Be concise and actionable.';
+
+                var sdk = window.GleanWebSDK || window.EmbeddedSearch;
+                if (sdk && sdk.renderChat) {
+                    insightsChatHandle = sdk.renderChat(insightsChat, {
+                        backend: 'https://confluent-be.glean.com',
+                        authMethod: 'sso',
+                        initialMessage: prompt,
+                        key: 'account-insights'
+                    });
+                } else {
+                    insightsChat.innerHTML = '<p style="padding:1rem;color:#666;">Glean SDK not loaded. Refresh the page and try again.</p>';
+                }
+                insightsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+
+            document.getElementById('btn-close-insights').addEventListener('click', function () {
+                insightsPanel.classList.add('hidden');
+                insightsChat.innerHTML = '';
+                insightsChatHandle = null;
+            });
+
+            document.getElementById('modal-close-x').addEventListener('click', closeModal);
+            document.getElementById('form-cancel').addEventListener('click', closeModal);
+
+            function render() {
+                var list = loadAccounts();
+                var grid = document.getElementById('accounts-grid');
+                grid.innerHTML = '';
+
+                list.forEach(function (acct) {
+                    acct = toV3(acct);
+                    var card = document.createElement('article');
+                    card.className =
+                        'account-card bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl cursor-pointer transition-shadow text-left';
+                    card.setAttribute('data-id', acct.id);
+
+                    var date = escapeHtml(acct.updatedAt || todayStr());
+                    var name = escapeHtml(acct.name);
+                    var pl = countPlayers(acct);
+                    var ini = countInitiatives(acct);
+                    var act = countSteps(acct);
+                    var priority = escapeHtml(cardSummaryLine(acct));
+
+                    var actionRow = '';
+                    if (act > 0) {
+                        actionRow = '<li class="text-gray-600 text-sm">✅ ' + act + ' action item' + (act !== 1 ? 's' : '') + '</li>';
+                    }
+                    var uc = (acct.useCases || []).filter(Boolean).length;
+                    var ucRow = uc > 0 ? '<li class="text-gray-600 text-sm">💡 ' + uc + ' use case' + (uc !== 1 ? 's' : '') + '</li>' : '';
+                    var attc = (acct.attachments || []).length;
+                    var attRow = attc > 0 ? '<li class="text-gray-600 text-sm">📎 ' + attc + ' file' + (attc !== 1 ? 's' : '') + '</li>' : '';
+
+                    card.innerHTML =
+                        '<div class="flex justify-between items-start mb-2">' +
+                        '<span class="text-gray-400 text-lg" aria-hidden="true">🏢</span>' +
+                        '<span class="text-xs text-gray-500">' + date + '</span>' +
+                        '</div>' +
+                        '<h2 class="font-bold text-lg text-dark">' + name + '</h2>' +
+                        '<ul class="mt-3 space-y-1">' +
+                        '<li class="text-gray-600 text-sm">👥 ' + pl + ' player' + (pl !== 1 ? 's' : '') + '</li>' +
+                        '<li class="text-gray-600 text-sm">🎯 ' + ini + ' initiative' + (ini !== 1 ? 's' : '') + '</li>' +
+                        actionRow +
+                        ucRow +
+                        attRow +
+                        '</ul>' +
+                        '<p class="mt-4 text-sm text-gray-600 italic border-t border-gray-100 pt-3">' + priority + '</p>';
+
+                    card.addEventListener('click', function () {
+                        openModal(acct.id);
+                    });
+                    grid.appendChild(card);
+                });
+
+                var addTile = document.createElement('button');
+                addTile.type = 'button';
+                addTile.className =
+                    'min-h-[220px] rounded-lg border-2 border-dashed border-gray-300 hover:border-[#0A85EA] bg-white/50 hover:bg-white flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-primary transition-colors shadow-sm';
+                addTile.innerHTML =
+                    '<span class="w-12 h-12 rounded-full border-2 border-gray-300 flex items-center justify-center text-2xl font-light leading-none text-primary">+</span>' +
+                    '<span class="text-sm font-medium text-dark">New Account</span>';
+                addTile.addEventListener('click', function () {
+                    openModal(null);
+                });
+                grid.appendChild(addTile);
+            }
+
+            document.getElementById('btn-header-new').addEventListener('click', function () {
+                openModal(null);
+            });
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var id = document.getElementById('form-id').value;
+                var name = (document.getElementById('form-name').value || '').trim();
+                if (!name) return;
+
+                var list = loadAccounts();
+                var nameLower = name.toLowerCase();
+                var dup = list.find(function (a) {
+                    return a.name && a.name.toLowerCase() === nameLower && a.id !== id;
+                });
+                if (dup) {
+                    alert('An account named "' + dup.name + '" already exists. Please use a different name.');
+                    document.getElementById('form-name').focus();
+                    return;
+                }
+                var entry = {
+                    id: id || ('acc-' + Date.now()),
+                    name: name,
+                    keyPlayers: collectKeyPlayers(playersEl),
+                    topInitiatives: collectLines(initiativesEl).slice(0, MAX_INITIATIVES),
+                    nextSteps: collectLines(stepsEl),
+                    additionalNotes: collectNotes(notesEl),
+                    useCases: collectLines(usecasesEl),
+                    architectureText: (document.getElementById('form-architecture-text').value || '').trim(),
+                    architectureImage: (document.getElementById('form-architecture-image').value || '').trim(),
+                    valuePath: collectLines(valuepathEl),
+                    attachments: currentAttachments,
+                    updatedAt: todayStr()
+                };
+
+                if (id) {
+                    var idx = list.findIndex(function (a) { return a.id === id; });
+                    if (idx >= 0) list[idx] = entry;
+                    else list.unshift(entry);
+                } else {
+                    list.unshift(entry);
+                }
+
+                saveAccounts(list);
+                closeModal();
+                render();
+            });
+
+            btnDelete.addEventListener('click', function () {
+                var id = document.getElementById('form-id').value;
+                if (!id || !confirm('Remove this account from your list?')) return;
+                var next = loadAccounts().filter(function (a) { return a.id !== id; });
+                saveAccounts(next);
+                closeModal();
+                render();
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeModal();
+            });
+
+            function updateDriveBar() {
+                var ad = window.AccountBrainDrive;
+                var cfg = ad && ad.isConfigured();
+                var signed = ad && ad.hasSessionToken();
+                var stack = document.getElementById('drive-auth-stack');
+                var signIn = document.getElementById('btn-google-signin');
+                var signOut = document.getElementById('btn-google-signout');
+                var syncRow = document.getElementById('drive-sync-row');
+                var hint = document.getElementById('drive-hint-local');
+                var oauthMissing = document.getElementById('drive-oauth-missing');
+                var scriptErr = document.getElementById('drive-script-error');
+                var intro = document.getElementById('accounts-intro');
+                var driveOk = !!window.AccountBrainDrive;
+                if (stack) {
+                    stack.classList.remove('hidden');
+                }
+                if (scriptErr) {
+                    scriptErr.classList.toggle('hidden', driveOk);
+                }
+                if (signIn) {
+                    signIn.classList.toggle('hidden', !!signed);
+                    signIn.classList.toggle('opacity-50', !cfg);
+                    signIn.classList.toggle('cursor-not-allowed', !cfg);
+                    signIn.setAttribute('aria-disabled', cfg ? 'false' : 'true');
+                    signIn.title = cfg
+                        ? 'Sign in with Google to use Drive backup and Doc import.'
+                        : 'Set window.GOOGLE_CLIENT_ID in google-oauth-config.js (same folder as this page), then reload.';
+                }
+                if (signOut) {
+                    signOut.classList.toggle('hidden', !cfg || !signed);
+                }
+                if (syncRow) {
+                    syncRow.classList.toggle('hidden', !cfg || !signed);
+                }
+                var syncHint = document.getElementById('drive-sync-hint');
+                if (syncHint) {
+                    syncHint.classList.toggle('hidden', !cfg || !signed);
+                }
+                if (hint) {
+                    hint.classList.toggle('hidden', !cfg || signed);
+                }
+                if (oauthMissing) {
+                    oauthMissing.classList.toggle('hidden', !driveOk || cfg);
+                }
+                if (intro) {
+                    intro.textContent = cfg
+                        ? 'Click an account to view or edit. Pull/Push syncs with your Google Docs (named "[Account Profile] Name").'
+                        : 'Click an account to view or edit. Your profiles are saved in this browser.';
+                }
+            }
+
+            document.getElementById('btn-google-signin').addEventListener('click', function () {
+                if (!window.AccountBrainDrive) {
+                    setDriveStatus(
+                        'Google Drive script did not load. Check the red notice above and the browser Network tab for failed JS files.',
+                        true
+                    );
+                    return;
+                }
+                if (!window.AccountBrainDrive.isConfigured()) {
+                    setDriveStatus(
+                        'OAuth Client ID is missing or invalid. Set window.GOOGLE_CLIENT_ID in google-oauth-config.js (must contain .apps.googleusercontent.com) and reload.',
+                        true
+                    );
+                    return;
+                }
+                setDriveStatus('Opening Google sign-in…', false);
+                window.AccountBrainDrive.signIn(function (err) {
+                    if (err) {
+                        setDriveStatus('Sign-in failed: ' + err.message, true);
+                        updateDriveBar();
+                        return;
+                    }
+                    updateDriveBar();
+                    setDriveStatus('Signed in — pulling accounts from Google Docs…', false);
+                    window.AccountBrainDrive.pullFromDocs(function (e2, profiles) {
+                        if (e2) {
+                            setDriveStatus('Signed in. Auto-pull failed: ' + e2.message, true);
+                            return;
+                        }
+                        if (!profiles || !profiles.length) {
+                            setDriveStatus('Signed in. No account profiles found in Drive.', false);
+                            return;
+                        }
+                        var localAccounts = loadAccounts();
+                        var localByName = {};
+                        localAccounts.forEach(function (a) { localByName[(a.name || '').toLowerCase()] = a; });
+                        var merged = deduplicateByName(profiles.map(function (p) {
+                            var pulled = toV3({
+                                name: p.accountName,
+                                keyPlayers: p.keyPlayers,
+                                topInitiatives: p.topInitiatives || [],
+                                nextSteps: p.nextSteps || [],
+                                additionalNotes: p.additionalNotes || []
+                            });
+                            var local = localByName[(pulled.name || '').toLowerCase()];
+                            if (local) {
+                                pulled.id = local.id;
+                                pulled.useCases = local.useCases || [];
+                                pulled.architectureText = local.architectureText || '';
+                                pulled.architectureImage = local.architectureImage || '';
+                                pulled.valuePath = local.valuePath || [];
+                                pulled.attachments = local.attachments || [];
+                            }
+                            return pulled;
+                        }));
+                        localStorage.setItem(STORAGE_V3, JSON.stringify(merged));
+                        setDriveStatus('Signed in — loaded ' + merged.length + ' account(s) from Google Docs.', false);
+                        render();
+                    });
+                });
+            });
+
+            document.getElementById('btn-google-signout').addEventListener('click', function () {
+                window.AccountBrainDrive.signOut(function () {
+                    localStorage.removeItem(STORAGE_V3);
+                    setDriveStatus('Signed out of Google.', false);
+                    updateDriveBar();
+                    render();
+                });
+            });
+
+            document.getElementById('btn-drive-push').addEventListener('click', function () {
+                var list = loadAccounts();
+                setDriveStatus('Writing ' + list.length + ' account(s) to Google Docs…', false);
+                window.AccountBrainDrive.pushToDocs(list, function (err, stats) {
+                    if (err) { setDriveStatus('Push failed: ' + err.message, true); return; }
+                    var msg = 'Push complete: ' + stats.updated + ' updated, ' + stats.created + ' created.';
+                    if (stats.errors && stats.errors.length) msg += ' Errors: ' + stats.errors.join('; ');
+                    setDriveStatus(msg, stats.errors && stats.errors.length > 0);
+                });
+            });
+
+            document.getElementById('btn-drive-pull').addEventListener('click', function () {
+                setDriveStatus('Reading Google Docs…', false);
+                window.AccountBrainDrive.pullFromDocs(function (err, profiles) {
+                    if (err) {
+                        setDriveStatus('Pull failed: ' + err.message, true);
+                        return;
+                    }
+                    if (!profiles || !profiles.length) {
+                        setDriveStatus('No "[Account Profile] *" docs found in Drive. Push first to create them.', false);
+                        return;
+                    }
+                    if (confirm('Replace local accounts with ' + profiles.length + ' profile(s) from Google Docs?')) {
+                        var localAccounts = loadAccounts();
+                        var localByName = {};
+                        localAccounts.forEach(function (a) { localByName[(a.name || '').toLowerCase()] = a; });
+                        var merged = deduplicateByName(profiles.map(function (p) {
+                            var pulled = toV3({
+                                name: p.accountName,
+                                keyPlayers: p.keyPlayers,
+                                topInitiatives: p.topInitiatives || [],
+                                nextSteps: p.nextSteps || [],
+                                additionalNotes: p.additionalNotes || []
+                            });
+                            var local = localByName[(pulled.name || '').toLowerCase()];
+                            if (local) {
+                                pulled.id = local.id;
+                                pulled.useCases = local.useCases || [];
+                                pulled.architectureText = local.architectureText || '';
+                                pulled.architectureImage = local.architectureImage || '';
+                                pulled.valuePath = local.valuePath || [];
+                                pulled.attachments = local.attachments || [];
+                            }
+                            return pulled;
+                        }));
+                        localStorage.setItem(STORAGE_V3, JSON.stringify(merged));
+                        setDriveStatus('Pulled ' + merged.length + ' account(s) from Google Docs.', false);
+                        render();
+                    }
+                });
+            });
+
+            if (window.AccountBrainDrive) {
+                window.AccountBrainDrive.onAuthChange = updateDriveBar;
+            }
+            updateDriveBar();
+            render();
+        })();
+    </script>
+    <script>
+        (function () {
+            document.querySelectorAll('.section-card[data-collapsible]').forEach(function (card) {
+                var head = card.querySelector('.section-head');
+                if (!head) return;
+                head.addEventListener('click', function () {
+                    card.classList.toggle('collapsed');
+                });
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            const overlay = document.getElementById('modal-overlay');
+            const sidebar = document.getElementById('form-sidebar');
+            if (!overlay || !sidebar) return;
+            const links = sidebar.querySelectorAll('a[href^="#sec-"]');
+            const sectionIds = Array.from(links).map(a => a.getAttribute('href').slice(1));
+
+            function updateActiveNav() {
+                const scrollTop = overlay.scrollTop;
+                let activeId = sectionIds[0];
+                for (const id of sectionIds) {
+                    const el = document.getElementById(id);
+                    if (el && el.offsetTop - 120 <= scrollTop) activeId = id;
+                }
+                links.forEach(a => {
+                    a.classList.toggle('active', a.getAttribute('href') === '#' + activeId);
+                });
+            }
+
+            overlay.addEventListener('scroll', updateActiveNav, { passive: true });
+
+            links.forEach(a => {
+                a.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.getElementById(this.getAttribute('href').slice(1));
+                    if (target) overlay.scrollTo({ top: target.offsetTop - 100, behavior: 'smooth' });
+                });
+            });
+
+            new MutationObserver(updateActiveNav).observe(overlay, { attributes: true, attributeFilter: ['class'] });
+        })();
+    </script>
+</body>
+</html>
