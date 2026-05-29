@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CP Cost Estimator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -305,7 +306,10 @@
                     <a href="index.html" class="text-primary underline">← Back to Landing Page</a>
                     <a href="https://github.com/bjaggi" class="text-primary underline" target="_blank" rel="noopener noreferrer">GitHub: @bjaggi</a>
                 </div>
-                <button id="download-pdf" class="bg-primary text-white px-4 py-2 rounded hover:bg-dark">Download PDF</button>
+                <div class="flex gap-2">
+                    <button id="download-pdf" class="bg-primary text-white px-4 py-2 rounded hover:bg-dark">Download PDF</button>
+                    <button id="download-excel" class="bg-primary text-white px-4 py-2 rounded hover:bg-dark">Download Excel</button>
+                </div>
             </div>
         </div>
     </div>
@@ -790,6 +794,228 @@
 
         downloadPdfButton.addEventListener('click', () => {
             window.print();
+        });
+
+        const downloadExcelButton = document.getElementById('download-excel');
+        downloadExcelButton.addEventListener('click', () => {
+            const wb = XLSX.utils.book_new();
+            const clusterCards = Array.from(clustersContainer.children);
+            const tableCards = Array.from(tablesContainer.children);
+
+            /* ── Sheet 1: Cluster Configurations ── */
+            const cfgData = [];
+            const cfgMerges = [];
+            let cfgRow = 0;
+
+            clusterCards.forEach((clusterCard, idx) => {
+                const tableCard = tableCards[idx];
+                if (!tableCard) return;
+                const nameInput = clusterCard.querySelector('input[type="text"]');
+                const envSelect = clusterCard.querySelector('.env-select');
+                const clusterName = nameInput?.value?.trim() || `Cluster ${idx + 1}`;
+                const env = envSelect?.value || 'prod';
+                const envLabel = env === 'prod' ? 'Production' : 'Non Production';
+
+                cfgData.push([clusterName + ' (' + envLabel + ')']);
+                cfgMerges.push({ s: { r: cfgRow, c: 0 }, e: { r: cfgRow, c: 5 } });
+                cfgRow++;
+
+                cfgData.push(['Service', 'Non-Prod Nodes', 'Non-Prod Billed', 'Prod Nodes', 'Prod Billed', 'Enabled']);
+                cfgRow++;
+
+                const rows = tableCard.querySelectorAll('tbody tr[data-service]');
+                rows.forEach(row => {
+                    const svcName = row.getAttribute('data-service');
+                    const npNode = Number(row.querySelector('.nonprod-col .node-input')?.value || 0);
+                    const npBilled = Number(row.querySelector('.nonprod-col .billed-input')?.value || 0);
+                    const pNode = Number(row.querySelector('.prod-col .node-input')?.value || 0);
+                    const pBilled = Number(row.querySelector('.prod-col .billed-input')?.value || 0);
+                    const enabled = row.querySelector('.service-toggle')?.checked ? 'Yes' : 'No';
+                    cfgData.push([svcName, npNode, npBilled, pNode, pBilled, enabled]);
+                    cfgRow++;
+                });
+
+                cfgData.push([]);
+                cfgRow++;
+            });
+
+            const wsCfg = XLSX.utils.aoa_to_sheet(cfgData);
+            wsCfg['!merges'] = cfgMerges;
+            wsCfg['!cols'] = [{ wch: 40 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }];
+            XLSX.utils.book_append_sheet(wb, wsCfg, 'Cluster Configurations');
+
+            /* ── Sheet 2: Billed Nodes Summary ── */
+            const clusterNames = clusterCards.map((c, i) => {
+                const n = c.querySelector('input[type="text"]')?.value?.trim();
+                return n || `Cluster ${i + 1}`;
+            });
+            const summaryData = [];
+            summaryData.push(['Component', ...clusterNames]);
+
+            services.forEach(service => {
+                const vals = clusterCards.map((clusterCard, idx) => {
+                    const tableCard = tableCards[idx];
+                    if (!tableCard) return 0;
+                    const env = clusterCard.querySelector('.env-select')?.value || 'prod';
+                    const rows = Array.from(tableCard.querySelectorAll('tbody tr[data-service]'));
+                    const row = rows.find(r => r.getAttribute('data-service') === service.name);
+                    if (!row) return 0;
+                    const toggle = row.querySelector('.service-toggle');
+                    if (!toggle || !toggle.checked) return 0;
+                    const billedInput = row.querySelector(env === 'prod' ? '.prod-col .billed-input' : '.nonprod-col .billed-input');
+                    const v = Number(billedInput?.value || 0);
+                    return Number.isNaN(v) ? 0 : v;
+                });
+                summaryData.push([service.name, ...vals]);
+            });
+
+            const totalRowIdx = summaryData.length;
+            const totalFormulas = ['TOTAL'];
+            for (let c = 1; c <= clusterNames.length; c++) {
+                const colLetter = XLSX.utils.encode_col(c);
+                totalFormulas.push({ f: `SUM(${colLetter}2:${colLetter}${totalRowIdx})` });
+            }
+            summaryData.push(totalFormulas);
+
+            const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+            wsSummary['!cols'] = [{ wch: 40 }, ...clusterNames.map(() => ({ wch: 16 }))];
+            XLSX.utils.book_append_sheet(wb, wsSummary, 'Billed Nodes Summary');
+
+            /* ── Sheet 3: Pricing (with formulas) ── */
+            const pricingData = [];
+            let pr = 0;
+
+            // --- Nodes section ---
+            pricingData.push(['NODES PRICING']); pr++;
+            pricingData.push([]); pr++;
+
+            const npNodeCount = Number(document.getElementById('summary-nonprod')?.textContent || 0);
+            const pNodeCount = Number(document.getElementById('summary-prod')?.textContent || 0);
+
+            pricingData.push(['', 'Non Production', 'Production']); pr++;
+            pricingData.push(['Billed Node Count', npNodeCount, pNodeCount]); pr++;
+            // Row index (1-based in Excel) for node counts = pr (which is 4)
+            const nodeCountRow = pr;
+
+            pricingData.push(['Price per Node ($)', Number(priceNonProdInput.value || 0), Number(priceProdInput.value || 0)]); pr++;
+            const nodePriceRow = pr;
+
+            // Total Non Prod Node Cost = B4 * B5, Total Prod Node Cost = C4 * C5
+            pricingData.push([
+                'Total Node Cost',
+                { f: `B${nodeCountRow}*B${nodePriceRow}` },
+                { f: `C${nodeCountRow}*C${nodePriceRow}` }
+            ]); pr++;
+            const nodeTotalRow = pr;
+
+            // Total Node Cost (sum) = B6 + C6
+            pricingData.push(['Total Node Cost (Combined)', { f: `B${nodeTotalRow}+C${nodeTotalRow}` }]); pr++;
+            const nodeCombinedRow = pr;
+
+            pricingData.push([]); pr++;
+            pricingData.push([]); pr++;
+
+            // --- Connectors section ---
+            pricingData.push(['CONNECTORS PRICING']); pr++;
+            pricingData.push([]); pr++;
+
+            const premCount = Number(connectorPremiumInput.value || 0);
+            const nonPremCount = Number(connectorNonPremiumInput.value || 0);
+            const cpPackCount = Number(connectorCpPackInput.value || 0);
+
+            pricingData.push(['Connector Counts']); pr++;
+            pricingData.push(['Number of Premium Connectors', premCount]); pr++;
+            const premCountRow = pr;
+            pricingData.push(['Number of Non-Premium Connectors', nonPremCount]); pr++;
+            const nonPremCountRow = pr;
+            pricingData.push(['CP Connector Pack', cpPackCount]); pr++;
+            const cpPackCountRow = pr;
+
+            pricingData.push([]); pr++;
+
+            // Premium Connectors pricing
+            pricingData.push(['Premium Connectors', 'Non Production', 'Production']); pr++;
+            pricingData.push(['Count', { f: `B${premCountRow}` }, { f: `B${premCountRow}` }]); pr++;
+            const premCntRefRow = pr;
+            pricingData.push(['Price per Connector ($)', Number(pricePremNonProdInput.value || 0), Number(pricePremProdInput.value || 0)]); pr++;
+            const premPriceRow = pr;
+            pricingData.push(['Total Premium Cost', { f: `B${premCntRefRow}*B${premPriceRow}` }, { f: `C${premCntRefRow}*C${premPriceRow}` }]); pr++;
+            const premTotalRow = pr;
+
+            pricingData.push([]); pr++;
+
+            // Non-Premium Connectors pricing
+            pricingData.push(['Non-Premium Connectors', 'Non Production', 'Production']); pr++;
+            pricingData.push(['Count', { f: `B${nonPremCountRow}` }, { f: `B${nonPremCountRow}` }]); pr++;
+            const nonPremCntRefRow = pr;
+            pricingData.push(['Price per Connector ($)', Number(priceNonPremNonProdInput.value || 0), Number(priceNonPremProdInput.value || 0)]); pr++;
+            const nonPremPriceRow = pr;
+            pricingData.push(['Total Non-Premium Cost', { f: `B${nonPremCntRefRow}*B${nonPremPriceRow}` }, { f: `C${nonPremCntRefRow}*C${nonPremPriceRow}` }]); pr++;
+            const nonPremTotalRow = pr;
+
+            pricingData.push([]); pr++;
+
+            // CP Connector Pack pricing
+            pricingData.push(['CP Connector Pack', 'Non Production', 'Production']); pr++;
+            pricingData.push(['Count', { f: `B${cpPackCountRow}` }, { f: `B${cpPackCountRow}` }]); pr++;
+            const cpCntRefRow = pr;
+            pricingData.push(['Price per Pack ($)', Number(priceCpNonProdInput.value || 0), Number(priceCpProdInput.value || 0)]); pr++;
+            const cpPriceRow = pr;
+            pricingData.push(['Total CP Pack Cost', { f: `B${cpCntRefRow}*B${cpPriceRow}` }, { f: `C${cpCntRefRow}*C${cpPriceRow}` }]); pr++;
+            const cpTotalRow = pr;
+
+            pricingData.push([]); pr++;
+
+            // Total Connector Cost = sum of all 6 connector cost cells
+            pricingData.push([
+                'Total Connector Cost',
+                { f: `B${premTotalRow}+B${nonPremTotalRow}+B${cpTotalRow}` },
+                { f: `C${premTotalRow}+C${nonPremTotalRow}+C${cpTotalRow}` }
+            ]); pr++;
+            const connTotalRow = pr;
+
+            pricingData.push(['Total Connector Cost (Combined)', { f: `B${connTotalRow}+C${connTotalRow}` }]); pr++;
+            const connCombinedRow = pr;
+
+            pricingData.push([]); pr++;
+            pricingData.push([]); pr++;
+
+            // Grand Total
+            pricingData.push(['GRAND TOTAL', { f: `B${nodeCombinedRow}+B${connCombinedRow}` }]); pr++;
+
+            const wsPricing = XLSX.utils.aoa_to_sheet(pricingData);
+            wsPricing['!cols'] = [{ wch: 36 }, { wch: 18 }, { wch: 18 }];
+
+            // Number format for currency cells
+            const currencyFmt = '$#,##0';
+            for (let r = 0; r < pricingData.length; r++) {
+                const row = pricingData[r];
+                if (!row) continue;
+                for (let c = 1; c <= 2; c++) {
+                    const cell = row[c];
+                    if (cell && typeof cell === 'object' && cell.f) {
+                        const addr = XLSX.utils.encode_cell({ r, c });
+                        if (wsPricing[addr]) wsPricing[addr].z = currencyFmt;
+                    }
+                }
+                const label = (row[0] || '').toString().toLowerCase();
+                if (label.includes('price per') || label.includes('total') || label.includes('grand')) {
+                    for (let c = 1; c <= 2; c++) {
+                        const addr = XLSX.utils.encode_cell({ r, c });
+                        if (wsPricing[addr]) wsPricing[addr].z = currencyFmt;
+                    }
+                }
+            }
+
+            XLSX.utils.book_append_sheet(wb, wsPricing, 'Pricing');
+
+            /* ── Sheet 4: Notes ── */
+            const notesText = document.getElementById('notes')?.value || '';
+            const wsNotes = XLSX.utils.aoa_to_sheet([['Notes'], [notesText]]);
+            wsNotes['!cols'] = [{ wch: 80 }];
+            XLSX.utils.book_append_sheet(wb, wsNotes, 'Notes');
+
+            XLSX.writeFile(wb, 'CP-Cost-Estimate.xlsx');
         });
         priceNonProdInput.addEventListener('input', updateSummary);
         priceProdInput.addEventListener('input', updateSummary);
