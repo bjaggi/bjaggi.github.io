@@ -815,23 +815,23 @@
                 const clusterName = nameInput?.value?.trim() || `Cluster ${idx + 1}`;
                 const env = envSelect?.value || 'prod';
                 const envLabel = env === 'prod' ? 'Production' : 'Non Production';
+                const isProd = env === 'prod';
 
                 cfgData.push([clusterName + ' (' + envLabel + ')']);
-                cfgMerges.push({ s: { r: cfgRow, c: 0 }, e: { r: cfgRow, c: 5 } });
+                cfgMerges.push({ s: { r: cfgRow, c: 0 }, e: { r: cfgRow, c: 3 } });
                 cfgRow++;
 
-                cfgData.push(['Service', 'Non-Prod Nodes', 'Non-Prod Billed', 'Prod Nodes', 'Prod Billed', 'Enabled']);
+                cfgData.push(['Service', isProd ? 'Prod Nodes' : 'Non-Prod Nodes', isProd ? 'Prod Billed' : 'Non-Prod Billed', 'Enabled']);
                 cfgRow++;
 
                 const rows = tableCard.querySelectorAll('tbody tr[data-service]');
                 rows.forEach(row => {
                     const svcName = row.getAttribute('data-service');
-                    const npNode = Number(row.querySelector('.nonprod-col .node-input')?.value || 0);
-                    const npBilled = Number(row.querySelector('.nonprod-col .billed-input')?.value || 0);
-                    const pNode = Number(row.querySelector('.prod-col .node-input')?.value || 0);
-                    const pBilled = Number(row.querySelector('.prod-col .billed-input')?.value || 0);
+                    const colPrefix = isProd ? '.prod-col' : '.nonprod-col';
+                    const nodeVal = Number(row.querySelector(`${colPrefix} .node-input`)?.value || 0);
+                    const billedVal = Number(row.querySelector(`${colPrefix} .billed-input`)?.value || 0);
                     const enabled = row.querySelector('.service-toggle')?.checked ? 'Yes' : 'No';
-                    cfgData.push([svcName, npNode, npBilled, pNode, pBilled, enabled]);
+                    cfgData.push([svcName, nodeVal, billedVal, enabled]);
                     cfgRow++;
                 });
 
@@ -841,7 +841,7 @@
 
             const wsCfg = XLSX.utils.aoa_to_sheet(cfgData);
             wsCfg['!merges'] = cfgMerges;
-            wsCfg['!cols'] = [{ wch: 40 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }];
+            wsCfg['!cols'] = [{ wch: 40 }, { wch: 16 }, { wch: 16 }, { wch: 10 }];
             XLSX.utils.book_append_sheet(wb, wsCfg, 'Cluster Configurations');
 
             /* ── Sheet 2: Billed Nodes Summary ── */
