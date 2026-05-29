@@ -802,36 +802,48 @@
             const clusterCards = Array.from(clustersContainer.children);
             const tableCards = Array.from(tablesContainer.children);
 
+            /* ── Collect all data into a single structure first ── */
+            const clusterData = clusterCards.map((clusterCard, idx) => {
+                const tableCard = tableCards[idx];
+                const nameInput = clusterCard.querySelector('input[type="text"]');
+                const envSelect = clusterCard.querySelector('.env-select');
+                const clusterName = nameInput?.value?.trim() || `Cluster ${idx + 1}`;
+                const env = envSelect?.value || 'prod';
+                const isProd = env === 'prod';
+                const svcRows = [];
+
+                if (tableCard) {
+                    const rows = tableCard.querySelectorAll('tbody tr[data-service]');
+                    rows.forEach(row => {
+                        const svcName = row.getAttribute('data-service');
+                        const colPrefix = isProd ? '.prod-col' : '.nonprod-col';
+                        const nodeVal = Number(row.querySelector(`${colPrefix} .node-input`)?.value || 0);
+                        const billedVal = Number(row.querySelector(`${colPrefix} .billed-input`)?.value || 0);
+                        const enabled = !!row.querySelector('.service-toggle')?.checked;
+                        svcRows.push({ svcName, nodeVal, billedVal, enabled });
+                    });
+                }
+
+                return { clusterName, env, isProd, svcRows };
+            });
+
             /* ── Sheet 1: Cluster Configurations ── */
             const cfgData = [];
             const cfgMerges = [];
             let cfgRow = 0;
 
-            clusterCards.forEach((clusterCard, idx) => {
-                const tableCard = tableCards[idx];
-                if (!tableCard) return;
-                const nameInput = clusterCard.querySelector('input[type="text"]');
-                const envSelect = clusterCard.querySelector('.env-select');
-                const clusterName = nameInput?.value?.trim() || `Cluster ${idx + 1}`;
-                const env = envSelect?.value || 'prod';
-                const envLabel = env === 'prod' ? 'Production' : 'Non Production';
-                const isProd = env === 'prod';
+            clusterData.forEach(cluster => {
+                const envLabel = cluster.isProd ? 'Production' : 'Non Production';
 
-                cfgData.push([clusterName + ' (' + envLabel + ')']);
+                cfgData.push([cluster.clusterName + ' (' + envLabel + ')']);
                 cfgMerges.push({ s: { r: cfgRow, c: 0 }, e: { r: cfgRow, c: 3 } });
                 cfgRow++;
 
-                cfgData.push(['Service', isProd ? 'Prod Nodes' : 'Non-Prod Nodes', isProd ? 'Prod Billed' : 'Non-Prod Billed', 'Enabled']);
+                cfgData.push(['Service', cluster.isProd ? 'Prod Nodes' : 'Non-Prod Nodes', cluster.isProd ? 'Prod Billed' : 'Non-Prod Billed', 'Enabled']);
                 cfgRow++;
 
-                const rows = tableCard.querySelectorAll('tbody tr[data-service]');
-                rows.forEach(row => {
-                    const svcName = row.getAttribute('data-service');
-                    const colPrefix = isProd ? '.prod-col' : '.nonprod-col';
-                    const nodeVal = Number(row.querySelector(`${colPrefix} .node-input`)?.value || 0);
-                    const billedVal = Number(row.querySelector(`${colPrefix} .billed-input`)?.value || 0);
-                    const enabled = row.querySelector('.service-toggle')?.checked ? 'Yes' : 'No';
-                    cfgData.push([svcName, nodeVal, billedVal, enabled]);
+                cluster.svcRows.forEach(svc => {
+                    cfgData.push([svc.svcName, svc.nodeVal, svc.billedVal, svc.enabled]);
                     cfgRow++;
                 });
 
@@ -844,27 +856,16 @@
             wsCfg['!cols'] = [{ wch: 40 }, { wch: 16 }, { wch: 16 }, { wch: 10 }];
             XLSX.utils.book_append_sheet(wb, wsCfg, 'Cluster Configurations');
 
-            /* ── Sheet 2: Billed Nodes Summary ── */
-            const clusterNames = clusterCards.map((c, i) => {
-                const n = c.querySelector('input[type="text"]')?.value?.trim();
-                return n || `Cluster ${i + 1}`;
-            });
+            /* ── Sheet 2: Billed Nodes Summary (from same data) ── */
+            const clusterNames = clusterData.map(c => c.clusterName);
             const summaryData = [];
             summaryData.push(['Component', ...clusterNames]);
 
             services.forEach(service => {
-                const vals = clusterCards.map((clusterCard, idx) => {
-                    const tableCard = tableCards[idx];
-                    if (!tableCard) return 0;
-                    const env = clusterCard.querySelector('.env-select')?.value || 'prod';
-                    const rows = Array.from(tableCard.querySelectorAll('tbody tr[data-service]'));
-                    const row = rows.find(r => r.getAttribute('data-service') === service.name);
-                    if (!row) return 0;
-                    const toggle = row.querySelector('.service-toggle');
-                    if (!toggle || !toggle.checked) return 0;
-                    const billedInput = row.querySelector(env === 'prod' ? '.prod-col .billed-input' : '.nonprod-col .billed-input');
-                    const v = Number(billedInput?.value || 0);
-                    return Number.isNaN(v) ? 0 : v;
+                const vals = clusterData.map(cluster => {
+                    const svc = cluster.svcRows.find(s => s.svcName === service.name);
+                    if (!svc || !svc.enabled) return 0;
+                    return Number.isNaN(svc.billedVal) ? 0 : svc.billedVal;
                 });
                 summaryData.push([service.name, ...vals]);
             });
