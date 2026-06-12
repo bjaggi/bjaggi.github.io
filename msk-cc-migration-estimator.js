@@ -981,7 +981,6 @@ const App = () => {
     const [localNotes, setLocalNotes] = useState(formData.sectionNotes[sectionKey] || '');
     const textareaRef = useRef(null);
 
-    // Update local state when formData changes, but only if textarea is not focused
     useEffect(() => {
       if (textareaRef.current !== document.activeElement) {
         setLocalNotes(formData.sectionNotes[sectionKey] || '');
@@ -1003,7 +1002,7 @@ const App = () => {
     }, [sectionKey, localNotes]);
 
     return (
-      <div className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
+      <div id={`sec-${sectionKey}`} className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200 scroll-mt-4">
         <h2 className="text-xl font-bold text-[#0A3D62] mb-5">{title}</h2>
         <div className="space-y-5">
           {children}
@@ -1094,9 +1093,40 @@ const App = () => {
   });
 
   // Update the form sections to pass the required props
+  const tocSections = [
+    { key: 'goals', label: '1. Migration Goals' },
+    { key: 'general', label: '2. General & Scope' },
+    { key: 'kafkaCore', label: '3. Kafka Core & Data' },
+    { key: 'applications', label: '4. Applications' },
+    { key: 'ecosystem', label: '5. Ecosystem & Tools' },
+    { key: 'security', label: '6. Security' },
+    { key: 'network', label: '7. Network' },
+    { key: 'performance', label: '8. Performance' },
+    { key: 'disasterRecovery', label: '9. DR & HA' },
+    { key: 'costAnalysis', label: '10. Cost Analysis' },
+    { key: 'targetState', label: '11. Target State' },
+    { key: 'results', label: 'Results' },
+  ];
+
   return (
     <div className="min-h-screen p-4 sm:p-8 font-sans text-[#0A3D62]">
-      <div className="max-w-4xl mx-auto shadow-lg rounded-xl p-6 sm:p-8">
+      <div className="max-w-6xl mx-auto flex gap-6">
+        {/* Table of Contents Sidebar */}
+        <nav className="toc-sidebar hidden lg:block w-48 shrink-0 no-print">
+          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+            <h3 className="text-xs font-bold text-[#0A3D62] uppercase tracking-wide mb-2">Contents</h3>
+            <div className="space-y-0.5">
+              {tocSections.map(s => (
+                <a key={s.key} href={`#sec-${s.key}`}
+                   className={`block px-3 py-1.5 rounded text-sm text-gray-600 hover:bg-blue-50 hover:text-[#0A85EA] transition-colors ${s.key === 'results' ? 'font-semibold mt-2 border-t border-gray-100 pt-2' : ''}`}>
+                  {s.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </nav>
+        {/* Main Content */}
+        <div className="flex-1 min-w-0 shadow-lg rounded-xl p-6 sm:p-8">
         <div className="space-y-8" ref={scrollRef}>
           {/* Migration Goals */}
           <Section title="1. Migration Goals" sectionKey="goals">
@@ -1750,7 +1780,7 @@ const App = () => {
         </div>
 
         {/* Results Section */}
-        <div className="mt-10 p-6 bg-indigo-50 rounded-xl shadow-inner border border-indigo-200">
+        <div id="sec-results" className="mt-10 p-6 bg-indigo-50 rounded-xl shadow-inner border border-indigo-200 scroll-mt-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-[#0A3D62]">Migration Effort Estimate</h2>
             <button
@@ -2095,6 +2125,7 @@ const App = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

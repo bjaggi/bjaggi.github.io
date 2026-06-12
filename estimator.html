@@ -65,6 +65,20 @@
         h1, h2, h3, h4, h5, h6 {
             color: #0A3D62;
         }
+        .toc-sidebar {
+            position: sticky;
+            top: 1rem;
+            align-self: start;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+        }
+        @media print {
+            .no-print,
+            .logo-container,
+            .toc-sidebar {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 
