@@ -1112,13 +1112,13 @@ const App = () => {
     <div className="min-h-screen p-4 sm:p-8 font-sans text-[#0A3D62]">
       <div className="max-w-6xl mx-auto flex gap-6">
         {/* Table of Contents Sidebar */}
-        <nav className="toc-sidebar hidden lg:block w-48 shrink-0 no-print">
-          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-            <h3 className="text-xs font-bold text-[#0A3D62] uppercase tracking-wide mb-2">Contents</h3>
-            <div className="space-y-0.5">
+        <nav className="toc-sidebar hidden lg:block w-52 shrink-0 no-print">
+          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+            <h3 className="text-xs font-bold text-[#0A3D62] uppercase tracking-widest mb-3 pb-2 border-b-2 border-[#0A85EA]">Contents</h3>
+            <div className="space-y-1">
               {tocSections.map(s => (
                 <a key={s.key} href={`#sec-${s.key}`}
-                   className={`block px-3 py-1.5 rounded text-sm text-gray-600 hover:bg-blue-50 hover:text-[#0A85EA] transition-colors ${s.key === 'results' ? 'font-semibold mt-2 border-t border-gray-100 pt-2' : ''}`}>
+                   className={`block px-3 py-2 rounded-md text-[13px] font-medium transition-colors border-l-2 ${s.key === 'results' ? 'mt-3 pt-3 border-t border-gray-200 text-[#0A3D62] font-bold border-l-[#0A85EA] bg-blue-50' : 'text-[#0A3D62] border-l-transparent hover:border-l-[#0A85EA] hover:bg-[#F5F9FF] hover:text-[#0A85EA]'}`}>
                   {s.label}
                 </a>
               ))}
@@ -1126,7 +1126,7 @@ const App = () => {
           </div>
         </nav>
         {/* Main Content */}
-        <div className="flex-1 min-w-0 shadow-lg rounded-xl p-6 sm:p-8">
+        <div className="flex-1 min-w-0 bg-white shadow-lg rounded-xl p-6 sm:p-8">
         <div className="space-y-8" ref={scrollRef}>
           {/* Migration Goals */}
           <Section title="1. Migration Goals" sectionKey="goals">
