@@ -1,0 +1,52 @@
+# [Account Profile] Nvidia
+
+
+---
+
+## 🧠 ACCOUNT BRAIN — Customer Context
+
+> This document contains customer-specific information: meeting notes, account activity, financial filings, and internal communications. Use this to understand the 'What' and 'Where' of the customer situation.
+
+---
+
+## Document Info
+- **Brain:** Account Brain
+- **Source:** Manual
+- **Date:** April 14, 2026 at 19:21 UTC
+- **Sentiment:** ⚪ Neutral
+
+---
+
+## Executive Summary
+
+(Summarization failed — see raw content.)
+
+---
+
+## Full Content
+
+```
+ACCOUNT PROFILE: Nvidia 
+
+## Key Players
+
+- Tony Mancill — Director of Infra
+  Notes: Neutral
+- Mrs YYZ — VP Eng
+
+## Top Initiatives / Concerns
+
+1. Evaluate WarpStream [High]
+2. Security & Networking [Medium]
+3. DR Stratergy [Low]
+
+## Next Steps / Action Items
+
+| Task | Owner | Due Date |
+|------|-------|----------|
+| Work with Tony's boss Mx X | bjaggi | 2026-04-24 |
+
+## Additional Notes
+
+we had a call it went well.
+```

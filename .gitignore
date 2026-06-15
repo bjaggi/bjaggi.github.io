@@ -1,0 +1,7 @@
+# Dependencies
+node_modules/
+
+# Google OAuth client download (contains client_secret) — never commit
+google-oauth-web-client.local.json
+client_secret*.json
+**/client_secret*.json

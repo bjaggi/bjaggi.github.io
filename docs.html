@@ -115,17 +115,30 @@
                 <h1 class="text-3xl font-bold mb-2 text-dark">AWS MSK to Confluent Cloud Migration Estimator</h1>
                 <p class="text-dark">Documentation and Scoring Guide</p>
                 <div id="visit-counter" class="mt-2 text-sm text-dark opacity-75">
-                    <span id="visit-count">Loading visit count since Jan 22, 2026...</span>
+                    <span id="visit-count">Loading views since Mar 14...</span>
                 </div>
                 <a href="index.html" class="text-primary hover:text-dark underline mt-4 inline-block">← Back to Estimator</a>
             </div>
+            <p class="text-sm text-dark mb-6 text-center opacity-80">Tip: Hard refresh on Mac with Cmd + Shift + R.</p>
 
             <div class="category">
                 <h2>Scoring System</h2>
                 <p class="mb-4">The estimator calculates a total complexity score based on 11 key categories:</p>
 
                 <div class="mb-6">
-                    <h3>1. General & Scope</h3>
+                    <h3>1. Migration Goals</h3>
+                    <p class="points">5-20 points</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>Primary and secondary goals</li>
+                        <li>Timeline constraints</li>
+                        <li>Budget constraints</li>
+                        <li>Risk tolerance</li>
+                        <li>Success criteria</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h3>2. General & Scope</h3>
                     <p class="points">5-18 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Number of MSK clusters</li>
@@ -137,7 +150,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>2. Kafka Core & Data Migration</h3>
+                    <h3>3. Kafka Core & Data Migration</h3>
                     <p class="points">5-25 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Number of topics and partitions</li>
@@ -149,7 +162,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>3. Applications & Connectivity</h3>
+                    <h3>4. Applications & Connectivity</h3>
                     <p class="points">5-20 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Number of applications</li>
@@ -161,7 +174,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>4. Ecosystem & Tools</h3>
+                    <h3>5. Ecosystem & Tools</h3>
                     <p class="points">5-20 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Schema Registry usage</li>
@@ -173,7 +186,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>5. Security & Governance</h3>
+                    <h3>6. Security & Governance</h3>
                     <p class="points">5-20 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>ACL management</li>
@@ -185,7 +198,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>6. Network & Connectivity</h3>
+                    <h3>7. Network & Connectivity</h3>
                     <p class="points">5-20 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Network type</li>
@@ -197,7 +210,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>7. Performance & Scaling</h3>
+                    <h3>8. Performance & Scaling</h3>
                     <p class="points">5-20 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Throughput requirements</li>
@@ -209,7 +222,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>8. Disaster Recovery & HA</h3>
+                    <h3>9. Disaster Recovery & HA</h3>
                     <p class="points">5-25 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>DR strategy</li>
@@ -221,7 +234,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>9. Cost Analysis & Optimization</h3>
+                    <h3>10. Cost Analysis & Optimization</h3>
                     <p class="points">5-15 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Current MSK costs</li>
@@ -233,7 +246,7 @@
                 </div>
 
                 <div class="mb-6">
-                    <h3>10. Target State</h3>
+                    <h3>11. Target State</h3>
                     <p class="points">5-25 points</p>
                     <ul class="list-disc list-inside ml-4">
                         <li>Cluster type selection</li>
@@ -246,17 +259,6 @@
                     </ul>
                 </div>
 
-                <div class="mb-6">
-                    <h3>11. Migration Goals</h3>
-                    <p class="points">5-20 points</p>
-                    <ul class="list-disc list-inside ml-4">
-                        <li>Primary and secondary goals</li>
-                        <li>Timeline constraints</li>
-                        <li>Budget constraints</li>
-                        <li>Risk tolerance</li>
-                        <li>Success criteria</li>
-                    </ul>
-                </div>
             </div>
 
             <div class="category">
@@ -333,42 +335,28 @@
             </div>
         </div>
     </div>
+
     <!-- Visit Counter Script -->
     <script>
-        // Track page visits using countapi.xyz (free service)
+        // Track visits via Cloud Function backed by GCS
         (function() {
             const visitCountElement = document.getElementById('visit-count');
             if (!visitCountElement) return;
 
-            const namespace = 'bjaggi-github-io';
-            const key = 'docs-page-visits';
-            const counterUrl = `https://api.countapi.xyz/hit/${namespace}/${key}`;
-            const getUrl = `https://api.countapi.xyz/get/${namespace}/${key}`;
+            const counterUrl = 'https://us-central1-solutionsarchitect-01.cloudfunctions.net/visit-counter?page=docs';
 
-            fetch(counterUrl)
+            fetch(counterUrl, { method: 'GET' })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.value !== undefined) {
-                        const count = data.value;
-                        visitCountElement.textContent = `Visit count since Jan 22, 2026: ${count.toLocaleString()}`;
+                    if (data && typeof data.count === 'number') {
+                        visitCountElement.textContent = `Last update: Mar 14 · Views: ${data.count.toLocaleString()}`;
                     } else {
-                        fetch(getUrl)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.value !== undefined) {
-                                    visitCountElement.textContent = `Visit count since Jan 22, 2026: ${data.value.toLocaleString()}`;
-                                } else {
-                                    visitCountElement.textContent = 'Visit tracking enabled';
-                                }
-                            })
-                            .catch(() => {
-                                visitCountElement.textContent = 'Visit tracking enabled';
-                            });
+                        visitCountElement.textContent = 'Last update: Mar 14 · Views';
                     }
                 })
                 .catch(error => {
                     console.error('Error tracking visits:', error);
-                    visitCountElement.textContent = 'Visit tracking enabled';
+                    visitCountElement.textContent = 'Last update: Mar 14 · Views';
                 });
         })();
     </script>
