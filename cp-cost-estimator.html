@@ -65,6 +65,11 @@
         @media (max-width: 1023px) {
             .toc-sidebar { display: none; }
         }
+        details[open] .details-chevron {
+            transform: rotate(90deg);
+        }
+        details summary::-webkit-details-marker { display: none; }
+        details summary::marker { content: ''; }
         @media print {
             .no-print,
             .logo-container,
@@ -93,7 +98,25 @@
             <!-- Main Content -->
             <div class="flex-1 min-w-0 bg-white shadow-lg rounded-lg p-8">
             <h1 class="text-2xl font-bold text-dark mb-3">CP Cost Estimator</h1>
-            <p class="text-dark mb-6">Scope and size Confluent Platform clusters, configure connectors, and estimate licensing costs across production, non-production, and development environments.</p>
+            <p class="text-dark mb-4">Scope and size Confluent Platform clusters, configure connectors, and estimate licensing costs across production, non-production, and development environments.</p>
+            <details class="mb-6 border border-gray-200 rounded-lg no-print">
+                <summary class="cursor-pointer px-4 py-2.5 text-sm font-semibold text-primary hover:bg-blue-50 rounded-lg select-none flex items-center gap-1.5">
+                    <svg class="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    How to use this estimator
+                </summary>
+                <div class="px-4 pb-4 text-sm text-gray-700 space-y-2 border-t border-gray-100 pt-3">
+                    <ol class="list-decimal list-inside space-y-1.5">
+                        <li><strong>Set up clusters</strong> — Choose the number of clusters, give each a name, and select the environment type (Production, Non-Production, or Dev).</li>
+                        <li><strong>Size each cluster</strong> — For every cluster, enter the number of nodes and billed nodes for each CP component (Kafka Broker, ZooKeeper, Connect, etc.). Toggle components on or off as needed.</li>
+                        <li><strong>Configure connectors</strong> — Enter the number of Premium and Non-Premium connectors and the CP Connector Pack count in the Connectors section.</li>
+                        <li><strong>Enter pricing</strong> — Expand the Pricing section and fill in the per-node and per-connector rates for Production and Non-Production environments.</li>
+                        <li><strong>Review totals</strong> — The Billed Nodes Summary and cost totals update automatically as you make changes.</li>
+                        <li><strong>Export &amp; share</strong> — Use <em>Download Excel</em> to generate a shareable workbook with all configurations and pricing, or <em>Download PDF</em> for a print-ready summary.</li>
+                        <li><strong>Re-import</strong> — Use <em>Upload Excel</em> to load a previously exported workbook and continue editing.</li>
+                    </ol>
+                    <p class="text-xs text-gray-500 mt-2">Your inputs are saved automatically in the browser. Use <kbd class="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">Cmd + Shift + R</kbd> to hard-refresh if the page feels stale.</p>
+                </div>
+            </details>
             <div class="mb-6 border border-gray-200 rounded-lg p-3" style="color: #800000; font-weight: 700;">
                 <div>1: Disaster Recovery (DR) nodes are priced at 50% of the Production price</div>
                 <div>2: UAT, Staging, Perf is considered as Non-Prod</div>
