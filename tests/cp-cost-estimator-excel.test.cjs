@@ -9,15 +9,16 @@ const ENV_LABELS = { prod: 'Production', nonprod: 'Non Production', dev: 'Dev (N
 const ENV_KEYS = Object.fromEntries(Object.entries(ENV_LABELS).map(([k, v]) => [v, k]));
 
 const defaultServices = [
-    { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, defaultEnabled: true, free: true },
-    { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 3, prod: 3, free: true },
-    { name: 'Kafka Broker', nonProd: 3, prod: 4, defaultEnabled: true },
-    { name: 'Kafka Broker - Stretch Across 2 DC', nonProd: 4, prod: 4 },
-    { name: 'Kafka Broker - MRC Across 2 DC', nonProd: 6, prod: 6 },
+    { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, defaultEnabled: true, free: true, group: 'Controllers' },
+    { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 3, prod: 3, free: true, group: 'Controllers' },
+    { name: 'Kafka Broker', nonProd: 3, prod: 4, defaultEnabled: true, group: 'Broker Architecture' },
+    { name: 'Kafka Broker - Stretch Across 2 DC', nonProd: 4, prod: 4, group: 'Broker Architecture' },
+    { name: 'Kafka Broker - MRC Across 2 DC', nonProd: 6, prod: 6, group: 'Broker Architecture' },
     { name: 'Schema Registry', nonProd: 1, prod: 2 },
     { name: 'REST Proxy', nonProd: 1, prod: 2 },
     { name: 'ksqlDB', nonProd: 1, prod: 2 },
     { name: 'Kafka Connect', nonProd: 1, prod: 2 },
+    { name: 'Kstreams', nonProd: 0, prod: 0 },
     { name: 'Control Center', nonProd: 1, prod: 1 },
     { name: 'Confluent Operator', nonProd: 1, prod: 1 },
     { name: 'CP Flink Nodes', nonProd: 3, prod: 3 },
