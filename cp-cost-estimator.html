@@ -163,14 +163,14 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-4 py-2 border">Number of Commercial Connector Packs</td>
+                                <td class="px-4 py-2 border">Number of Open Source Connectors</td>
                                 <td class="px-4 py-2 border">
-                                    <input id="connector-non-premium" type="number" min="0" value="0" class="w-24 border border-gray-300 rounded px-2 py-1 text-center">
+                                    <input id="connector-opensource" type="number" min="0" value="0" class="w-24 border border-gray-300 rounded px-2 py-1 text-center">
                                 </td>
                             </tr>
                             <tr>
                                 <td class="px-4 py-2 border">
-                                    <div>CP Connector Pack</div>
+                                    <div>CP Commercial Connector Pack</div>
                                     <a href="https://confluentinc.atlassian.net/wiki/spaces/PM/pages/3351249960/End+Free+CP+-+Field+Enablement+and+FAQs#Bundle-SKUs" target="_blank" rel="noopener noreferrer" class="text-primary text-xs hover:underline">Connector Pack Guide</a>
                                 </td>
                                 <td class="px-4 py-2 border">
@@ -261,11 +261,11 @@
                                         <td class="px-4 py-2 border" id="summary-connector-premium">0</td>
                                     </tr>
                                     <tr>
-                                        <td class="px-4 py-2 border">Number of Commercial Connector Packs</td>
-                                        <td class="px-4 py-2 border" id="summary-connector-non-premium">0</td>
+                                        <td class="px-4 py-2 border">Number of Open Source Connectors</td>
+                                        <td class="px-4 py-2 border" id="summary-connector-opensource">0</td>
                                     </tr>
                                     <tr>
-                                        <td class="px-4 py-2 border">CP Connector Pack</td>
+                                        <td class="px-4 py-2 border">CP Commercial Connector Pack</td>
                                         <td class="px-4 py-2 border" id="summary-connector-cp-pack">0</td>
                                     </tr>
                                 </tbody>
@@ -286,31 +286,16 @@
                             </div>
                         </div>
 
-                        <!-- Commercial Connector Packs pricing -->
-                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Commercial Connector Packs</h4>
+                        <!-- CP Commercial Connector Pack pricing -->
+                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">CP Commercial Connector Pack</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
                             <div class="bg-white border border-gray-100 rounded p-3">
-                                <label class="block text-sm text-dark mb-1" for="price-nonprem-nonprod">Price per Commercial Connector Pack in Non Production ($)</label>
-                                <input id="price-nonprem-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                                <div class="mt-2 text-sm">Total Non Prod Commercial Cost: <span id="total-nonprem-nonprod-cost" class="font-semibold">$0</span></div>
-                            </div>
-                            <div class="bg-white border border-gray-100 rounded p-3">
-                                <label class="block text-sm text-dark mb-1" for="price-nonprem-prod">Price per Commercial Connector Pack in Production ($)</label>
-                                <input id="price-nonprem-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                                <div class="mt-2 text-sm">Total Prod Commercial Cost: <span id="total-nonprem-prod-cost" class="font-semibold">$0</span></div>
-                            </div>
-                        </div>
-
-                        <!-- CP Connector Pack pricing -->
-                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">CP Connector Pack</h4>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
-                            <div class="bg-white border border-gray-100 rounded p-3">
-                                <label class="block text-sm text-dark mb-1" for="price-cp-nonprod">Price per CP Connector Pack in Non Production ($)</label>
+                                <label class="block text-sm text-dark mb-1" for="price-cp-nonprod">Price per CP Commercial Connector Pack in Non Production ($)</label>
                                 <input id="price-cp-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
                                 <div class="mt-2 text-sm">Total Non Prod CP Cost: <span id="total-cp-nonprod-cost" class="font-semibold">$0</span></div>
                             </div>
                             <div class="bg-white border border-gray-100 rounded p-3">
-                                <label class="block text-sm text-dark mb-1" for="price-cp-prod">Price per CP Connector Pack in Production ($)</label>
+                                <label class="block text-sm text-dark mb-1" for="price-cp-prod">Price per CP Commercial Connector Pack in Production ($)</label>
                                 <input id="price-cp-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
                                 <div class="mt-2 text-sm">Total Prod CP Cost: <span id="total-cp-prod-cost" class="font-semibold">$0</span></div>
                             </div>
@@ -374,10 +359,6 @@
         const pricePremProdInput = document.getElementById('price-prem-prod');
         const totalPremNonProdCostEl = document.getElementById('total-prem-nonprod-cost');
         const totalPremProdCostEl = document.getElementById('total-prem-prod-cost');
-        const priceNonPremNonProdInput = document.getElementById('price-nonprem-nonprod');
-        const priceNonPremProdInput = document.getElementById('price-nonprem-prod');
-        const totalNonPremNonProdCostEl = document.getElementById('total-nonprem-nonprod-cost');
-        const totalNonPremProdCostEl = document.getElementById('total-nonprem-prod-cost');
         const priceCpNonProdInput = document.getElementById('price-cp-nonprod');
         const priceCpProdInput = document.getElementById('price-cp-prod');
         const totalCpNonProdCostEl = document.getElementById('total-cp-nonprod-cost');
@@ -385,13 +366,12 @@
         const totalCpAmountEl = document.getElementById('total-cp-amount');
         const grandTotalEl = document.getElementById('grand-total');
         const connectorPremiumInput = document.getElementById('connector-premium');
-        const connectorNonPremiumInput = document.getElementById('connector-non-premium');
         const connectorOpensourceInput = document.getElementById('connector-opensource');
         const connectorCpPackInput = document.getElementById('connector-cp-pack');
         const connectorNotesInput = document.getElementById('connector-notes');
         const preparedForInput = document.getElementById('prepared-for');
         const preparedByInput = document.getElementById('prepared-by');
-        const CONNECTOR_PACK_SERVICE = 'CP Connector Pack';
+        const CONNECTOR_PACK_SERVICE = 'CP Commercial Connector Pack';
         const STORAGE_KEY = 'cp-cost-estimator-state';
         const services = [
             { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, defaultEnabled: true, free: true },
@@ -462,7 +442,6 @@
                 clusters,
                 connectors: {
                     premium: Number(connectorPremiumInput?.value || 0),
-                    nonPremium: Number(connectorNonPremiumInput?.value || 0),
                     openSource: Number(connectorOpensourceInput?.value || 0),
                     cpPack: Number(connectorCpPackInput?.value || 0)
                 },
@@ -484,7 +463,6 @@
             const summaryNonProdEl = document.getElementById('summary-nonprod');
             const summaryProdEl = document.getElementById('summary-prod');
             const summaryConnPremiumEl = document.getElementById('summary-connector-premium');
-            const summaryConnNonPremiumEl = document.getElementById('summary-connector-non-premium');
             const summaryConnOpensourceEl = document.getElementById('summary-connector-opensource');
             const summaryConnCpPackEl = document.getElementById('summary-connector-cp-pack');
             let summaryNonProd = 0;
@@ -527,11 +505,9 @@
             if (summaryProdEl) summaryProdEl.textContent = summaryProd.toString();
 
             const connPremium = Number(connectorPremiumInput?.value || 0);
-            const connNonPremium = Number(connectorNonPremiumInput?.value || 0);
             const connOpenSource = Number(connectorOpensourceInput?.value || 0);
             const connCpPack = Number(connectorCpPackInput?.value || 0);
             if (summaryConnPremiumEl) summaryConnPremiumEl.textContent = (isNaN(connPremium) ? 0 : connPremium).toString();
-            if (summaryConnNonPremiumEl) summaryConnNonPremiumEl.textContent = (isNaN(connNonPremium) ? 0 : connNonPremium).toString();
             if (summaryConnOpensourceEl) summaryConnOpensourceEl.textContent = (isNaN(connOpenSource) ? 0 : connOpenSource).toString();
             if (summaryConnCpPackEl) summaryConnCpPackEl.textContent = (isNaN(connCpPack) ? 0 : connCpPack).toString();
 
@@ -550,7 +526,6 @@
             if (totalAmountEl) totalAmountEl.textContent = formatCurrency(totalNodeCost);
 
             const premCount = isNaN(connPremium) ? 0 : connPremium;
-            const nonPremCount = isNaN(connNonPremium) ? 0 : connNonPremium;
             const cpPackCount = isNaN(connCpPack) ? 0 : connCpPack;
 
             const premNpRate = Number(pricePremNonProdInput?.value || 0);
@@ -560,13 +535,6 @@
             if (totalPremNonProdCostEl) totalPremNonProdCostEl.textContent = formatCurrency(premNpCost);
             if (totalPremProdCostEl) totalPremProdCostEl.textContent = formatCurrency(premPCost);
 
-            const nonPremNpRate = Number(priceNonPremNonProdInput?.value || 0);
-            const nonPremPRate = Number(priceNonPremProdInput?.value || 0);
-            const nonPremNpCost = (Number.isNaN(nonPremNpRate) ? 0 : nonPremNpRate) * nonPremCount;
-            const nonPremPCost = (Number.isNaN(nonPremPRate) ? 0 : nonPremPRate) * nonPremCount;
-            if (totalNonPremNonProdCostEl) totalNonPremNonProdCostEl.textContent = formatCurrency(nonPremNpCost);
-            if (totalNonPremProdCostEl) totalNonPremProdCostEl.textContent = formatCurrency(nonPremPCost);
-
             const cpNpRate = Number(priceCpNonProdInput?.value || 0);
             const cpPRate = Number(priceCpProdInput?.value || 0);
             const cpNpCost = (Number.isNaN(cpNpRate) ? 0 : cpNpRate) * cpPackCount;
@@ -574,7 +542,7 @@
             if (totalCpNonProdCostEl) totalCpNonProdCostEl.textContent = formatCurrency(cpNpCost);
             if (totalCpProdCostEl) totalCpProdCostEl.textContent = formatCurrency(cpPCost);
 
-            const totalCpCost = premNpCost + premPCost + nonPremNpCost + nonPremPCost + cpNpCost + cpPCost;
+            const totalCpCost = premNpCost + premPCost + cpNpCost + cpPCost;
             if (totalCpAmountEl) totalCpAmountEl.textContent = formatCurrency(totalCpCost);
 
             if (grandTotalEl) grandTotalEl.textContent = formatCurrency(totalNodeCost + totalCpCost);
@@ -656,7 +624,6 @@
             const count = Math.max(1, Number(clusterCountInput.value) || existingState.count || defaultClusters.length);
             if (existingState.connectors) {
                 connectorPremiumInput.value = existingState.connectors.premium ?? 0;
-                connectorNonPremiumInput.value = existingState.connectors.nonPremium ?? 0;
                 connectorOpensourceInput.value = existingState.connectors.openSource ?? 0;
                 connectorCpPackInput.value = existingState.connectors.cpPack ?? 0;
             }
@@ -944,7 +911,6 @@
             let pr = 0;
 
             const premCount = Number(connectorPremiumInput.value || 0);
-            const nonPremCount = Number(connectorNonPremiumInput.value || 0);
             const osCount = Number(connectorOpensourceInput.value || 0);
             const cpPackCount = Number(connectorCpPackInput.value || 0);
             const connNotes = connectorNotesInput.value || '';
@@ -954,10 +920,8 @@
             pData.push(['CONNECTOR COUNTS']); pr++;
             pData.push(['Number of Premium Connectors', premCount]); pr++;
             const cntPremRow = pr;
-            pData.push(['Number of Commercial Connector Packs', nonPremCount]); pr++;
-            const cntCommRow = pr;
             pData.push(['Number of Open Source Connectors', osCount]); pr++;
-            pData.push(['CP Connector Pack', cpPackCount]); pr++;
+            pData.push(['CP Commercial Connector Pack', cpPackCount]); pr++;
             const cntCpRow = pr;
             if (connNotes) { pData.push(['Connector Notes:', connNotes]); pr++; }
             pData.push([]); pr++;
@@ -966,9 +930,7 @@
             const rateNodeRow = pr;
             pData.push(['Price per Premium Connector', Number(pricePremNonProdInput.value || 0), Number(pricePremProdInput.value || 0)]); pr++;
             const ratePremRow = pr;
-            pData.push(['Price per Commercial Connector Pack', Number(priceNonPremNonProdInput.value || 0), Number(priceNonPremProdInput.value || 0)]); pr++;
-            const rateCommRow = pr;
-            pData.push(['Price per CP Connector Pack', Number(priceCpNonProdInput.value || 0), Number(priceCpProdInput.value || 0)]); pr++;
+            pData.push(['Price per CP Commercial Connector Pack', Number(priceCpNonProdInput.value || 0), Number(priceCpProdInput.value || 0)]); pr++;
             const rateCpRow = pr;
             pData.push([]); pr++;
             pData.push([]); pr++;
@@ -992,14 +954,7 @@
             const premSubRow = pr;
             pData.push([]); pr++;
 
-            pData.push([`Commercial Connector Packs (${nonPremCount})`]); pr++;
-            pData.push(['  Price per Pack', { f: `B${rateCommRow}` }, { f: `C${rateCommRow}` }]); pr++;
-            const npremPrRow = pr;
-            pData.push(['  Commercial Cost', { f: `B${cntCommRow}*B${npremPrRow}` }, { f: `B${cntCommRow}*C${npremPrRow}` }]); pr++;
-            const npremSubRow = pr;
-            pData.push([]); pr++;
-
-            pData.push([`CP Connector Pack (${cpPackCount})`]); pr++;
+            pData.push([`CP Commercial Connector Pack (${cpPackCount})`]); pr++;
             pData.push(['  Price per Pack', { f: `B${rateCpRow}` }, { f: `C${rateCpRow}` }]); pr++;
             const cpPrRow = pr;
             pData.push(['  CP Pack Cost', { f: `B${cntCpRow}*B${cpPrRow}` }, { f: `B${cntCpRow}*C${cpPrRow}` }]); pr++;
@@ -1009,7 +964,7 @@
 
             pData.push(['TOTAL NODE COST', { f: `B${nodeSubRow}` }, { f: `C${nodeSubRow}` }]); pr++;
             const tNodeRow = pr;
-            pData.push(['TOTAL CONNECTOR COST', { f: `B${premSubRow}+B${npremSubRow}+B${cpSubRow}` }, { f: `C${premSubRow}+C${npremSubRow}+C${cpSubRow}` }]); pr++;
+            pData.push(['TOTAL CONNECTOR COST', { f: `B${premSubRow}+B${cpSubRow}` }, { f: `C${premSubRow}+C${cpSubRow}` }]); pr++;
             const tConnRow = pr;
             pData.push([]); pr++;
             pData.push(['GRAND TOTAL', { f: `B${tNodeRow}+C${tNodeRow}+B${tConnRow}+C${tConnRow}` }]); pr++;
@@ -1119,11 +1074,10 @@
 
                     /* ── Parse Tab 3: Pricing (or old Connectors & Pricing) ── */
                     const wsInputs = wb.Sheets['Pricing'] || wb.Sheets['Connectors & Pricing'];
-                    let connPremium = 0, connNonPremium = 0, connOpenSource = 0, connCpPack = 0;
+                    let connPremium = 0, connOpenSource = 0, connCpPack = 0;
                     let parsedConnNotes = '';
                     let nodeNpRate = 0, nodePRate = 0;
                     let premNpRate = 0, premPRate = 0;
-                    let nonPremNpRate = 0, nonPremPRate = 0;
                     let cpNpRate = 0, cpPRate = 0;
 
                     if (wsInputs) {
@@ -1134,13 +1088,11 @@
                             if (label === 'COST SUMMARY') { pastCostSummary = true; return; }
                             if (pastCostSummary) return;
                             if (label.startsWith('Number of Premium')) connPremium = Number(pRow[1]) || 0;
-                            else if (label.startsWith('Number of Commercial') || label.startsWith('Number of Non-Premium')) connNonPremium = Number(pRow[1]) || 0;
                             else if (label.startsWith('Number of Open Source')) connOpenSource = Number(pRow[1]) || 0;
-                            else if (label === 'CP Connector Pack') connCpPack = Number(pRow[1]) || 0;
+                            else if (label.startsWith('CP Commercial Connector Pack') || label === 'CP Connector Pack') connCpPack = Number(pRow[1]) || 0;
                             else if (label === 'Connector Notes:') parsedConnNotes = String(pRow[1] || '').trim();
                             else if (label === 'Price per Node') { nodeNpRate = Number(pRow[1]) || 0; nodePRate = Number(pRow[2]) || 0; }
                             else if (label.startsWith('Price per Premium')) { premNpRate = Number(pRow[1]) || 0; premPRate = Number(pRow[2]) || 0; }
-                            else if (label.startsWith('Price per Commercial') || label.startsWith('Price per Non-Premium')) { nonPremNpRate = Number(pRow[1]) || 0; nonPremPRate = Number(pRow[2]) || 0; }
                             else if (label.startsWith('Price per CP')) { cpNpRate = Number(pRow[1]) || 0; cpPRate = Number(pRow[2]) || 0; }
                         });
                     }
@@ -1149,7 +1101,6 @@
                     if (parsedClusters.length > 0) clusterCountInput.value = parsedClusters.length;
 
                     connectorPremiumInput.value = connPremium;
-                    connectorNonPremiumInput.value = connNonPremium;
                     connectorOpensourceInput.value = connOpenSource;
                     connectorCpPackInput.value = connCpPack;
                     connectorNotesInput.value = parsedConnNotes;
@@ -1157,15 +1108,13 @@
                     priceProdInput.value = nodePRate;
                     pricePremNonProdInput.value = premNpRate;
                     pricePremProdInput.value = premPRate;
-                    priceNonPremNonProdInput.value = nonPremNpRate;
-                    priceNonPremProdInput.value = nonPremPRate;
                     priceCpNonProdInput.value = cpNpRate;
                     priceCpProdInput.value = cpPRate;
 
                     const uploadState = {
                         count: parsedClusters.length || 1,
                         clusters: parsedClusters,
-                        connectors: { premium: connPremium, nonPremium: connNonPremium, openSource: connOpenSource, cpPack: connCpPack },
+                        connectors: { premium: connPremium, openSource: connOpenSource, cpPack: connCpPack },
                         connectorNotes: parsedConnNotes,
                         preparedFor: preparedForInput.value,
                         preparedBy: preparedByInput.value
@@ -1186,12 +1135,9 @@
         priceProdInput.addEventListener('input', updateSummary);
         pricePremNonProdInput.addEventListener('input', updateSummary);
         pricePremProdInput.addEventListener('input', updateSummary);
-        priceNonPremNonProdInput.addEventListener('input', updateSummary);
-        priceNonPremProdInput.addEventListener('input', updateSummary);
         priceCpNonProdInput.addEventListener('input', updateSummary);
         priceCpProdInput.addEventListener('input', updateSummary);
         connectorPremiumInput.addEventListener('input', () => { updateSummary(); saveState(); });
-        connectorNonPremiumInput.addEventListener('input', () => { updateSummary(); saveState(); });
         connectorOpensourceInput.addEventListener('input', () => { updateSummary(); saveState(); });
         connectorCpPackInput.addEventListener('input', () => { updateSummary(); saveState(); });
         connectorNotesInput.addEventListener('input', saveState);

@@ -29,7 +29,6 @@ const licensedServices = defaultServices.filter(s => !s.free);
 const defaultPricing = {
     nodePricing: { nonProd: 0, prod: 0 },
     premiumPricing: { nonProd: 0, prod: 0 },
-    nonPremiumPricing: { nonProd: 0, prod: 0 },
     cpPackPricing: { nonProd: 0, prod: 0 },
 };
 
@@ -39,7 +38,7 @@ const defaultPricing = {
 function buildWorkbook(params) {
     const {
         clusters, services, connectors,
-        nodePricing, premiumPricing, nonPremiumPricing, cpPackPricing,
+        nodePricing, premiumPricing, cpPackPricing,
         notes, connectorNotes, preparedFor, preparedBy
     } = params;
 
@@ -130,10 +129,8 @@ function buildWorkbook(params) {
     pData.push(['CONNECTOR COUNTS']); pr++;
     pData.push(['Number of Premium Connectors', connectors.premium]); pr++;
     const cntPremRow = pr;
-    pData.push(['Number of Commercial Connector Packs', connectors.nonPremium]); pr++;
-    const cntCommRow = pr;
     pData.push(['Number of Open Source Connectors', connectors.openSource || 0]); pr++;
-    pData.push(['CP Connector Pack', connectors.cpPack]); pr++;
+    pData.push(['CP Commercial Connector Pack', connectors.cpPack]); pr++;
     const cntCpRow = pr;
     if (connectorNotes) { pData.push(['Connector Notes:', connectorNotes]); pr++; }
     pData.push([]); pr++;
@@ -142,9 +139,7 @@ function buildWorkbook(params) {
     const rateNodeRow = pr;
     pData.push(['Price per Premium Connector', premiumPricing.nonProd, premiumPricing.prod]); pr++;
     const ratePremRow = pr;
-    pData.push(['Price per Commercial Connector Pack', nonPremiumPricing.nonProd, nonPremiumPricing.prod]); pr++;
-    const rateCommRow = pr;
-    pData.push(['Price per CP Connector Pack', cpPackPricing.nonProd, cpPackPricing.prod]); pr++;
+    pData.push(['Price per CP Commercial Connector Pack', cpPackPricing.nonProd, cpPackPricing.prod]); pr++;
     const rateCpRow = pr;
     pData.push([]); pr++;
     pData.push([]); pr++;
@@ -168,14 +163,7 @@ function buildWorkbook(params) {
     const premSubRow = pr;
     pData.push([]); pr++;
 
-    pData.push([`Commercial Connector Packs (${connectors.nonPremium})`]); pr++;
-    pData.push(['  Price per Pack', { f: `B${rateCommRow}` }, { f: `C${rateCommRow}` }]); pr++;
-    const npremPrRow = pr;
-    pData.push(['  Commercial Cost', { f: `B${cntCommRow}*B${npremPrRow}` }, { f: `B${cntCommRow}*C${npremPrRow}` }]); pr++;
-    const npremSubRow = pr;
-    pData.push([]); pr++;
-
-    pData.push([`CP Connector Pack (${connectors.cpPack})`]); pr++;
+    pData.push([`CP Commercial Connector Pack (${connectors.cpPack})`]); pr++;
     pData.push(['  Price per Pack', { f: `B${rateCpRow}` }, { f: `C${rateCpRow}` }]); pr++;
     const cpPrRow = pr;
     pData.push(['  CP Pack Cost', { f: `B${cntCpRow}*B${cpPrRow}` }, { f: `B${cntCpRow}*C${cpPrRow}` }]); pr++;
@@ -185,7 +173,7 @@ function buildWorkbook(params) {
 
     pData.push(['TOTAL NODE COST', { f: `B${nodeSubRow}` }, { f: `C${nodeSubRow}` }]); pr++;
     const tNodeRow = pr;
-    pData.push(['TOTAL CONNECTOR COST', { f: `B${premSubRow}+B${npremSubRow}+B${cpSubRow}` }, { f: `C${premSubRow}+C${npremSubRow}+C${cpSubRow}` }]); pr++;
+    pData.push(['TOTAL CONNECTOR COST', { f: `B${premSubRow}+B${cpSubRow}` }, { f: `C${premSubRow}+C${cpSubRow}` }]); pr++;
     const tConnRow = pr;
     pData.push([]); pr++;
     pData.push(['GRAND TOTAL', { f: `B${tNodeRow}+C${tNodeRow}+B${tConnRow}+C${tConnRow}` }]); pr++;
@@ -195,7 +183,7 @@ function buildWorkbook(params) {
 
     return {
         wb, clusterData,
-        meta: { cntPremRow, cntCommRow, cntCpRow, rateNodeRow, ratePremRow, rateCommRow, rateCpRow, ncRow, npRow, nodeSubRow, premPrRow, premSubRow, npremPrRow, npremSubRow, cpPrRow, cpSubRow, tNodeRow, tConnRow }
+        meta: { cntPremRow, cntCpRow, rateNodeRow, ratePremRow, rateCpRow, ncRow, npRow, nodeSubRow, premPrRow, premSubRow, cpPrRow, cpSubRow, tNodeRow, tConnRow }
     };
 }
 
@@ -211,11 +199,10 @@ function parseWorkbook(wb, knownServices) {
     const result = {
         preparedFor: '', preparedBy: '', notes: '',
         clusters: [],
-        connectors: { premium: 0, nonPremium: 0, openSource: 0, cpPack: 0 },
+        connectors: { premium: 0, openSource: 0, cpPack: 0 },
         connectorNotes: '',
         nodePricing: { nonProd: 0, prod: 0 },
         premiumPricing: { nonProd: 0, prod: 0 },
-        nonPremiumPricing: { nonProd: 0, prod: 0 },
         cpPackPricing: { nonProd: 0, prod: 0 }
     };
 
@@ -277,13 +264,11 @@ function parseWorkbook(wb, knownServices) {
             if (label === 'COST SUMMARY') { pastCostSummary = true; return; }
             if (pastCostSummary) return;
             if (label.startsWith('Number of Premium')) result.connectors.premium = Number(pRow[1]) || 0;
-            else if (label.startsWith('Number of Commercial') || label.startsWith('Number of Non-Premium')) result.connectors.nonPremium = Number(pRow[1]) || 0;
             else if (label.startsWith('Number of Open Source')) result.connectors.openSource = Number(pRow[1]) || 0;
-            else if (label === 'CP Connector Pack') result.connectors.cpPack = Number(pRow[1]) || 0;
+            else if (label.startsWith('CP Commercial Connector Pack') || label === 'CP Connector Pack') result.connectors.cpPack = Number(pRow[1]) || 0;
             else if (label === 'Connector Notes:') result.connectorNotes = String(pRow[1] || '').trim();
             else if (label === 'Price per Node') { result.nodePricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
             else if (label.startsWith('Price per Premium')) { result.premiumPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
-            else if (label.startsWith('Price per Commercial') || label.startsWith('Price per Non-Premium')) { result.nonPremiumPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
             else if (label.startsWith('Price per CP')) { result.cpPackPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
         });
     }
@@ -319,7 +304,7 @@ describe('CP Cost Estimator Excel Export', () => {
         const { wb } = buildWorkbook({
             clusters: [{ name: 'prod', env: 'prod', services: {} }],
             services: defaultServices,
-            connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+            connectors: { premium: 0, cpPack: 0 },
             ...defaultPricing, notes: ''
         });
         assert.strictEqual(wb.SheetNames.length, 3);
@@ -332,7 +317,7 @@ describe('CP Cost Estimator Excel Export', () => {
             const { wb } = buildWorkbook({
                 clusters: [{ name: 'test', env: 'prod', services: {} }],
                 services: defaultServices,
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 ...defaultPricing, notes: 'A note',
                 preparedFor: 'Acme Corp', preparedBy: 'Jane'
             });
@@ -350,7 +335,7 @@ describe('CP Cost Estimator Excel Export', () => {
                     { name: 'uat', env: 'nonprod', services: {} }
                 ],
                 services: [{ name: 'Kafka Broker', nonProd: 3, prod: 4, defaultEnabled: true }],
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 ...defaultPricing, notes: ''
             });
             const ws = wb.Sheets['Configurations'];
@@ -368,7 +353,7 @@ describe('CP Cost Estimator Excel Export', () => {
                     }
                 }],
                 services: defaultServices,
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 ...defaultPricing, notes: ''
             });
             const ws = wb.Sheets['Configurations'];
@@ -385,7 +370,7 @@ describe('CP Cost Estimator Excel Export', () => {
                     { name: 'd', env: 'dev', services: {} }
                 ],
                 services: [{ name: 'Kafka Broker', nonProd: 3, prod: 4, defaultEnabled: true }],
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 ...defaultPricing, notes: ''
             });
             const ws = wb.Sheets['Configurations'];
@@ -398,7 +383,7 @@ describe('CP Cost Estimator Excel Export', () => {
             const { wb } = buildWorkbook({
                 clusters: [{ name: 'test', env: 'prod', services: {} }],
                 services: defaultServices,
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 ...defaultPricing, notes: ''
             });
             const ws = wb.Sheets['Configurations'];
@@ -419,7 +404,7 @@ describe('CP Cost Estimator Excel Export', () => {
                     }
                 }],
                 services: defaultServices,
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 ...defaultPricing, notes: ''
             });
             const ws = wb.Sheets['Summary'];
@@ -440,7 +425,7 @@ describe('CP Cost Estimator Excel Export', () => {
                     }
                 }],
                 services: defaultServices,
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 ...defaultPricing, notes: ''
             });
 
@@ -461,7 +446,7 @@ describe('CP Cost Estimator Excel Export', () => {
                     { name: 'dev-1', env: 'dev', services: { 'Kafka Broker': { nonProd: 3, enabled: true } } }
                 ],
                 services: defaultServices,
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 ...defaultPricing, notes: ''
             });
             const ws = wb.Sheets['Summary'];
@@ -473,7 +458,7 @@ describe('CP Cost Estimator Excel Export', () => {
             const { wb } = buildWorkbook({
                 clusters: [{ name: 'test', env: 'prod', services: { 'Kafka Broker': { prod: 4, enabled: true } } }],
                 services: defaultServices,
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 ...defaultPricing, notes: ''
             });
             const ws = wb.Sheets['Summary'];
@@ -488,16 +473,14 @@ describe('CP Cost Estimator Excel Export', () => {
             const { wb, meta } = buildWorkbook({
                 clusters: [{ name: 'test', env: 'prod', services: {} }],
                 services: defaultServices,
-                connectors: { premium: 5, nonPremium: 3, openSource: 7, cpPack: 2 },
+                connectors: { premium: 5, openSource: 7, cpPack: 2 },
                 nodePricing: { nonProd: 1000, prod: 2000 },
                 premiumPricing: { nonProd: 500, prod: 800 },
-                nonPremiumPricing: { nonProd: 200, prod: 300 },
                 cpPackPricing: { nonProd: 1500, prod: 2500 },
                 notes: ''
             });
             const ws = wb.Sheets['Pricing'];
             assert.strictEqual(getCellValue(ws, `B${meta.cntPremRow}`), 5, 'Premium count');
-            assert.strictEqual(getCellValue(ws, `B${meta.cntCommRow}`), 3, 'Commercial count');
             assert.strictEqual(getCellValue(ws, `B${meta.cntCpRow}`), 2, 'CP Pack count');
             assert.strictEqual(getCellValue(ws, `B${meta.rateNodeRow}`), 1000, 'Node NP rate');
             assert.strictEqual(getCellValue(ws, `C${meta.rateNodeRow}`), 2000, 'Node P rate');
@@ -515,10 +498,9 @@ describe('CP Cost Estimator Excel Export', () => {
                     { name: 'np', env: 'nonprod', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, enabled: true } } }
                 ],
                 services: defaultServices,
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 nodePricing: { nonProd: 1000, prod: 2000 },
                 premiumPricing: { nonProd: 0, prod: 0 },
-                nonPremiumPricing: { nonProd: 0, prod: 0 },
                 cpPackPricing: { nonProd: 0, prod: 0 },
                 notes: ''
             });
@@ -531,10 +513,9 @@ describe('CP Cost Estimator Excel Export', () => {
             const { wb, meta } = buildWorkbook({
                 clusters: [{ name: 'test', env: 'prod', services: {} }],
                 services: defaultServices,
-                connectors: { premium: 1, nonPremium: 1, cpPack: 1 },
+                connectors: { premium: 1, cpPack: 1 },
                 nodePricing: { nonProd: 100, prod: 200 },
                 premiumPricing: { nonProd: 10, prod: 20 },
-                nonPremiumPricing: { nonProd: 5, prod: 10 },
                 cpPackPricing: { nonProd: 50, prod: 100 },
                 notes: ''
             });
@@ -554,7 +535,7 @@ describe('CP Cost Estimator Excel Export', () => {
                     { name: 'np', env: 'nonprod', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, enabled: true } } }
                 ],
                 services: defaultServices,
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 ...defaultPricing, notes: ''
             });
             const ws = wb.Sheets['Pricing'];
@@ -575,7 +556,7 @@ describe('CP Cost Estimator Excel Export', () => {
                     }
                 }],
                 services: defaultServices,
-                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                connectors: { premium: 0, cpPack: 0 },
                 ...defaultPricing, notes: ''
             });
             const ws = wb.Sheets['Pricing'];
@@ -598,7 +579,7 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
                 { name: 'dev-cluster', env: 'dev', services: {} }
             ],
             services: defaultServices,
-            connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+            connectors: { premium: 0, cpPack: 0 },
             ...defaultPricing, notes: '', preparedFor: '', preparedBy: ''
         });
         const parsed = parseWorkbook(roundTrip(wb), defaultServices);
@@ -614,7 +595,7 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
         const { wb } = buildWorkbook({
             clusters: [{ name: 'test', env: 'prod', services: {} }],
             services: defaultServices,
-            connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+            connectors: { premium: 0, cpPack: 0 },
             ...defaultPricing,
             notes: 'Customer notes', preparedFor: 'Acme Corp', preparedBy: 'Jane'
         });
@@ -628,15 +609,14 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
         const { wb } = buildWorkbook({
             clusters: [{ name: 'test', env: 'prod', services: {} }],
             services: defaultServices,
-            connectors: { premium: 5, nonPremium: 3, openSource: 7, cpPack: 2 },
+            connectors: { premium: 5, openSource: 7, cpPack: 2 },
             nodePricing: { nonProd: 1000, prod: 2000 },
             premiumPricing: { nonProd: 500, prod: 800 },
-            nonPremiumPricing: { nonProd: 200, prod: 300 },
             cpPackPricing: { nonProd: 1500, prod: 2500 },
             notes: ''
         });
         const parsed = parseWorkbook(roundTrip(wb), defaultServices);
-        assert.deepStrictEqual(parsed.connectors, { premium: 5, nonPremium: 3, openSource: 7, cpPack: 2 });
+        assert.deepStrictEqual(parsed.connectors, { premium: 5, openSource: 7, cpPack: 2 });
         assert.deepStrictEqual(parsed.nodePricing, { nonProd: 1000, prod: 2000 });
         assert.deepStrictEqual(parsed.premiumPricing, { nonProd: 500, prod: 800 });
     });
@@ -650,7 +630,7 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
                 }
             }],
             services: defaultServices,
-            connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+            connectors: { premium: 0, cpPack: 0 },
             ...defaultPricing, notes: ''
         });
         const parsed = parseWorkbook(roundTrip(wb), defaultServices);
@@ -666,7 +646,7 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
                 'Kafka Broker': { nonProd: 3, enabled: true },
             }}],
             services: defaultServices,
-            connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+            connectors: { premium: 0, cpPack: 0 },
             ...defaultPricing, notes: ''
         });
         const parsed = parseWorkbook(roundTrip(wb), defaultServices);
@@ -685,10 +665,9 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
                 { name: 'dev', env: 'dev', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, enabled: true } } }
             ],
             services: defaultServices,
-            connectors: { premium: 10, nonPremium: 5, cpPack: 3 },
+            connectors: { premium: 10, openSource: 5, cpPack: 3 },
             nodePricing: { nonProd: 1000, prod: 2000 },
             premiumPricing: { nonProd: 500, prod: 800 },
-            nonPremiumPricing: { nonProd: 200, prod: 300 },
             cpPackPricing: { nonProd: 1500, prod: 2500 },
             notes: 'Full test', preparedFor: 'BigCo', preparedBy: 'Sales'
         });
@@ -707,10 +686,9 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
                 'Kafka Broker': { prod: 4, enabled: true },
             }}],
             services: defaultServices,
-            connectors: { premium: 2, nonPremium: 1, openSource: 0, cpPack: 0 },
+            connectors: { premium: 2, openSource: 0, cpPack: 0 },
             nodePricing: { nonProd: 500, prod: 1000 },
             premiumPricing: { nonProd: 100, prod: 200 },
-            nonPremiumPricing: { nonProd: 0, prod: 0 },
             cpPackPricing: { nonProd: 0, prod: 0 },
             notes: ''
         });
@@ -741,14 +719,12 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
         const pricingData = [
             ['CONNECTOR COUNTS'],
             ['Number of Premium Connectors', 0],
-            ['Number of Commercial Connector Packs', 0],
             ['Number of Open Source Connectors', 0],
-            ['CP Connector Pack', 0],
+            ['CP Commercial Connector Pack', 0],
             [], ['PRICING RATES'],
             ['Price per Node', 0, 0],
             ['Price per Premium Connector', 0, 0],
-            ['Price per Commercial Connector Pack', 0, 0],
-            ['Price per CP Connector Pack', 0, 0]
+            ['Price per CP Commercial Connector Pack', 0, 0]
         ];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(pricingData), 'Pricing');
 
@@ -774,10 +750,9 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
                 { name: 'uat', env: 'nonprod', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, enabled: true } } }
             ],
             services: defaultServices,
-            connectors: { premium: 4, nonPremium: 2, cpPack: 1 },
+            connectors: { premium: 4, openSource: 2, cpPack: 1 },
             nodePricing: { nonProd: 800, prod: 1600 },
             premiumPricing: { nonProd: 400, prod: 700 },
-            nonPremiumPricing: { nonProd: 150, prod: 250 },
             cpPackPricing: { nonProd: 1200, prod: 2000 },
             notes: 'RT test', preparedFor: 'TestCo', preparedBy: 'QA'
         };
