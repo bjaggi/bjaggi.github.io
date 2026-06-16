@@ -9,8 +9,8 @@ const ENV_LABELS = { prod: 'Production', nonprod: 'Non Production', dev: 'Dev (N
 const ENV_KEYS = Object.fromEntries(Object.entries(ENV_LABELS).map(([k, v]) => [v, k]));
 
 const defaultServices = [
-    { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, defaultEnabled: true },
-    { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 3, prod: 3 },
+    { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, defaultEnabled: true, free: true },
+    { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 3, prod: 3, free: true },
     { name: 'Kafka Broker', nonProd: 3, prod: 4, defaultEnabled: true },
     { name: 'Kafka Broker - Stretch Across 2 DC', nonProd: 4, prod: 4 },
     { name: 'Kafka Broker - MRC Across 2 DC', nonProd: 6, prod: 6 },
@@ -24,6 +24,8 @@ const defaultServices = [
     { name: 'CP Flink Nodes in 2 DC', nonProd: 6, prod: 6 },
 ];
 
+const licensedServices = defaultServices.filter(s => !s.free);
+
 const defaultPricing = {
     nodePricing: { nonProd: 0, prod: 0 },
     premiumPricing: { nonProd: 0, prod: 0 },
@@ -32,13 +34,13 @@ const defaultPricing = {
 };
 
 /* ════════════════════════════════════════════════════════════════
-   buildWorkbook — mirrors the 3-tab download logic
+   buildWorkbook — mirrors the 3-tab download logic (no billed column)
    ════════════════════════════════════════════════════════════════ */
 function buildWorkbook(params) {
     const {
         clusters, services, connectors,
         nodePricing, premiumPricing, nonPremiumPricing, cpPackPricing,
-        notes, preparedFor, preparedBy
+        notes, connectorNotes, preparedFor, preparedBy
     } = params;
 
     const wb = XLSX.utils.book_new();
@@ -49,8 +51,7 @@ function buildWorkbook(params) {
             const svcState = cluster.services[svc.name] || {};
             const enabled = svcState.enabled !== undefined ? svcState.enabled : !!svc.defaultEnabled;
             const nodeVal = isProd ? (svcState.prod ?? svc.prod) : (svcState.nonProd ?? svc.nonProd);
-            const billedVal = isProd ? (svcState.billedProd ?? svc.prod) : (svcState.billedNonProd ?? svc.nonProd);
-            return { svcName: svc.name, nodeVal, billedVal, enabled };
+            return { svcName: svc.name, nodeVal, enabled, free: !!svc.free };
         });
         const isDev = cluster.env === 'dev';
         return { clusterName: cluster.name, env: cluster.env, isProd, isDev, svcRows };
@@ -73,10 +74,10 @@ function buildWorkbook(params) {
         const envLabel = ENV_LABELS[cluster.env] || 'Production';
         cfgData.push(['Cluster:', cluster.clusterName, 'Environment:', envLabel]);
         r++;
-        cfgData.push(['Service', 'Number of Nodes', 'Number of Billed Nodes', 'Enabled']);
+        cfgData.push(['Service', 'Number of Nodes', 'Enabled']);
         r++;
         cluster.svcRows.forEach(svc => {
-            cfgData.push([svc.svcName, svc.nodeVal, svc.billedVal, svc.enabled]);
+            cfgData.push([svc.svcName, svc.nodeVal, svc.enabled]);
             r++;
         });
         cfgData.push([]); r++;
@@ -86,16 +87,17 @@ function buildWorkbook(params) {
     wsCfg['!merges'] = cfgMerges;
     XLSX.utils.book_append_sheet(wb, wsCfg, 'Configurations');
 
-    /* ── Tab 2: Summary ── */
+    /* ── Tab 2: Summary (excludes free & dev) ── */
     const billedClusters = clusterData.filter(c => !c.isDev);
     const billedNames = billedClusters.map(c => c.clusterName);
     const summaryData = [['Component', ...billedNames]];
 
     services.forEach(service => {
+        if (service.free) return;
         const vals = billedClusters.map(cluster => {
             const svc = cluster.svcRows.find(s => s.svcName === service.name);
             if (!svc || !svc.enabled) return 0;
-            return Number.isNaN(svc.billedVal) ? 0 : svc.billedVal;
+            return Number.isNaN(svc.nodeVal) ? 0 : svc.nodeVal;
         });
         summaryData.push([service.name, ...vals]);
     });
@@ -119,22 +121,31 @@ function buildWorkbook(params) {
     clusterData.forEach(cluster => {
         if (cluster.isDev) return;
         cluster.svcRows.forEach(svc => {
-            if (!svc.enabled) return;
-            if (cluster.isProd) pNodeCount += svc.billedVal;
-            else npNodeCount += svc.billedVal;
+            if (!svc.enabled || svc.free) return;
+            if (cluster.isProd) pNodeCount += svc.nodeVal;
+            else npNodeCount += svc.nodeVal;
         });
     });
 
     pData.push(['CONNECTOR COUNTS']); pr++;
     pData.push(['Number of Premium Connectors', connectors.premium]); pr++;
-    pData.push(['Number of Non-Premium Connectors', connectors.nonPremium]); pr++;
+    const cntPremRow = pr;
+    pData.push(['Number of Commercial Connector Packs', connectors.nonPremium]); pr++;
+    const cntCommRow = pr;
+    pData.push(['Number of Open Source Connectors', connectors.openSource || 0]); pr++;
     pData.push(['CP Connector Pack', connectors.cpPack]); pr++;
+    const cntCpRow = pr;
+    if (connectorNotes) { pData.push(['Connector Notes:', connectorNotes]); pr++; }
     pData.push([]); pr++;
     pData.push(['PRICING RATES', 'Non Production ($)', 'Production ($)']); pr++;
     pData.push(['Price per Node', nodePricing.nonProd, nodePricing.prod]); pr++;
+    const rateNodeRow = pr;
     pData.push(['Price per Premium Connector', premiumPricing.nonProd, premiumPricing.prod]); pr++;
-    pData.push(['Price per Non-Premium Connector', nonPremiumPricing.nonProd, nonPremiumPricing.prod]); pr++;
+    const ratePremRow = pr;
+    pData.push(['Price per Commercial Connector Pack', nonPremiumPricing.nonProd, nonPremiumPricing.prod]); pr++;
+    const rateCommRow = pr;
     pData.push(['Price per CP Connector Pack', cpPackPricing.nonProd, cpPackPricing.prod]); pr++;
+    const rateCpRow = pr;
     pData.push([]); pr++;
     pData.push([]); pr++;
 
@@ -142,32 +153,32 @@ function buildWorkbook(params) {
     pData.push([]); pr++;
 
     pData.push(['Nodes']); pr++;
-    pData.push(['  Billed Node Count', npNodeCount, pNodeCount]); pr++;
+    pData.push(['  Licensed Node Count', npNodeCount, pNodeCount]); pr++;
     const ncRow = pr;
-    pData.push(['  Price per Node', { f: 'B7' }, { f: 'C7' }]); pr++;
+    pData.push(['  Price per Node', { f: `B${rateNodeRow}` }, { f: `C${rateNodeRow}` }]); pr++;
     const npRow = pr;
     pData.push(['  Node Cost', { f: `B${ncRow}*B${npRow}` }, { f: `C${ncRow}*C${npRow}` }]); pr++;
     const nodeSubRow = pr;
     pData.push([]); pr++;
 
     pData.push([`Premium Connectors (${connectors.premium})`]); pr++;
-    pData.push(['  Price per Connector', { f: 'B8' }, { f: 'C8' }]); pr++;
+    pData.push(['  Price per Connector', { f: `B${ratePremRow}` }, { f: `C${ratePremRow}` }]); pr++;
     const premPrRow = pr;
-    pData.push(['  Premium Cost', { f: `B2*B${premPrRow}` }, { f: `B2*C${premPrRow}` }]); pr++;
+    pData.push(['  Premium Cost', { f: `B${cntPremRow}*B${premPrRow}` }, { f: `B${cntPremRow}*C${premPrRow}` }]); pr++;
     const premSubRow = pr;
     pData.push([]); pr++;
 
-    pData.push([`Non-Premium Connectors (${connectors.nonPremium})`]); pr++;
-    pData.push(['  Price per Connector', { f: 'B9' }, { f: 'C9' }]); pr++;
+    pData.push([`Commercial Connector Packs (${connectors.nonPremium})`]); pr++;
+    pData.push(['  Price per Pack', { f: `B${rateCommRow}` }, { f: `C${rateCommRow}` }]); pr++;
     const npremPrRow = pr;
-    pData.push(['  Non-Premium Cost', { f: `B3*B${npremPrRow}` }, { f: `B3*C${npremPrRow}` }]); pr++;
+    pData.push(['  Commercial Cost', { f: `B${cntCommRow}*B${npremPrRow}` }, { f: `B${cntCommRow}*C${npremPrRow}` }]); pr++;
     const npremSubRow = pr;
     pData.push([]); pr++;
 
     pData.push([`CP Connector Pack (${connectors.cpPack})`]); pr++;
-    pData.push(['  Price per Pack', { f: 'B10' }, { f: 'C10' }]); pr++;
+    pData.push(['  Price per Pack', { f: `B${rateCpRow}` }, { f: `C${rateCpRow}` }]); pr++;
     const cpPrRow = pr;
-    pData.push(['  CP Pack Cost', { f: `B4*B${cpPrRow}` }, { f: `B4*C${cpPrRow}` }]); pr++;
+    pData.push(['  CP Pack Cost', { f: `B${cntCpRow}*B${cpPrRow}` }, { f: `B${cntCpRow}*C${cpPrRow}` }]); pr++;
     const cpSubRow = pr;
     pData.push([]); pr++;
     pData.push([]); pr++;
@@ -184,12 +195,12 @@ function buildWorkbook(params) {
 
     return {
         wb, clusterData,
-        meta: { ncRow, npRow, nodeSubRow, premPrRow, premSubRow, npremPrRow, npremSubRow, cpPrRow, cpSubRow, tNodeRow, tConnRow }
+        meta: { cntPremRow, cntCommRow, cntCpRow, rateNodeRow, ratePremRow, rateCommRow, rateCpRow, ncRow, npRow, nodeSubRow, premPrRow, premSubRow, npremPrRow, npremSubRow, cpPrRow, cpSubRow, tNodeRow, tConnRow }
     };
 }
 
 /* ════════════════════════════════════════════════════════════════
-   parseWorkbook — mirrors the upload logic
+   parseWorkbook — mirrors the upload logic (no billed column)
    ════════════════════════════════════════════════════════════════ */
 function parseWorkbook(wb, knownServices) {
     const cell = (ws, addr) => {
@@ -200,7 +211,8 @@ function parseWorkbook(wb, knownServices) {
     const result = {
         preparedFor: '', preparedBy: '', notes: '',
         clusters: [],
-        connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+        connectors: { premium: 0, nonPremium: 0, openSource: 0, cpPack: 0 },
+        connectorNotes: '',
         nodePricing: { nonProd: 0, prod: 0 },
         premiumPricing: { nonProd: 0, prod: 0 },
         nonPremiumPricing: { nonProd: 0, prod: 0 },
@@ -244,27 +256,36 @@ function parseWorkbook(wb, knownServices) {
             if (!knownSvc) continue;
 
             const nodeVal = Number(row[1]) || 0;
-            const billedVal = Number(row[2]) || 0;
-            const rawEnabled = row[3];
+            const rawEnabled = row[2];
             const enabled = rawEnabled === true || rawEnabled === 'true' || rawEnabled === 'TRUE' || rawEnabled === 1;
             const isProd = current.env === 'prod';
 
             current.services[svcName] = isProd
-                ? { prod: nodeVal, billedProd: billedVal, nonProd: knownSvc.nonProd, billedNonProd: knownSvc.nonProd, enabled }
-                : { nonProd: nodeVal, billedNonProd: billedVal, prod: knownSvc.prod, billedProd: knownSvc.prod, enabled };
+                ? { prod: nodeVal, nonProd: knownSvc.nonProd, enabled }
+                : { nonProd: nodeVal, prod: knownSvc.prod, enabled };
         }
         if (current) result.clusters.push(current);
     }
 
     const wsInputs = wb.Sheets['Pricing'] || wb.Sheets['Connectors & Pricing'];
     if (wsInputs) {
-        result.connectors.premium = Number(cell(wsInputs, 'B2')) || 0;
-        result.connectors.nonPremium = Number(cell(wsInputs, 'B3')) || 0;
-        result.connectors.cpPack = Number(cell(wsInputs, 'B4')) || 0;
-        result.nodePricing = { nonProd: Number(cell(wsInputs, 'B7')) || 0, prod: Number(cell(wsInputs, 'C7')) || 0 };
-        result.premiumPricing = { nonProd: Number(cell(wsInputs, 'B8')) || 0, prod: Number(cell(wsInputs, 'C8')) || 0 };
-        result.nonPremiumPricing = { nonProd: Number(cell(wsInputs, 'B9')) || 0, prod: Number(cell(wsInputs, 'C9')) || 0 };
-        result.cpPackPricing = { nonProd: Number(cell(wsInputs, 'B10')) || 0, prod: Number(cell(wsInputs, 'C10')) || 0 };
+        const pRows = XLSX.utils.sheet_to_json(wsInputs, { header: 1, defval: '' });
+        let pastCostSummary = false;
+        pRows.forEach(pRow => {
+            const raw = String(pRow[0] || '');
+            const label = raw.trim();
+            if (label === 'COST SUMMARY') { pastCostSummary = true; return; }
+            if (pastCostSummary) return;
+            if (label.startsWith('Number of Premium')) result.connectors.premium = Number(pRow[1]) || 0;
+            else if (label.startsWith('Number of Commercial') || label.startsWith('Number of Non-Premium')) result.connectors.nonPremium = Number(pRow[1]) || 0;
+            else if (label.startsWith('Number of Open Source')) result.connectors.openSource = Number(pRow[1]) || 0;
+            else if (label === 'CP Connector Pack') result.connectors.cpPack = Number(pRow[1]) || 0;
+            else if (label === 'Connector Notes:') result.connectorNotes = String(pRow[1] || '').trim();
+            else if (label === 'Price per Node') { result.nodePricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
+            else if (label.startsWith('Price per Premium')) { result.premiumPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
+            else if (label.startsWith('Price per Commercial') || label.startsWith('Price per Non-Premium')) { result.nonPremiumPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
+            else if (label.startsWith('Price per CP')) { result.cpPackPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
+        });
     }
 
     return result;
@@ -342,8 +363,8 @@ describe('CP Cost Estimator Excel Export', () => {
             const { wb } = buildWorkbook({
                 clusters: [{
                     name: 'test', env: 'prod', services: {
-                        'Kafka Broker': { prod: 4, billedProd: 4, enabled: true },
-                        'Schema Registry': { prod: 2, billedProd: 2, enabled: false },
+                        'Kafka Broker': { prod: 4, enabled: true },
+                        'Schema Registry': { prod: 2, enabled: false },
                     }
                 }],
                 services: defaultServices,
@@ -352,8 +373,8 @@ describe('CP Cost Estimator Excel Export', () => {
             });
             const ws = wb.Sheets['Configurations'];
             const firstSvcRow = 8;
-            assert.strictEqual(getCellType(ws, `D${firstSvcRow}`), 'b');
-            assert.strictEqual(getCellValue(ws, `D${firstSvcRow}`), true);
+            assert.strictEqual(getCellType(ws, `C${firstSvcRow}`), 'b');
+            assert.strictEqual(getCellValue(ws, `C${firstSvcRow}`), true);
         });
 
         it('shows environment labels correctly', () => {
@@ -372,17 +393,50 @@ describe('CP Cost Estimator Excel Export', () => {
             assert.strictEqual(getCellValue(ws, 'D10'), 'Non Production');
             assert.strictEqual(getCellValue(ws, 'D14'), 'Dev (No License Cost)');
         });
+
+        it('does not have billed nodes column', () => {
+            const { wb } = buildWorkbook({
+                clusters: [{ name: 'test', env: 'prod', services: {} }],
+                services: defaultServices,
+                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                ...defaultPricing, notes: ''
+            });
+            const ws = wb.Sheets['Configurations'];
+            assert.strictEqual(getCellValue(ws, 'A7'), 'Service');
+            assert.strictEqual(getCellValue(ws, 'B7'), 'Number of Nodes');
+            assert.strictEqual(getCellValue(ws, 'C7'), 'Enabled');
+        });
     });
 
     describe('Summary tab', () => {
 
-        it('only enabled services contribute billed nodes', () => {
+        it('excludes free services from summary', () => {
+            const { wb } = buildWorkbook({
+                clusters: [{
+                    name: 'prod-1', env: 'prod', services: {
+                        'Zookeeper or KRaft Nodes': { prod: 3, enabled: true },
+                        'Kafka Broker': { prod: 4, enabled: true },
+                    }
+                }],
+                services: defaultServices,
+                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                ...defaultPricing, notes: ''
+            });
+            const ws = wb.Sheets['Summary'];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+            const componentNames = rows.slice(1, -1).map(r => r[0]);
+            assert.ok(!componentNames.includes('Zookeeper or KRaft Nodes'), 'ZK should be excluded');
+            assert.ok(!componentNames.includes('Zookeeper or KRaft Nodes Across 2 DC'), 'ZK 2DC should be excluded');
+            assert.ok(componentNames.includes('Kafka Broker'), 'Kafka Broker should be included');
+        });
+
+        it('only enabled services contribute nodes', () => {
             const { wb, clusterData } = buildWorkbook({
                 clusters: [{
                     name: 'NetApp-prod', env: 'prod', services: {
-                        'Kafka Broker': { prod: 4, billedProd: 4, enabled: true },
-                        'Kafka Connect': { prod: 2, billedProd: 2, enabled: false },
-                        'Control Center': { prod: 1, billedProd: 1, enabled: true },
+                        'Kafka Broker': { prod: 4, enabled: true },
+                        'Kafka Connect': { prod: 2, enabled: false },
+                        'Control Center': { prod: 1, enabled: true },
                     }
                 }],
                 services: defaultServices,
@@ -392,19 +446,19 @@ describe('CP Cost Estimator Excel Export', () => {
 
             const ws = wb.Sheets['Summary'];
             const cluster = clusterData[0];
-            defaultServices.forEach((svc, idx) => {
+            licensedServices.forEach((svc, idx) => {
                 const svcData = cluster.svcRows.find(s => s.svcName === svc.name);
-                const expected = (svcData && svcData.enabled) ? svcData.billedVal : 0;
+                const expected = (svcData && svcData.enabled) ? svcData.nodeVal : 0;
                 const actual = getCellValue(ws, `B${idx + 2}`) ?? 0;
                 assert.strictEqual(actual, expected, `"${svc.name}": expected ${expected}, got ${actual}`);
             });
         });
 
-        it('dev cluster is hidden', () => {
+        it('dev cluster is hidden from summary', () => {
             const { wb } = buildWorkbook({
                 clusters: [
-                    { name: 'prod-1', env: 'prod', services: { 'Kafka Broker': { prod: 4, billedProd: 4, enabled: true } } },
-                    { name: 'dev-1', env: 'dev', services: { 'Kafka Broker': { nonProd: 3, billedNonProd: 3, enabled: true } } }
+                    { name: 'prod-1', env: 'prod', services: { 'Kafka Broker': { prod: 4, enabled: true } } },
+                    { name: 'dev-1', env: 'dev', services: { 'Kafka Broker': { nonProd: 3, enabled: true } } }
                 ],
                 services: defaultServices,
                 connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
@@ -417,13 +471,13 @@ describe('CP Cost Estimator Excel Export', () => {
 
         it('has TOTAL row with SUM formula', () => {
             const { wb } = buildWorkbook({
-                clusters: [{ name: 'test', env: 'prod', services: { 'Kafka Broker': { prod: 4, billedProd: 4, enabled: true } } }],
+                clusters: [{ name: 'test', env: 'prod', services: { 'Kafka Broker': { prod: 4, enabled: true } } }],
                 services: defaultServices,
                 connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
                 ...defaultPricing, notes: ''
             });
             const ws = wb.Sheets['Summary'];
-            const totalRow = defaultServices.length + 2;
+            const totalRow = licensedServices.length + 2;
             assert.strictEqual(getCellFormula(ws, `B${totalRow}`), `SUM(B2:B${totalRow - 1})`);
         });
     });
@@ -431,10 +485,10 @@ describe('CP Cost Estimator Excel Export', () => {
     describe('Pricing tab', () => {
 
         it('has connector counts and pricing rates at top', () => {
-            const { wb } = buildWorkbook({
+            const { wb, meta } = buildWorkbook({
                 clusters: [{ name: 'test', env: 'prod', services: {} }],
                 services: defaultServices,
-                connectors: { premium: 5, nonPremium: 3, cpPack: 2 },
+                connectors: { premium: 5, nonPremium: 3, openSource: 7, cpPack: 2 },
                 nodePricing: { nonProd: 1000, prod: 2000 },
                 premiumPricing: { nonProd: 500, prod: 800 },
                 nonPremiumPricing: { nonProd: 200, prod: 300 },
@@ -442,23 +496,23 @@ describe('CP Cost Estimator Excel Export', () => {
                 notes: ''
             });
             const ws = wb.Sheets['Pricing'];
-            assert.strictEqual(getCellValue(ws, 'B2'), 5, 'Premium count');
-            assert.strictEqual(getCellValue(ws, 'B3'), 3, 'Non-premium count');
-            assert.strictEqual(getCellValue(ws, 'B4'), 2, 'CP Pack count');
-            assert.strictEqual(getCellValue(ws, 'B7'), 1000, 'Node NP rate');
-            assert.strictEqual(getCellValue(ws, 'C7'), 2000, 'Node P rate');
-            assert.strictEqual(getCellValue(ws, 'B8'), 500);
-            assert.strictEqual(getCellValue(ws, 'C10'), 2500);
+            assert.strictEqual(getCellValue(ws, `B${meta.cntPremRow}`), 5, 'Premium count');
+            assert.strictEqual(getCellValue(ws, `B${meta.cntCommRow}`), 3, 'Commercial count');
+            assert.strictEqual(getCellValue(ws, `B${meta.cntCpRow}`), 2, 'CP Pack count');
+            assert.strictEqual(getCellValue(ws, `B${meta.rateNodeRow}`), 1000, 'Node NP rate');
+            assert.strictEqual(getCellValue(ws, `C${meta.rateNodeRow}`), 2000, 'Node P rate');
+            assert.strictEqual(getCellValue(ws, `B${meta.ratePremRow}`), 500);
+            assert.strictEqual(getCellValue(ws, `C${meta.rateCpRow}`), 2500);
         });
 
         it('has node cost formulas', () => {
             const allDisabled = {};
-            defaultServices.forEach(s => { allDisabled[s.name] = { prod: 0, billedProd: 0, nonProd: 0, billedNonProd: 0, enabled: false }; });
+            defaultServices.forEach(s => { allDisabled[s.name] = { prod: 0, nonProd: 0, enabled: false }; });
 
             const { wb, meta } = buildWorkbook({
                 clusters: [
-                    { name: 'p', env: 'prod', services: { ...allDisabled, 'Kafka Broker': { prod: 4, billedProd: 4, enabled: true } } },
-                    { name: 'np', env: 'nonprod', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, billedNonProd: 3, enabled: true } } }
+                    { name: 'p', env: 'prod', services: { ...allDisabled, 'Kafka Broker': { prod: 4, enabled: true } } },
+                    { name: 'np', env: 'nonprod', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, enabled: true } } }
                 ],
                 services: defaultServices,
                 connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
@@ -491,13 +545,13 @@ describe('CP Cost Estimator Excel Export', () => {
 
         it('dev cluster excluded from node counts', () => {
             const allDisabled = {};
-            defaultServices.forEach(s => { allDisabled[s.name] = { prod: 0, billedProd: 0, nonProd: 0, billedNonProd: 0, enabled: false }; });
+            defaultServices.forEach(s => { allDisabled[s.name] = { prod: 0, nonProd: 0, enabled: false }; });
 
             const { wb, meta } = buildWorkbook({
                 clusters: [
-                    { name: 'p', env: 'prod', services: { ...allDisabled, 'Kafka Broker': { prod: 4, billedProd: 4, enabled: true } } },
-                    { name: 'd', env: 'dev', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, billedNonProd: 3, enabled: true } } },
-                    { name: 'np', env: 'nonprod', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, billedNonProd: 3, enabled: true } } }
+                    { name: 'p', env: 'prod', services: { ...allDisabled, 'Kafka Broker': { prod: 4, enabled: true } } },
+                    { name: 'd', env: 'dev', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, enabled: true } } },
+                    { name: 'np', env: 'nonprod', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, enabled: true } } }
                 ],
                 services: defaultServices,
                 connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
@@ -506,6 +560,26 @@ describe('CP Cost Estimator Excel Export', () => {
             const ws = wb.Sheets['Pricing'];
             assert.strictEqual(getCellValue(ws, `C${meta.ncRow}`), 4, 'Prod excludes dev');
             assert.strictEqual(getCellValue(ws, `B${meta.ncRow}`), 3, 'NonProd excludes dev');
+        });
+
+        it('free services excluded from licensed node counts', () => {
+            const allDisabled = {};
+            defaultServices.forEach(s => { allDisabled[s.name] = { prod: 0, nonProd: 0, enabled: false }; });
+
+            const { wb, meta } = buildWorkbook({
+                clusters: [{
+                    name: 'p', env: 'prod', services: {
+                        ...allDisabled,
+                        'Zookeeper or KRaft Nodes': { prod: 3, enabled: true },
+                        'Kafka Broker': { prod: 4, enabled: true },
+                    }
+                }],
+                services: defaultServices,
+                connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
+                ...defaultPricing, notes: ''
+            });
+            const ws = wb.Sheets['Pricing'];
+            assert.strictEqual(getCellValue(ws, `C${meta.ncRow}`), 4, 'Only Kafka Broker counted, not ZK');
         });
     });
 });
@@ -554,7 +628,7 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
         const { wb } = buildWorkbook({
             clusters: [{ name: 'test', env: 'prod', services: {} }],
             services: defaultServices,
-            connectors: { premium: 5, nonPremium: 3, cpPack: 2 },
+            connectors: { premium: 5, nonPremium: 3, openSource: 7, cpPack: 2 },
             nodePricing: { nonProd: 1000, prod: 2000 },
             premiumPricing: { nonProd: 500, prod: 800 },
             nonPremiumPricing: { nonProd: 200, prod: 300 },
@@ -562,7 +636,7 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
             notes: ''
         });
         const parsed = parseWorkbook(roundTrip(wb), defaultServices);
-        assert.deepStrictEqual(parsed.connectors, { premium: 5, nonPremium: 3, cpPack: 2 });
+        assert.deepStrictEqual(parsed.connectors, { premium: 5, nonPremium: 3, openSource: 7, cpPack: 2 });
         assert.deepStrictEqual(parsed.nodePricing, { nonProd: 1000, prod: 2000 });
         assert.deepStrictEqual(parsed.premiumPricing, { nonProd: 500, prod: 800 });
     });
@@ -571,8 +645,8 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
         const { wb } = buildWorkbook({
             clusters: [{
                 name: 'prod-1', env: 'prod', services: {
-                    'Kafka Broker': { prod: 6, billedProd: 6, enabled: true },
-                    'Schema Registry': { prod: 2, billedProd: 2, enabled: false },
+                    'Kafka Broker': { prod: 6, enabled: true },
+                    'Schema Registry': { prod: 2, enabled: false },
                 }
             }],
             services: defaultServices,
@@ -589,7 +663,7 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
     it('preserves service values for nonprod cluster', () => {
         const { wb } = buildWorkbook({
             clusters: [{ name: 'uat', env: 'nonprod', services: {
-                'Kafka Broker': { nonProd: 3, billedNonProd: 3, enabled: true },
+                'Kafka Broker': { nonProd: 3, enabled: true },
             }}],
             services: defaultServices,
             connectors: { premium: 0, nonPremium: 0, cpPack: 0 },
@@ -602,13 +676,13 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
 
     it('full multi-cluster round-trip', () => {
         const allDisabled = {};
-        defaultServices.forEach(s => { allDisabled[s.name] = { prod: 0, billedProd: 0, nonProd: 0, billedNonProd: 0, enabled: false }; });
+        defaultServices.forEach(s => { allDisabled[s.name] = { prod: 0, nonProd: 0, enabled: false }; });
 
         const { wb } = buildWorkbook({
             clusters: [
-                { name: 'production', env: 'prod', services: { ...allDisabled, 'Kafka Broker': { prod: 8, billedProd: 8, enabled: true } } },
-                { name: 'staging', env: 'nonprod', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, billedNonProd: 3, enabled: true } } },
-                { name: 'dev', env: 'dev', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, billedNonProd: 3, enabled: true } } }
+                { name: 'production', env: 'prod', services: { ...allDisabled, 'Kafka Broker': { prod: 8, enabled: true } } },
+                { name: 'staging', env: 'nonprod', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, enabled: true } } },
+                { name: 'dev', env: 'dev', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, enabled: true } } }
             ],
             services: defaultServices,
             connectors: { premium: 10, nonPremium: 5, cpPack: 3 },
@@ -628,12 +702,12 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
     });
 
     it('customer-edited values survive round-trip', () => {
-        const { wb } = buildWorkbook({
+        const { wb, meta } = buildWorkbook({
             clusters: [{ name: 'original', env: 'prod', services: {
-                'Kafka Broker': { prod: 4, billedProd: 4, enabled: true },
+                'Kafka Broker': { prod: 4, enabled: true },
             }}],
             services: defaultServices,
-            connectors: { premium: 2, nonPremium: 1, cpPack: 0 },
+            connectors: { premium: 2, nonPremium: 1, openSource: 0, cpPack: 0 },
             nodePricing: { nonProd: 500, prod: 1000 },
             premiumPricing: { nonProd: 100, prod: 200 },
             nonPremiumPricing: { nonProd: 0, prod: 0 },
@@ -642,8 +716,8 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
         });
 
         const ws = wb.Sheets['Pricing'];
-        ws['B2'] = { t: 'n', v: 8 };
-        ws['C7'] = { t: 'n', v: 3000 };
+        ws[`B${meta.cntPremRow}`] = { t: 'n', v: 8 };
+        ws[`C${meta.rateNodeRow}`] = { t: 'n', v: 3000 };
 
         const wsCfg = wb.Sheets['Configurations'];
         wsCfg['D3'] = { t: 's', v: 'New Customer' };
@@ -659,12 +733,24 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
         const cfgData = [
             ['Confluent Platform'], [], ['Date:', '', 'Prepared For:', ''], ['Prepared By:', '', 'Notes:', ''], [],
             ['Cluster:', 'test', 'Environment:', 'Production'],
-            ['Service', 'Number of Nodes', 'Number of Billed Nodes', 'Enabled'],
-            ['Kafka Broker', 4, 4, true],
-            ['Imaginary Service', 99, 99, true],
+            ['Service', 'Number of Nodes', 'Enabled'],
+            ['Kafka Broker', 4, true],
+            ['Imaginary Service', 99, true],
         ];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cfgData), 'Configurations');
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[null], [null, 0], [null, 0], [null, 0], [], [null], [null, 0, 0], [null, 0, 0], [null, 0, 0], [null, 0, 0]]), 'Pricing');
+        const pricingData = [
+            ['CONNECTOR COUNTS'],
+            ['Number of Premium Connectors', 0],
+            ['Number of Commercial Connector Packs', 0],
+            ['Number of Open Source Connectors', 0],
+            ['CP Connector Pack', 0],
+            [], ['PRICING RATES'],
+            ['Price per Node', 0, 0],
+            ['Price per Premium Connector', 0, 0],
+            ['Price per Commercial Connector Pack', 0, 0],
+            ['Price per CP Connector Pack', 0, 0]
+        ];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(pricingData), 'Pricing');
 
         const parsed = parseWorkbook(roundTrip(wb), defaultServices);
         assert.ok(parsed.clusters[0].services['Kafka Broker']);
@@ -680,12 +766,12 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
 
     it('double round-trip produces identical input data', () => {
         const allDisabled = {};
-        defaultServices.forEach(s => { allDisabled[s.name] = { prod: 0, billedProd: 0, nonProd: 0, billedNonProd: 0, enabled: false }; });
+        defaultServices.forEach(s => { allDisabled[s.name] = { prod: 0, nonProd: 0, enabled: false }; });
 
         const original = {
             clusters: [
-                { name: 'prod', env: 'prod', services: { ...allDisabled, 'Kafka Broker': { prod: 6, billedProd: 6, enabled: true } } },
-                { name: 'uat', env: 'nonprod', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, billedNonProd: 3, enabled: true } } }
+                { name: 'prod', env: 'prod', services: { ...allDisabled, 'Kafka Broker': { prod: 6, enabled: true } } },
+                { name: 'uat', env: 'nonprod', services: { ...allDisabled, 'Kafka Broker': { nonProd: 3, enabled: true } } }
             ],
             services: defaultServices,
             connectors: { premium: 4, nonPremium: 2, cpPack: 1 },

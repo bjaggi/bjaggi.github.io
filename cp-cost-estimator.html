@@ -164,11 +164,17 @@
                             </tr>
                             <tr>
                                 <td class="px-4 py-2 border">
-                                    <div>Number of Non-Premium Connectors</div>
+                                    <div>Number of Commercial Connector Packs</div>
                                     <div class="text-xs mt-1" style="color: #800000; font-weight: 600;">If not already priced in a pack</div>
                                 </td>
                                 <td class="px-4 py-2 border">
                                     <input id="connector-non-premium" type="number" min="0" value="0" class="w-24 border border-gray-300 rounded px-2 py-1 text-center">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 border">Number of Open Source Connectors</td>
+                                <td class="px-4 py-2 border">
+                                    <input id="connector-opensource" type="number" min="0" value="0" class="w-24 border border-gray-300 rounded px-2 py-1 text-center">
                                 </td>
                             </tr>
                             <tr>
@@ -183,10 +189,14 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-3">
+                    <label class="block text-sm text-dark mb-1 font-semibold" for="connector-notes">Connector Notes</label>
+                    <textarea id="connector-notes" class="w-full border border-gray-300 rounded px-3 py-2 text-sm min-h-[80px]" placeholder="Add any notes about connectors here..."></textarea>
+                </div>
             </div>
 
             <div id="sec-summary" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 scroll-mt-4">
-                <h2 class="text-lg font-semibold text-dark mb-2">Billed Nodes Summary</h2>
+                <h2 class="text-lg font-semibold text-dark mb-2">Licensed Nodes Summary</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left border border-gray-200" id="summary-table">
                         <thead class="bg-gray-50 text-dark">
@@ -260,8 +270,12 @@
                                         <td class="px-4 py-2 border" id="summary-connector-premium">0</td>
                                     </tr>
                                     <tr>
-                                        <td class="px-4 py-2 border">Number of Non-Premium Connectors</td>
+                                        <td class="px-4 py-2 border">Number of Commercial Connector Packs</td>
                                         <td class="px-4 py-2 border" id="summary-connector-non-premium">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-2 border">Number of Open Source Connectors</td>
+                                        <td class="px-4 py-2 border" id="summary-connector-opensource">0</td>
                                     </tr>
                                     <tr>
                                         <td class="px-4 py-2 border">CP Connector Pack</td>
@@ -285,18 +299,18 @@
                             </div>
                         </div>
 
-                        <!-- Non-Premium Connectors pricing -->
-                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Non-Premium Connectors</h4>
+                        <!-- Commercial Connector Packs pricing -->
+                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Commercial Connector Packs</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
                             <div class="bg-white border border-gray-100 rounded p-3">
-                                <label class="block text-sm text-dark mb-1" for="price-nonprem-nonprod">Price per Non-Premium Connector in Non Production ($)</label>
+                                <label class="block text-sm text-dark mb-1" for="price-nonprem-nonprod">Price per Commercial Connector Pack in Non Production ($)</label>
                                 <input id="price-nonprem-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                                <div class="mt-2 text-sm">Total Non Prod Non-Premium Cost: <span id="total-nonprem-nonprod-cost" class="font-semibold">$0</span></div>
+                                <div class="mt-2 text-sm">Total Non Prod Commercial Cost: <span id="total-nonprem-nonprod-cost" class="font-semibold">$0</span></div>
                             </div>
                             <div class="bg-white border border-gray-100 rounded p-3">
-                                <label class="block text-sm text-dark mb-1" for="price-nonprem-prod">Price per Non-Premium Connector in Production ($)</label>
+                                <label class="block text-sm text-dark mb-1" for="price-nonprem-prod">Price per Commercial Connector Pack in Production ($)</label>
                                 <input id="price-nonprem-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                                <div class="mt-2 text-sm">Total Prod Non-Premium Cost: <span id="total-nonprem-prod-cost" class="font-semibold">$0</span></div>
+                                <div class="mt-2 text-sm">Total Prod Commercial Cost: <span id="total-nonprem-prod-cost" class="font-semibold">$0</span></div>
                             </div>
                         </div>
 
@@ -385,21 +399,23 @@
         const grandTotalEl = document.getElementById('grand-total');
         const connectorPremiumInput = document.getElementById('connector-premium');
         const connectorNonPremiumInput = document.getElementById('connector-non-premium');
+        const connectorOpensourceInput = document.getElementById('connector-opensource');
         const connectorCpPackInput = document.getElementById('connector-cp-pack');
+        const connectorNotesInput = document.getElementById('connector-notes');
         const preparedForInput = document.getElementById('prepared-for');
         const preparedByInput = document.getElementById('prepared-by');
         const CONNECTOR_PACK_SERVICE = 'CP Connector Pack';
         const STORAGE_KEY = 'cp-cost-estimator-state';
         const services = [
-            { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, billedNonProd: 0, billedProd: 0, defaultEnabled: true },
-            { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 3, prod: 3, billedNonProd: 0, billedProd: 0, note: 'Recommended num of nodes are 3 or 5, and the tie breaker 3rd or 5th node should be in the 3rd DC' },
+            { name: 'Zookeeper or KRaft Nodes', nonProd: 3, prod: 3, defaultEnabled: true, free: true },
+            { name: 'Zookeeper or KRaft Nodes Across 2 DC', nonProd: 3, prod: 3, free: true, note: 'Recommended num of nodes are 3 or 5, and the tie breaker 3rd or 5th node should be in the 3rd DC' },
             { name: 'Kafka Broker', nonProd: 3, prod: 4, defaultEnabled: true, note: 'Num of brokers is based on anticipated CP cluster load (default is the smallest recommended config). See eventsizer.io for details' },
             { name: 'Kafka Broker - Stretch Across 2 DC', nonProd: 4, prod: 4, note: 'Num of brokers is based on anticipated CP cluster load (default is the smallest recommended config). See eventsizer.io for details' },
             { name: 'Kafka Broker - MRC Across 2 DC', nonProd: 6, prod: 6, note: 'Num of brokers is based on anticipated CP cluster load (default is the smallest recommended config). See eventsizer.io for details' },
             { name: 'Schema Registry', nonProd: 1, prod: 2 },
             { name: 'REST Proxy', nonProd: 1, prod: 2 },
             { name: 'ksqlDB', nonProd: 1, prod: 2 },
-            { name: 'Kafka Connect', nonProd: 1, prod: 2, warnNote: 'Disable this if Connect Workers are already priced under a connector pack, only for add-on Worker nodes leave it enabled' },
+            { name: 'Kafka Connect', nonProd: 1, prod: 2 },
             { name: 'Control Center', nonProd: 1, prod: 1 },
             { name: 'Confluent Operator', nonProd: 1, prod: 1 },
             { name: 'CP Flink Nodes', nonProd: 3, prod: 3 },
@@ -437,16 +453,12 @@
                     const serviceName = row.getAttribute('data-service');
                     if (!serviceName) return;
                     const nonProdInput = row.querySelector('.nonprod-col .node-input');
-                    const nonProdBilledInput = row.querySelector('.nonprod-col .billed-input');
                     const prodInput = row.querySelector('.prod-col .node-input');
-                    const prodBilledInput = row.querySelector('.prod-col .billed-input');
                     const toggle = row.querySelector('.service-toggle');
 
                     servicesState[serviceName] = {
                         nonProd: nonProdInput?.value ?? '',
-                        billedNonProd: nonProdBilledInput?.value ?? '',
                         prod: prodInput?.value ?? '',
-                        billedProd: prodBilledInput?.value ?? '',
                         enabled: toggle?.checked ?? false
                     };
                 });
@@ -464,8 +476,10 @@
                 connectors: {
                     premium: Number(connectorPremiumInput?.value || 0),
                     nonPremium: Number(connectorNonPremiumInput?.value || 0),
+                    openSource: Number(connectorOpensourceInput?.value || 0),
                     cpPack: Number(connectorCpPackInput?.value || 0)
                 },
+                connectorNotes: connectorNotesInput?.value || '',
                 preparedFor: preparedForInput?.value || '',
                 preparedBy: preparedByInput?.value || ''
             };
@@ -484,6 +498,7 @@
             const summaryProdEl = document.getElementById('summary-prod');
             const summaryConnPremiumEl = document.getElementById('summary-connector-premium');
             const summaryConnNonPremiumEl = document.getElementById('summary-connector-non-premium');
+            const summaryConnOpensourceEl = document.getElementById('summary-connector-opensource');
             const summaryConnCpPackEl = document.getElementById('summary-connector-cp-pack');
             let summaryNonProd = 0;
             let summaryProd = 0;
@@ -510,10 +525,11 @@
                 if (env === 'dev') return;
                 const rows = tableCard.querySelectorAll('tbody tr[data-service]');
                 rows.forEach((row) => {
+                    if (row.dataset.free === 'true') return;
                     const toggle = row.querySelector('.service-toggle');
                     if (!toggle || !toggle.checked) return;
-                    const billedInput = row.querySelector(env === 'prod' ? '.prod-col .billed-input' : '.nonprod-col .billed-input');
-                    const value = Number(billedInput?.value || 0);
+                    const nodeInput = row.querySelector(env === 'prod' ? '.prod-col .node-input' : '.nonprod-col .node-input');
+                    const value = Number(nodeInput?.value || 0);
                     if (Number.isNaN(value)) return;
                     if (env === 'prod') summaryProd += value;
                     else summaryNonProd += value;
@@ -525,9 +541,11 @@
 
             const connPremium = Number(connectorPremiumInput?.value || 0);
             const connNonPremium = Number(connectorNonPremiumInput?.value || 0);
+            const connOpenSource = Number(connectorOpensourceInput?.value || 0);
             const connCpPack = Number(connectorCpPackInput?.value || 0);
             if (summaryConnPremiumEl) summaryConnPremiumEl.textContent = (isNaN(connPremium) ? 0 : connPremium).toString();
             if (summaryConnNonPremiumEl) summaryConnNonPremiumEl.textContent = (isNaN(connNonPremium) ? 0 : connNonPremium).toString();
+            if (summaryConnOpensourceEl) summaryConnOpensourceEl.textContent = (isNaN(connOpenSource) ? 0 : connOpenSource).toString();
             if (summaryConnCpPackEl) summaryConnCpPackEl.textContent = (isNaN(connCpPack) ? 0 : connCpPack).toString();
 
             const formatCurrency = (value) => {
@@ -576,6 +594,7 @@
 
             if (summaryBody) {
                 services.forEach((service) => {
+                    if (service.free) return;
                     const rowValues = visibleClusters.map(vc => {
                         const idx = vc.idx;
                         const tableCard = tableCards[idx];
@@ -586,8 +605,8 @@
                         if (!row) return 0;
                         const toggle = row.querySelector('.service-toggle');
                         if (!toggle || !toggle.checked) return 0;
-                        const billedInput = row.querySelector(env === 'prod' ? '.prod-col .billed-input' : '.nonprod-col .billed-input');
-                        const v = Number(billedInput?.value || 0);
+                        const nodeInput = row.querySelector(env === 'prod' ? '.prod-col .node-input' : '.nonprod-col .node-input');
+                        const v = Number(nodeInput?.value || 0);
                         return Number.isNaN(v) ? 0 : v;
                     });
 
@@ -607,17 +626,18 @@
                     const env = clusterCards[idx].querySelector('.env-select')?.value || 'prod';
                     const rows = Array.from(tableCard.querySelectorAll('tbody tr[data-service]'));
                     return rows.reduce((sum, row) => {
+                        if (row.dataset.free === 'true') return sum;
                         const toggle = row.querySelector('.service-toggle');
                         if (!toggle || !toggle.checked) return sum;
-                        const billedInput = row.querySelector(env === 'prod' ? '.prod-col .billed-input' : '.nonprod-col .billed-input');
-                        const value = Number(billedInput?.value || 0);
+                        const nodeInput = row.querySelector(env === 'prod' ? '.prod-col .node-input' : '.nonprod-col .node-input');
+                        const value = Number(nodeInput?.value || 0);
                         return sum + (Number.isNaN(value) ? 0 : value);
                     }, 0);
                 });
 
                 const totalsRow = `
                     <tr class="font-semibold bg-gray-50">
-                        <td class="px-4 py-2 border">TOTAL (Billed)</td>
+                        <td class="px-4 py-2 border">TOTAL</td>
                         ${totals.map(t => `<td class="px-4 py-2 border">${t}</td>`).join('')}
                     </tr>
                 `;
@@ -637,7 +657,7 @@
                 html += `<a href="#sec-cluster-${idx}" class="toc-sub">${label}</a>`;
             });
             html += '<a href="#sec-connectors">Connectors</a>';
-            html += '<a href="#sec-summary">Billed Nodes Summary</a>';
+            html += '<a href="#sec-summary">Licensed Nodes Summary</a>';
             html += '<a href="#sec-pricing">Pricing</a>';
             tocLinks.innerHTML = html;
         };
@@ -650,8 +670,10 @@
             if (existingState.connectors) {
                 connectorPremiumInput.value = existingState.connectors.premium ?? 0;
                 connectorNonPremiumInput.value = existingState.connectors.nonPremium ?? 0;
+                connectorOpensourceInput.value = existingState.connectors.openSource ?? 0;
                 connectorCpPackInput.value = existingState.connectors.cpPack ?? 0;
             }
+            if (existingState.connectorNotes !== undefined) connectorNotesInput.value = existingState.connectorNotes;
             if (existingState.preparedFor !== undefined) preparedForInput.value = existingState.preparedFor;
             if (existingState.preparedBy !== undefined) preparedByInput.value = existingState.preparedBy;
             clustersContainer.innerHTML = '';
@@ -687,16 +709,14 @@
                 tableWrapper.id = `sec-cluster-${i}`;
                 tableWrapper.innerHTML = `
                     <h3 class="text-lg font-semibold text-dark mb-3 cluster-title">Cluster ${i + 1} Configuration</h3>
-                    <div class="dev-notice hidden border border-dashed border-amber-400 bg-amber-50 rounded px-3 py-2 mb-3 text-sm" style="color: #800000; font-weight: 600;">Dev clusters don't require a license — Billed Nodes are set to 0 and services are disabled.</div>
+                    <div class="dev-notice hidden border border-dashed border-amber-400 bg-amber-50 rounded px-3 py-2 mb-3 text-sm" style="color: #800000; font-weight: 600;">Dev clusters don't require a license — nodes are not counted towards licensing totals.</div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left border border-gray-200 cluster-table">
                             <thead class="bg-gray-50 text-dark">
                                 <tr>
                                     <th class="px-4 py-2 border">Services</th>
                                     <th class="px-4 py-2 border value-col">Number of Nodes</th>
-                                    <th class="px-4 py-2 border value-col">Number of Billed Nodes</th>
                                     <th class="px-4 py-2 border value-col">Number of Nodes</th>
-                                    <th class="px-4 py-2 border value-col">Number of Billed Nodes</th>
                                     <th class="px-4 py-2 border">Enable</th>
                                 </tr>
                             </thead>
@@ -704,28 +724,21 @@
                                 ${services.map(service => {
                                     const saved = servicesState[service.name] || {};
                                     const nonProdValue = saved.nonProd ?? service.nonProd;
-                                    const billedNonProdValue = saved.billedNonProd ?? service.billedNonProd ?? service.nonProd;
                                     const prodValue = saved.prod ?? service.prod;
-                                    const billedProdValue = saved.billedProd ?? service.billedProd ?? service.prod;
                                     const enabled = typeof saved.enabled === 'boolean' ? saved.enabled : !!service.defaultEnabled;
+                                    const isFree = !!service.free;
                                     return `
-                                    <tr data-service="${service.name}">
+                                    <tr data-service="${service.name}" ${isFree ? 'data-free="true"' : ''}>
                                         <td class="px-4 py-2 border">
-                                            <div>${service.name}</div>
+                                            <div>${service.name}${isFree ? ' <span class="text-xs text-green-600 font-semibold">(No License Required)</span>' : ''}</div>
                                             ${service.note ? `<div class="text-xs text-gray-500 mt-1">${service.note}</div>` : ''}
                                             ${service.warnNote ? `<div class="text-xs mt-1" style="color: #800000; font-weight: 600;">${service.warnNote}</div>` : ''}
                                         </td>
                                         <td class="px-4 py-2 border nonprod-col">
                                             <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${nonProdValue}">
                                         </td>
-                                        <td class="px-4 py-2 border nonprod-col">
-                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center billed-input" value="${billedNonProdValue}">
-                                        </td>
                                         <td class="px-4 py-2 border prod-col">
                                             <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${prodValue}">
-                                        </td>
-                                        <td class="px-4 py-2 border prod-col">
-                                            <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center billed-input" value="${billedProdValue}">
                                         </td>
                                         <td class="px-4 py-2 border text-center">
                                             <input type="checkbox" class="service-toggle" ${enabled ? 'checked' : ''}>
@@ -734,8 +747,6 @@
                                 `}).join('')}
                                 <tr class="font-semibold bg-gray-50">
                                     <td class="px-4 py-2 border">Total Nodes</td>
-                                    <td class="px-4 py-2 border text-center total-col">0</td>
-                                    <td class="px-4 py-2 border text-center total-col">0</td>
                                     <td class="px-4 py-2 border text-center total-col">0</td>
                                     <td class="px-4 py-2 border text-center total-col">0</td>
                                     <td class="px-4 py-2 border"></td>
@@ -749,10 +760,9 @@
                 const envSelect = wrapper.querySelector('.env-select');
                 const nameInput = wrapper.querySelector('input[type="text"]');
                 const titleEl = tableWrapper.querySelector('.cluster-title');
-                const nonProdCols = tableWrapper.querySelectorAll('.nonprod-col, .value-col:nth-child(2), .value-col:nth-child(3), .total-col:nth-child(2), .total-col:nth-child(3)');
-                const prodCols = tableWrapper.querySelectorAll('.prod-col, .value-col:nth-child(4), .value-col:nth-child(5), .total-col:nth-child(4), .total-col:nth-child(5)');
+                const nonProdCols = tableWrapper.querySelectorAll('.nonprod-col, .value-col:nth-child(2), .total-col:nth-child(2)');
+                const prodCols = tableWrapper.querySelectorAll('.prod-col, .value-col:nth-child(3), .total-col:nth-child(3)');
                 const nodeInputs = tableWrapper.querySelectorAll('.node-input');
-                const billedInputs = tableWrapper.querySelectorAll('.billed-input');
                 const toggleInputs = tableWrapper.querySelectorAll('.service-toggle');
                 const totalCols = tableWrapper.querySelectorAll('.total-col');
 
@@ -770,17 +780,6 @@
 
                     devNotice.classList.toggle('hidden', !isDev);
 
-                    billedInputs.forEach(input => {
-                        if (isDev) {
-                            input.value = 0;
-                            input.disabled = true;
-                            input.classList.add('bg-gray-100', 'text-gray-400');
-                        } else {
-                            input.disabled = false;
-                            input.classList.remove('bg-gray-100', 'text-gray-400');
-                        }
-                    });
-
                     toggleInputs.forEach(toggle => {
                         if (isDev) {
                             toggle.checked = false;
@@ -794,46 +793,23 @@
                 const updateTotal = () => {
                     const isProd = envSelect.value === 'prod';
                     let nodeTotal = 0;
-                    let billedTotal = 0;
 
                     nodeInputs.forEach((input) => {
                         const cell = input.closest('td');
                         const isProdCell = cell?.classList.contains('prod-col');
                         const isNonProdCell = cell?.classList.contains('nonprod-col');
-                        if ((isProd && !isProdCell) || (!isProd && !isNonProdCell)) {
-                            return;
-                        }
+                        if ((isProd && !isProdCell) || (!isProd && !isNonProdCell)) return;
                         const row = input.closest('tr');
                         const toggle = row?.querySelector('.service-toggle');
-                        if (toggle && !toggle.checked) {
-                            return;
-                        }
+                        if (toggle && !toggle.checked) return;
+                        if (row.dataset.free === 'true') return;
                         const rawValue = input.value;
                         const value = Number(rawValue === '' ? 0 : rawValue);
                         nodeTotal += Number.isNaN(value) ? 0 : value;
                     });
 
-                    billedInputs.forEach((input) => {
-                        const cell = input.closest('td');
-                        const isProdCell = cell?.classList.contains('prod-col');
-                        const isNonProdCell = cell?.classList.contains('nonprod-col');
-                        const row = input.closest('tr');
-                        const toggle = row?.querySelector('.service-toggle');
-                        if (toggle && !toggle.checked) {
-                            return;
-                        }
-                        const rawValue = input.value;
-                        const value = Number(rawValue === '' ? 0 : rawValue);
-                        if (Number.isNaN(value)) {
-                            return;
-                        }
-                        if (isProdCell && isProd) billedTotal += value;
-                        if (isNonProdCell && !isProd) billedTotal += value;
-                    });
-
-                    totalCols.forEach((col, idx) => {
-                        const isBilled = idx % 2 === 1;
-                        col.textContent = (isBilled ? billedTotal : nodeTotal).toString();
+                    totalCols.forEach((col) => {
+                        col.textContent = nodeTotal.toString();
                     });
                     updateSummary();
                     saveState();
@@ -903,11 +879,11 @@
                     const rows = tableCard.querySelectorAll('tbody tr[data-service]');
                     rows.forEach(row => {
                         const svcName = row.getAttribute('data-service');
+                        const isFree = row.dataset.free === 'true';
                         const colPrefix = isProd ? '.prod-col' : '.nonprod-col';
                         const nodeVal = Number(row.querySelector(`${colPrefix} .node-input`)?.value || 0);
-                        const billedVal = Number(row.querySelector(`${colPrefix} .billed-input`)?.value || 0);
                         const enabled = !!row.querySelector('.service-toggle')?.checked;
-                        svcRows.push({ svcName, nodeVal, billedVal, enabled });
+                        svcRows.push({ svcName, nodeVal, enabled, free: isFree });
                     });
                 }
                 const isDev = env === 'dev';
@@ -940,10 +916,10 @@
                 const envLabel = ENV_LABELS[cluster.env] || 'Production';
                 cfgData.push(['Cluster:', cluster.clusterName, 'Environment:', envLabel]);
                 r++;
-                cfgData.push(['Service', 'Number of Nodes', 'Number of Billed Nodes', 'Enabled']);
+                cfgData.push(['Service', 'Number of Nodes', 'Enabled']);
                 r++;
                 cluster.svcRows.forEach(svc => {
-                    cfgData.push([svc.svcName, svc.nodeVal, svc.billedVal, svc.enabled]);
+                    cfgData.push([svc.svcName, svc.nodeVal, svc.enabled]);
                     r++;
                 });
                 cfgData.push([]); r++;
@@ -951,7 +927,7 @@
 
             const wsCfg = XLSX.utils.aoa_to_sheet(cfgData);
             wsCfg['!merges'] = cfgMerges;
-            wsCfg['!cols'] = [{ wch: 42 }, { wch: 18 }, { wch: 22 }, { wch: 28 }];
+            wsCfg['!cols'] = [{ wch: 42 }, { wch: 18 }, { wch: 28 }];
             XLSX.utils.book_append_sheet(wb, wsCfg, 'Configurations');
 
             /* ── Tab 2: Summary ── */
@@ -960,10 +936,11 @@
             const summaryData = [['Component', ...billedNames]];
 
             services.forEach(service => {
+                if (service.free) return;
                 const vals = billedClusters.map(cluster => {
                     const svc = cluster.svcRows.find(s => s.svcName === service.name);
                     if (!svc || !svc.enabled) return 0;
-                    return Number.isNaN(svc.billedVal) ? 0 : svc.billedVal;
+                    return Number.isNaN(svc.nodeVal) ? 0 : svc.nodeVal;
                 });
                 summaryData.push([service.name, ...vals]);
             });
@@ -986,20 +963,31 @@
 
             const premCount = Number(connectorPremiumInput.value || 0);
             const nonPremCount = Number(connectorNonPremiumInput.value || 0);
+            const osCount = Number(connectorOpensourceInput.value || 0);
             const cpPackCount = Number(connectorCpPackInput.value || 0);
+            const connNotes = connectorNotesInput.value || '';
             const npNodeCount = Number(document.getElementById('summary-nonprod')?.textContent || 0);
             const pNodeCount = Number(document.getElementById('summary-prod')?.textContent || 0);
 
             pData.push(['CONNECTOR COUNTS']); pr++;
             pData.push(['Number of Premium Connectors', premCount]); pr++;
-            pData.push(['Number of Non-Premium Connectors', nonPremCount]); pr++;
+            const cntPremRow = pr;
+            pData.push(['Number of Commercial Connector Packs', nonPremCount]); pr++;
+            const cntCommRow = pr;
+            pData.push(['Number of Open Source Connectors', osCount]); pr++;
             pData.push(['CP Connector Pack', cpPackCount]); pr++;
+            const cntCpRow = pr;
+            if (connNotes) { pData.push(['Connector Notes:', connNotes]); pr++; }
             pData.push([]); pr++;
             pData.push(['PRICING RATES', 'Non Production ($)', 'Production ($)']); pr++;
             pData.push(['Price per Node', Number(priceNonProdInput.value || 0), Number(priceProdInput.value || 0)]); pr++;
+            const rateNodeRow = pr;
             pData.push(['Price per Premium Connector', Number(pricePremNonProdInput.value || 0), Number(pricePremProdInput.value || 0)]); pr++;
-            pData.push(['Price per Non-Premium Connector', Number(priceNonPremNonProdInput.value || 0), Number(priceNonPremProdInput.value || 0)]); pr++;
+            const ratePremRow = pr;
+            pData.push(['Price per Commercial Connector Pack', Number(priceNonPremNonProdInput.value || 0), Number(priceNonPremProdInput.value || 0)]); pr++;
+            const rateCommRow = pr;
             pData.push(['Price per CP Connector Pack', Number(priceCpNonProdInput.value || 0), Number(priceCpProdInput.value || 0)]); pr++;
+            const rateCpRow = pr;
             pData.push([]); pr++;
             pData.push([]); pr++;
 
@@ -1007,32 +995,32 @@
             pData.push([]); pr++;
 
             pData.push(['Nodes']); pr++;
-            pData.push(['  Billed Node Count', npNodeCount, pNodeCount]); pr++;
+            pData.push(['  Licensed Node Count', npNodeCount, pNodeCount]); pr++;
             const ncRow = pr;
-            pData.push(['  Price per Node', { f: `B7` }, { f: `C7` }]); pr++;
+            pData.push(['  Price per Node', { f: `B${rateNodeRow}` }, { f: `C${rateNodeRow}` }]); pr++;
             const npRow = pr;
             pData.push(['  Node Cost', { f: `B${ncRow}*B${npRow}` }, { f: `C${ncRow}*C${npRow}` }]); pr++;
             const nodeSubRow = pr;
             pData.push([]); pr++;
 
             pData.push([`Premium Connectors (${premCount})`]); pr++;
-            pData.push(['  Price per Connector', { f: 'B8' }, { f: 'C8' }]); pr++;
+            pData.push(['  Price per Connector', { f: `B${ratePremRow}` }, { f: `C${ratePremRow}` }]); pr++;
             const premPrRow = pr;
-            pData.push(['  Premium Cost', { f: `B2*B${premPrRow}` }, { f: `B2*C${premPrRow}` }]); pr++;
+            pData.push(['  Premium Cost', { f: `B${cntPremRow}*B${premPrRow}` }, { f: `B${cntPremRow}*C${premPrRow}` }]); pr++;
             const premSubRow = pr;
             pData.push([]); pr++;
 
-            pData.push([`Non-Premium Connectors (${nonPremCount})`]); pr++;
-            pData.push(['  Price per Connector', { f: 'B9' }, { f: 'C9' }]); pr++;
+            pData.push([`Commercial Connector Packs (${nonPremCount})`]); pr++;
+            pData.push(['  Price per Pack', { f: `B${rateCommRow}` }, { f: `C${rateCommRow}` }]); pr++;
             const npremPrRow = pr;
-            pData.push(['  Non-Premium Cost', { f: `B3*B${npremPrRow}` }, { f: `B3*C${npremPrRow}` }]); pr++;
+            pData.push(['  Commercial Cost', { f: `B${cntCommRow}*B${npremPrRow}` }, { f: `B${cntCommRow}*C${npremPrRow}` }]); pr++;
             const npremSubRow = pr;
             pData.push([]); pr++;
 
             pData.push([`CP Connector Pack (${cpPackCount})`]); pr++;
-            pData.push(['  Price per Pack', { f: 'B10' }, { f: 'C10' }]); pr++;
+            pData.push(['  Price per Pack', { f: `B${rateCpRow}` }, { f: `C${rateCpRow}` }]); pr++;
             const cpPrRow = pr;
-            pData.push(['  CP Pack Cost', { f: `B4*B${cpPrRow}` }, { f: `B4*C${cpPrRow}` }]); pr++;
+            pData.push(['  CP Pack Cost', { f: `B${cntCpRow}*B${cpPrRow}` }, { f: `B${cntCpRow}*C${cpPrRow}` }]); pr++;
             const cpSubRow = pr;
             pData.push([]); pr++;
             pData.push([]); pr++;
@@ -1124,14 +1112,13 @@
                             if (!knownService) continue;
 
                             const nodeVal = Number(row[1]) || 0;
-                            const billedVal = Number(row[2]) || 0;
-                            const rawEnabled = row[3];
+                            const rawEnabled = row[2];
                             const enabled = rawEnabled === true || rawEnabled === 'true' || rawEnabled === 'TRUE' || rawEnabled === 1;
                             const isProd = current.env === 'prod';
 
                             current.services[svcName] = isProd
-                                ? { prod: nodeVal, billedProd: billedVal, nonProd: knownService.nonProd, billedNonProd: knownService.nonProd, enabled }
-                                : { nonProd: nodeVal, billedNonProd: billedVal, prod: knownService.prod, billedProd: knownService.prod, enabled };
+                                ? { prod: nodeVal, nonProd: knownService.nonProd, enabled }
+                                : { nonProd: nodeVal, prod: knownService.prod, enabled };
                         }
                         if (current) parsedClusters.push(current);
                     }
@@ -1150,24 +1137,30 @@
 
                     /* ── Parse Tab 3: Pricing (or old Connectors & Pricing) ── */
                     const wsInputs = wb.Sheets['Pricing'] || wb.Sheets['Connectors & Pricing'];
-                    let connPremium = 0, connNonPremium = 0, connCpPack = 0;
+                    let connPremium = 0, connNonPremium = 0, connOpenSource = 0, connCpPack = 0;
+                    let parsedConnNotes = '';
                     let nodeNpRate = 0, nodePRate = 0;
                     let premNpRate = 0, premPRate = 0;
                     let nonPremNpRate = 0, nonPremPRate = 0;
                     let cpNpRate = 0, cpPRate = 0;
 
                     if (wsInputs) {
-                        connPremium = Number(cell(wsInputs, 'B2')) || 0;
-                        connNonPremium = Number(cell(wsInputs, 'B3')) || 0;
-                        connCpPack = Number(cell(wsInputs, 'B4')) || 0;
-                        nodeNpRate = Number(cell(wsInputs, 'B7')) || 0;
-                        nodePRate = Number(cell(wsInputs, 'C7')) || 0;
-                        premNpRate = Number(cell(wsInputs, 'B8')) || 0;
-                        premPRate = Number(cell(wsInputs, 'C8')) || 0;
-                        nonPremNpRate = Number(cell(wsInputs, 'B9')) || 0;
-                        nonPremPRate = Number(cell(wsInputs, 'C9')) || 0;
-                        cpNpRate = Number(cell(wsInputs, 'B10')) || 0;
-                        cpPRate = Number(cell(wsInputs, 'C10')) || 0;
+                        const pRows = XLSX.utils.sheet_to_json(wsInputs, { header: 1, defval: '' });
+                        let pastCostSummary = false;
+                        pRows.forEach(pRow => {
+                            const label = String(pRow[0] || '').trim();
+                            if (label === 'COST SUMMARY') { pastCostSummary = true; return; }
+                            if (pastCostSummary) return;
+                            if (label.startsWith('Number of Premium')) connPremium = Number(pRow[1]) || 0;
+                            else if (label.startsWith('Number of Commercial') || label.startsWith('Number of Non-Premium')) connNonPremium = Number(pRow[1]) || 0;
+                            else if (label.startsWith('Number of Open Source')) connOpenSource = Number(pRow[1]) || 0;
+                            else if (label === 'CP Connector Pack') connCpPack = Number(pRow[1]) || 0;
+                            else if (label === 'Connector Notes:') parsedConnNotes = String(pRow[1] || '').trim();
+                            else if (label === 'Price per Node') { nodeNpRate = Number(pRow[1]) || 0; nodePRate = Number(pRow[2]) || 0; }
+                            else if (label.startsWith('Price per Premium')) { premNpRate = Number(pRow[1]) || 0; premPRate = Number(pRow[2]) || 0; }
+                            else if (label.startsWith('Price per Commercial') || label.startsWith('Price per Non-Premium')) { nonPremNpRate = Number(pRow[1]) || 0; nonPremPRate = Number(pRow[2]) || 0; }
+                            else if (label.startsWith('Price per CP')) { cpNpRate = Number(pRow[1]) || 0; cpPRate = Number(pRow[2]) || 0; }
+                        });
                     }
 
                     /* ── Apply to UI ── */
@@ -1175,7 +1168,9 @@
 
                     connectorPremiumInput.value = connPremium;
                     connectorNonPremiumInput.value = connNonPremium;
+                    connectorOpensourceInput.value = connOpenSource;
                     connectorCpPackInput.value = connCpPack;
+                    connectorNotesInput.value = parsedConnNotes;
                     priceNonProdInput.value = nodeNpRate;
                     priceProdInput.value = nodePRate;
                     pricePremNonProdInput.value = premNpRate;
@@ -1188,7 +1183,8 @@
                     const uploadState = {
                         count: parsedClusters.length || 1,
                         clusters: parsedClusters,
-                        connectors: { premium: connPremium, nonPremium: connNonPremium, cpPack: connCpPack },
+                        connectors: { premium: connPremium, nonPremium: connNonPremium, openSource: connOpenSource, cpPack: connCpPack },
+                        connectorNotes: parsedConnNotes,
                         preparedFor: preparedForInput.value,
                         preparedBy: preparedByInput.value
                     };
@@ -1214,7 +1210,9 @@
         priceCpProdInput.addEventListener('input', updateSummary);
         connectorPremiumInput.addEventListener('input', () => { updateSummary(); saveState(); });
         connectorNonPremiumInput.addEventListener('input', () => { updateSummary(); saveState(); });
+        connectorOpensourceInput.addEventListener('input', () => { updateSummary(); saveState(); });
         connectorCpPackInput.addEventListener('input', () => { updateSummary(); saveState(); });
+        connectorNotesInput.addEventListener('input', saveState);
         preparedForInput.addEventListener('input', saveState);
         preparedByInput.addEventListener('input', saveState);
 
