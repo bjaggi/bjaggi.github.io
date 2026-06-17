@@ -119,7 +119,7 @@ function buildWorkbook(params) {
 
     let npNodeCount = 0, pNodeCount = 0;
     clusterData.forEach(cluster => {
-        if (cluster.isDev) return;
+        if (cluster.env !== 'prod' && cluster.env !== 'nonprod') return;
         cluster.svcRows.forEach(svc => {
             if (!svc.enabled || svc.free) return;
             if (cluster.isProd) pNodeCount += svc.nodeVal;
@@ -542,6 +542,27 @@ describe('CP Cost Estimator Excel Export', () => {
             const ws = wb.Sheets['Pricing'];
             assert.strictEqual(getCellValue(ws, `C${meta.ncRow}`), 4, 'Prod excludes dev');
             assert.strictEqual(getCellValue(ws, `B${meta.ncRow}`), 3, 'NonProd excludes dev');
+        });
+
+        it('broker architecture defaults flow into node counts', () => {
+            const allDisabled = {};
+            defaultServices.forEach(s => { allDisabled[s.name] = { prod: 0, nonProd: 0, enabled: false }; });
+
+            const { wb: wbStretch, meta: mStretch } = buildWorkbook({
+                clusters: [{ name: 'stretch', env: 'prod', services: { ...allDisabled, 'Kafka Broker - Stretch Across 2 DC': { prod: 4, enabled: true } } }],
+                services: defaultServices,
+                connectors: { premium: 0, cpPack: 0 },
+                ...defaultPricing, notes: ''
+            });
+            assert.strictEqual(getCellValue(wbStretch.Sheets['Pricing'], `C${mStretch.ncRow}`), 4, 'Stretch prod=4');
+
+            const { wb: wbMRC, meta: mMRC } = buildWorkbook({
+                clusters: [{ name: 'mrc', env: 'prod', services: { ...allDisabled, 'Kafka Broker - MRC Across 2 DC': { prod: 6, enabled: true } } }],
+                services: defaultServices,
+                connectors: { premium: 0, cpPack: 0 },
+                ...defaultPricing, notes: ''
+            });
+            assert.strictEqual(getCellValue(wbMRC.Sheets['Pricing'], `C${mMRC.ncRow}`), 6, 'MRC prod=6');
         });
 
         it('free services excluded from licensed node counts', () => {

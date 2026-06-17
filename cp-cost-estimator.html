@@ -98,7 +98,8 @@
             <!-- Main Content -->
             <div class="flex-1 min-w-0 bg-white shadow-lg rounded-lg p-8">
             <h1 class="text-2xl font-bold text-dark mb-3">CP Cost Estimator</h1>
-            <p class="text-dark mb-4">Scope and size Confluent Platform clusters, configure connectors, and estimate licensing costs across production, non-production, and development environments.</p>
+            <p class="text-dark mb-4">Scope and size Confluent Platform 8.0+ clusters, configure connectors, and estimate licensing costs across production, non-production, and development environments.</p>
+            <p class="text-sm font-semibold mb-4" style="color: #800000;">Note: This pricing model applies to Confluent Platform 8.0 and above.</p>
             <details class="mb-6 border border-gray-200 rounded-lg no-print">
                 <summary class="cursor-pointer px-4 py-2.5 text-sm font-semibold text-primary hover:bg-blue-50 rounded-lg select-none flex items-center gap-1.5">
                     <svg class="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -488,7 +489,7 @@
                 const tableCard = tableCards[idx];
                 if (!tableCard) return;
                 const env = clusterCard.querySelector('.env-select')?.value || 'prod';
-                if (env === 'dev') return;
+                if (env !== 'prod' && env !== 'nonprod') return;
                 const rows = tableCard.querySelectorAll('tbody tr[data-service]');
                 rows.forEach((row) => {
                     if (row.dataset.free === 'true') return;
@@ -498,7 +499,7 @@
                     const value = Number(nodeInput?.value || 0);
                     if (Number.isNaN(value)) return;
                     if (env === 'prod') summaryProd += value;
-                    else summaryNonProd += value;
+                    else if (env === 'nonprod') summaryNonProd += value;
                 });
             });
 
