@@ -388,7 +388,10 @@
             { name: 'Control Center', nonProd: 1, prod: 1 },
             { name: 'Confluent Operator', nonProd: 1, prod: 1 },
             { name: 'CP Flink Nodes', nonProd: 3, prod: 3 },
-            { name: 'CP Flink Nodes in 2 DC', nonProd: 6, prod: 6 }
+            { name: 'CP Flink Nodes in 2 DC', nonProd: 6, prod: 6 },
+            { name: 'CSFLE Add-on', nonProd: 0, prod: 0, link: { url: 'https://docs.google.com/presentation/d/1UBwN1KYcfc29gszJqF0u7HPYD3GFpdl0wMQJ2z-N3MM/edit?slide=id.g3b1384a0fa2_1_2506#slide=id.g3b1384a0fa2_1_2506', label: 'Encryption Pricing Guide' } },
+            { name: 'Full Encryption Add-on', nonProd: 0, prod: 0, link: { url: 'https://docs.google.com/presentation/d/1UBwN1KYcfc29gszJqF0u7HPYD3GFpdl0wMQJ2z-N3MM/edit?slide=id.g3b1384a0fa2_1_2506#slide=id.g3b1384a0fa2_1_2506', label: 'Encryption Pricing Guide' } },
+            { name: 'CSFLE + Full Payload', nonProd: 0, prod: 0 }
         ];
 
         const defaultClusters = [
@@ -697,6 +700,7 @@
                                                 <div>${service.name}${isFree ? ' <span class="text-xs text-green-600 font-semibold">(No License Required)</span>' : ''}</div>
                                                 ${service.note ? `<div class="text-xs text-gray-500 mt-1">${service.note}</div>` : ''}
                                                 ${service.warnNote ? `<div class="text-xs mt-1" style="color: #800000; font-weight: 600;">${service.warnNote}</div>` : ''}
+                                                ${service.link ? `<a href="${service.link.url}" target="_blank" rel="noopener noreferrer" class="text-primary text-xs hover:underline">${service.link.label}</a>` : ''}
                                             </td>
                                             <td class="px-4 py-2 border nonprod-col">
                                                 <input type="number" min="0" class="w-20 border border-gray-300 rounded px-2 py-1 text-center node-input" value="${nonProdValue}">

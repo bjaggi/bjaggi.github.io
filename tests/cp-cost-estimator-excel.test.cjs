@@ -23,6 +23,9 @@ const defaultServices = [
     { name: 'Confluent Operator', nonProd: 1, prod: 1 },
     { name: 'CP Flink Nodes', nonProd: 3, prod: 3 },
     { name: 'CP Flink Nodes in 2 DC', nonProd: 6, prod: 6 },
+    { name: 'CSFLE Add-on', nonProd: 0, prod: 0 },
+    { name: 'Full Encryption Add-on', nonProd: 0, prod: 0 },
+    { name: 'CSFLE + Full Payload', nonProd: 0, prod: 0 },
 ];
 
 const licensedServices = defaultServices.filter(s => !s.free);
