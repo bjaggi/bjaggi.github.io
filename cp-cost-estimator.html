@@ -97,7 +97,10 @@
             </nav>
             <!-- Main Content -->
             <div class="flex-1 min-w-0 bg-white shadow-lg rounded-lg p-8">
-            <h1 class="text-2xl font-bold text-dark mb-3">CP Cost Estimator</h1>
+            <div class="flex justify-between items-center mb-3">
+                <h1 class="text-2xl font-bold text-dark">CP Cost Estimator</h1>
+                <a href="#" id="clear-cache-link" class="text-xs text-red-600 hover:text-red-800 hover:underline">Clear saved data</a>
+            </div>
             <p class="text-dark mb-4">Scope and size Confluent Platform 8.0+ clusters, configure connectors, and estimate licensing costs across production, non-production, and development environments.</p>
             <p class="text-sm font-semibold mb-4" style="color: #800000;">Note: This pricing model applies to Confluent Platform 8.0 and above.</p>
             <details class="mb-6 border border-gray-200 rounded-lg no-print">
@@ -356,6 +359,57 @@
                     </div>
                 </div>
 
+                <!-- CP Add Ons pricing -->
+                <div class="mb-2">
+                    <button id="toggle-addons-pricing" type="button" onclick="document.getElementById('addons-pricing-detail').classList.toggle('hidden'); document.getElementById('addons-pricing-chevron').classList.toggle('-rotate-90')" class="flex items-center gap-2 text-md font-semibold text-dark mb-2 cursor-pointer hover:text-primary transition-colors">
+                        <svg id="addons-pricing-chevron" class="w-4 h-4 transform transition-transform -rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                        CP Add Ons
+                    </button>
+                    <div id="addons-pricing-detail" class="hidden">
+                        <div class="overflow-x-auto mb-4">
+                            <table class="w-full text-sm text-left border border-gray-200">
+                                <thead class="bg-gray-50 text-dark">
+                                    <tr>
+                                        <th class="px-4 py-2 border">Add On</th>
+                                        <th class="px-4 py-2 border">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="px-4 py-2 border">CSFLE Add-on</td>
+                                        <td class="px-4 py-2 border" id="summary-addon-csfle">No</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-2 border">Full Encryption Add-on (CSFLE + Full payload)</td>
+                                        <td class="px-4 py-2 border" id="summary-addon-full-encryption">No</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-2 border">USM (Unified Stream Manager)</td>
+                                        <td class="px-4 py-2 border" id="summary-addon-usm">No</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Add On Pricing</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-addon-nonprod">Add On Cost in Non Production ($)</label>
+                                <input id="price-addon-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Non Prod Add On Cost: <span id="total-addon-nonprod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                            <div class="bg-white border border-gray-100 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-addon-prod">Add On Cost in Production ($)</label>
+                                <input id="price-addon-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Prod Add On Cost: <span id="total-addon-prod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-sm text-dark font-semibold">
+                        Total Add On Cost: <span id="total-addon-amount" class="font-semibold">$0</span>
+                    </div>
+                </div>
+
                 <!-- Grand Total -->
                 <hr class="my-4 border-gray-200">
                 <div class="mt-2 text-dark text-lg font-bold">
@@ -423,6 +477,14 @@
         const addonFullEncryptionInput = document.getElementById('addon-full-encryption');
         const addonUsmInput = document.getElementById('addon-usm');
         const addonNotesInput = document.getElementById('addon-notes');
+        const priceAddonNonProdInput = document.getElementById('price-addon-nonprod');
+        const priceAddonProdInput = document.getElementById('price-addon-prod');
+        const totalAddonNonProdCostEl = document.getElementById('total-addon-nonprod-cost');
+        const totalAddonProdCostEl = document.getElementById('total-addon-prod-cost');
+        const totalAddonAmountEl = document.getElementById('total-addon-amount');
+        const summaryAddonCsfleEl = document.getElementById('summary-addon-csfle');
+        const summaryAddonFullEncEl = document.getElementById('summary-addon-full-encryption');
+        const summaryAddonUsmEl = document.getElementById('summary-addon-usm');
         const preparedForInput = document.getElementById('prepared-for');
         const preparedByInput = document.getElementById('prepared-by');
         const CONNECTOR_PACK_SERVICE = 'CP Commercial Connector Pack';
@@ -507,6 +569,10 @@
                     usm: !!addonUsmInput?.checked
                 },
                 addonNotes: addonNotesInput?.value || '',
+                addonPricing: {
+                    npRate: Number(priceAddonNonProdInput?.value || 0),
+                    pRate: Number(priceAddonProdInput?.value || 0)
+                },
                 preparedFor: preparedForInput?.value || '',
                 preparedBy: preparedByInput?.value || ''
             };
@@ -606,7 +672,25 @@
             const totalCpCost = premNpCost + premPCost + cpNpCost + cpPCost;
             if (totalCpAmountEl) totalCpAmountEl.textContent = formatCurrency(totalCpCost);
 
-            if (grandTotalEl) grandTotalEl.textContent = formatCurrency(totalNodeCost + totalCpCost);
+            // CP Add Ons summary & pricing
+            const addonCsfleOn = !!addonCsfleInput?.checked;
+            const addonFullEncOn = !!addonFullEncryptionInput?.checked;
+            const addonUsmOn = !!addonUsmInput?.checked;
+            if (summaryAddonCsfleEl) summaryAddonCsfleEl.textContent = addonCsfleOn ? 'Yes' : 'No';
+            if (summaryAddonFullEncEl) summaryAddonFullEncEl.textContent = addonFullEncOn ? 'Yes' : 'No';
+            if (summaryAddonUsmEl) summaryAddonUsmEl.textContent = addonUsmOn ? 'Yes' : 'No';
+
+            const addonCount = (addonCsfleOn ? 1 : 0) + (addonFullEncOn ? 1 : 0) + (addonUsmOn ? 1 : 0);
+            const addonNpRate = Number(priceAddonNonProdInput?.value || 0);
+            const addonPRate = Number(priceAddonProdInput?.value || 0);
+            const addonNpCost = (Number.isNaN(addonNpRate) ? 0 : addonNpRate) * addonCount;
+            const addonPCost = (Number.isNaN(addonPRate) ? 0 : addonPRate) * addonCount;
+            if (totalAddonNonProdCostEl) totalAddonNonProdCostEl.textContent = formatCurrency(addonNpCost);
+            if (totalAddonProdCostEl) totalAddonProdCostEl.textContent = formatCurrency(addonPCost);
+            const totalAddonCost = addonNpCost + addonPCost;
+            if (totalAddonAmountEl) totalAddonAmountEl.textContent = formatCurrency(totalAddonCost);
+
+            if (grandTotalEl) grandTotalEl.textContent = formatCurrency(totalNodeCost + totalCpCost + totalAddonCost);
 
             if (summaryBody) {
                 services.forEach((service) => {
@@ -672,9 +756,9 @@
                 const label = name || `Cluster ${idx + 1}`;
                 html += `<a href="#sec-cluster-${idx}" class="toc-sub">${label}</a>`;
             });
+            html += '<a href="#sec-summary">Licensed Nodes Summary</a>';
             html += '<a href="#sec-connectors">Connectors</a>';
             html += '<a href="#sec-addons">CP Add Ons</a>';
-            html += '<a href="#sec-summary">Licensed Nodes Summary</a>';
             html += '<a href="#sec-pricing">Pricing</a>';
             tocLinks.innerHTML = html;
         };
@@ -696,6 +780,10 @@
                 addonUsmInput.checked = !!existingState.addons.usm;
             }
             if (existingState.addonNotes !== undefined) addonNotesInput.value = existingState.addonNotes;
+            if (existingState.addonPricing) {
+                priceAddonNonProdInput.value = existingState.addonPricing.npRate ?? 0;
+                priceAddonProdInput.value = existingState.addonPricing.pRate ?? 0;
+            }
             if (existingState.preparedFor !== undefined) preparedForInput.value = existingState.preparedFor;
             if (existingState.preparedBy !== undefined) preparedByInput.value = existingState.preparedBy;
             clustersContainer.innerHTML = '';
@@ -890,6 +978,14 @@
         clusterCountInput.addEventListener('change', renderClusters);
         clusterCountInput.addEventListener('input', renderClusters);
 
+        document.getElementById('clear-cache-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (confirm('This will clear all saved data and reset the estimator. Continue?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            }
+        });
+
         downloadPdfButton.addEventListener('click', () => {
             window.print();
         });
@@ -1026,6 +1122,8 @@
             const ratePremRow = pr;
             pData.push(['Price per CP Commercial Connector Pack', Number(priceCpNonProdInput.value || 0), Number(priceCpProdInput.value || 0)]); pr++;
             const rateCpRow = pr;
+            pData.push(['Price per Add On', Number(priceAddonNonProdInput.value || 0), Number(priceAddonProdInput.value || 0)]); pr++;
+            const rateAddonRow = pr;
             pData.push([]); pr++;
             pData.push([]); pr++;
 
@@ -1054,14 +1152,24 @@
             pData.push(['  CP Pack Cost', { f: `B${cntCpRow}*B${cpPrRow}` }, { f: `B${cntCpRow}*C${cpPrRow}` }]); pr++;
             const cpSubRow = pr;
             pData.push([]); pr++;
+
+            const addonEnabledCount = (addonCsfleInput.checked ? 1 : 0) + (addonFullEncryptionInput.checked ? 1 : 0) + (addonUsmInput.checked ? 1 : 0);
+            pData.push([`CP Add Ons (${addonEnabledCount} enabled)`]); pr++;
+            pData.push(['  Price per Add On', { f: `B${rateAddonRow}` }, { f: `C${rateAddonRow}` }]); pr++;
+            const addonPrRow = pr;
+            pData.push(['  Add On Cost', { f: `${addonEnabledCount}*B${addonPrRow}` }, { f: `${addonEnabledCount}*C${addonPrRow}` }]); pr++;
+            const addonSubRow = pr;
+            pData.push([]); pr++;
             pData.push([]); pr++;
 
             pData.push(['TOTAL NODE COST', { f: `B${nodeSubRow}` }, { f: `C${nodeSubRow}` }]); pr++;
             const tNodeRow = pr;
             pData.push(['TOTAL CONNECTOR COST', { f: `B${premSubRow}+B${cpSubRow}` }, { f: `C${premSubRow}+C${cpSubRow}` }]); pr++;
             const tConnRow = pr;
+            pData.push(['TOTAL ADD ON COST', { f: `B${addonSubRow}` }, { f: `C${addonSubRow}` }]); pr++;
+            const tAddonRow = pr;
             pData.push([]); pr++;
-            pData.push(['GRAND TOTAL', { f: `B${tNodeRow}+C${tNodeRow}+B${tConnRow}+C${tConnRow}` }]); pr++;
+            pData.push(['GRAND TOTAL', { f: `B${tNodeRow}+C${tNodeRow}+B${tConnRow}+C${tConnRow}+B${tAddonRow}+C${tAddonRow}` }]); pr++;
 
             const wsPricing = XLSX.utils.aoa_to_sheet(pData);
             wsPricing['!cols'] = [{ wch: 36 }, { wch: 20 }, { wch: 20 }];
@@ -1174,6 +1282,7 @@
                     let nodeNpRate = 0, nodePRate = 0;
                     let premNpRate = 0, premPRate = 0;
                     let cpNpRate = 0, cpPRate = 0;
+                    let addonNpRateVal = 0, addonPRateVal = 0;
 
                     if (wsInputs) {
                         const pRows = XLSX.utils.sheet_to_json(wsInputs, { header: 1, defval: '' });
@@ -1193,6 +1302,7 @@
                             else if (label === 'Price per Node') { nodeNpRate = Number(pRow[1]) || 0; nodePRate = Number(pRow[2]) || 0; }
                             else if (label.startsWith('Price per Premium')) { premNpRate = Number(pRow[1]) || 0; premPRate = Number(pRow[2]) || 0; }
                             else if (label.startsWith('Price per CP')) { cpNpRate = Number(pRow[1]) || 0; cpPRate = Number(pRow[2]) || 0; }
+                            else if (label === 'Price per Add On') { addonNpRateVal = Number(pRow[1]) || 0; addonPRateVal = Number(pRow[2]) || 0; }
                         });
                     }
 
@@ -1213,6 +1323,8 @@
                     pricePremProdInput.value = premPRate;
                     priceCpNonProdInput.value = cpNpRate;
                     priceCpProdInput.value = cpPRate;
+                    priceAddonNonProdInput.value = addonNpRateVal;
+                    priceAddonProdInput.value = addonPRateVal;
 
                     const uploadState = {
                         count: parsedClusters.length || 1,
@@ -1221,6 +1333,7 @@
                         connectorNotes: parsedConnNotes,
                         addons: { csfle: parsedAddonCsfle, fullEncryption: parsedAddonFullEnc, usm: parsedAddonUsm },
                         addonNotes: parsedAddonNotes,
+                        addonPricing: { npRate: addonNpRateVal, pRate: addonPRateVal },
                         preparedFor: preparedForInput.value,
                         preparedBy: preparedByInput.value
                     };
@@ -1246,10 +1359,12 @@
         connectorOpensourceInput.addEventListener('input', () => { updateSummary(); saveState(); });
         connectorCpPackInput.addEventListener('input', () => { updateSummary(); saveState(); });
         connectorNotesInput.addEventListener('input', saveState);
-        addonCsfleInput.addEventListener('change', saveState);
-        addonFullEncryptionInput.addEventListener('change', saveState);
-        addonUsmInput.addEventListener('change', saveState);
+        addonCsfleInput.addEventListener('change', () => { updateSummary(); saveState(); });
+        addonFullEncryptionInput.addEventListener('change', () => { updateSummary(); saveState(); });
+        addonUsmInput.addEventListener('change', () => { updateSummary(); saveState(); });
         addonNotesInput.addEventListener('input', saveState);
+        priceAddonNonProdInput.addEventListener('input', updateSummary);
+        priceAddonProdInput.addEventListener('input', updateSummary);
         preparedForInput.addEventListener('input', saveState);
         preparedByInput.addEventListener('input', saveState);
 

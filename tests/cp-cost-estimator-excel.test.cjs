@@ -31,6 +31,7 @@ const defaultPricing = {
     nodePricing: { nonProd: 0, prod: 0 },
     premiumPricing: { nonProd: 0, prod: 0 },
     cpPackPricing: { nonProd: 0, prod: 0 },
+    addonPricing: { nonProd: 0, prod: 0 },
 };
 
 /* ════════════════════════════════════════════════════════════════
@@ -39,7 +40,7 @@ const defaultPricing = {
 function buildWorkbook(params) {
     const {
         clusters, services, connectors,
-        nodePricing, premiumPricing, cpPackPricing,
+        nodePricing, premiumPricing, cpPackPricing, addonPricing,
         notes, connectorNotes, addons, addonNotes, preparedFor, preparedBy
     } = params;
 
@@ -148,6 +149,8 @@ function buildWorkbook(params) {
     const ratePremRow = pr;
     pData.push(['Price per CP Commercial Connector Pack', cpPackPricing.nonProd, cpPackPricing.prod]); pr++;
     const rateCpRow = pr;
+    pData.push(['Price per Add On', (addonPricing || {}).nonProd || 0, (addonPricing || {}).prod || 0]); pr++;
+    const rateAddonRow = pr;
     pData.push([]); pr++;
     pData.push([]); pr++;
 
@@ -176,21 +179,31 @@ function buildWorkbook(params) {
     pData.push(['  CP Pack Cost', { f: `B${cntCpRow}*B${cpPrRow}` }, { f: `B${cntCpRow}*C${cpPrRow}` }]); pr++;
     const cpSubRow = pr;
     pData.push([]); pr++;
+
+    const addonEnabledCount = ((addons?.csfle ? 1 : 0) + (addons?.fullEncryption ? 1 : 0) + (addons?.usm ? 1 : 0));
+    pData.push([`CP Add Ons (${addonEnabledCount} enabled)`]); pr++;
+    pData.push(['  Price per Add On', { f: `B${rateAddonRow}` }, { f: `C${rateAddonRow}` }]); pr++;
+    const addonPrRow = pr;
+    pData.push(['  Add On Cost', { f: `${addonEnabledCount}*B${addonPrRow}` }, { f: `${addonEnabledCount}*C${addonPrRow}` }]); pr++;
+    const addonSubRow = pr;
+    pData.push([]); pr++;
     pData.push([]); pr++;
 
     pData.push(['TOTAL NODE COST', { f: `B${nodeSubRow}` }, { f: `C${nodeSubRow}` }]); pr++;
     const tNodeRow = pr;
     pData.push(['TOTAL CONNECTOR COST', { f: `B${premSubRow}+B${cpSubRow}` }, { f: `C${premSubRow}+C${cpSubRow}` }]); pr++;
     const tConnRow = pr;
+    pData.push(['TOTAL ADD ON COST', { f: `B${addonSubRow}` }, { f: `C${addonSubRow}` }]); pr++;
+    const tAddonRow = pr;
     pData.push([]); pr++;
-    pData.push(['GRAND TOTAL', { f: `B${tNodeRow}+C${tNodeRow}+B${tConnRow}+C${tConnRow}` }]); pr++;
+    pData.push(['GRAND TOTAL', { f: `B${tNodeRow}+C${tNodeRow}+B${tConnRow}+C${tConnRow}+B${tAddonRow}+C${tAddonRow}` }]); pr++;
 
     const wsPricing = XLSX.utils.aoa_to_sheet(pData);
     XLSX.utils.book_append_sheet(wb, wsPricing, 'Pricing');
 
     return {
         wb, clusterData,
-        meta: { cntPremRow, cntCpRow, rateNodeRow, ratePremRow, rateCpRow, ncRow, npRow, nodeSubRow, premPrRow, premSubRow, cpPrRow, cpSubRow, tNodeRow, tConnRow }
+        meta: { cntPremRow, cntCpRow, rateNodeRow, ratePremRow, rateCpRow, rateAddonRow, ncRow, npRow, nodeSubRow, premPrRow, premSubRow, cpPrRow, cpSubRow, addonPrRow, addonSubRow, tNodeRow, tConnRow, tAddonRow }
     };
 }
 
@@ -212,7 +225,8 @@ function parseWorkbook(wb, knownServices) {
         addonNotes: '',
         nodePricing: { nonProd: 0, prod: 0 },
         premiumPricing: { nonProd: 0, prod: 0 },
-        cpPackPricing: { nonProd: 0, prod: 0 }
+        cpPackPricing: { nonProd: 0, prod: 0 },
+        addonPricing: { nonProd: 0, prod: 0 }
     };
 
     const wsCfg = wb.Sheets['Configurations'] || wb.Sheets['Cluster Configurations'];
@@ -283,6 +297,7 @@ function parseWorkbook(wb, knownServices) {
             else if (label === 'Price per Node') { result.nodePricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
             else if (label.startsWith('Price per Premium')) { result.premiumPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
             else if (label.startsWith('Price per CP')) { result.cpPackPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
+            else if (label === 'Price per Add On') { result.addonPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
         });
     }
 
@@ -530,11 +545,12 @@ describe('CP Cost Estimator Excel Export', () => {
                 nodePricing: { nonProd: 100, prod: 200 },
                 premiumPricing: { nonProd: 10, prod: 20 },
                 cpPackPricing: { nonProd: 50, prod: 100 },
+                addonPricing: { nonProd: 0, prod: 0 },
                 notes: ''
             });
             const ws = wb.Sheets['Pricing'];
-            const grandRow = meta.tConnRow + 2;
-            assert.strictEqual(getCellFormula(ws, `B${grandRow}`), `B${meta.tNodeRow}+C${meta.tNodeRow}+B${meta.tConnRow}+C${meta.tConnRow}`);
+            const grandRow = meta.tAddonRow + 2;
+            assert.strictEqual(getCellFormula(ws, `B${grandRow}`), `B${meta.tNodeRow}+C${meta.tNodeRow}+B${meta.tConnRow}+C${meta.tConnRow}+B${meta.tAddonRow}+C${meta.tAddonRow}`);
         });
 
         it('dev cluster excluded from node counts', () => {
@@ -758,7 +774,8 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
             [], ['PRICING RATES'],
             ['Price per Node', 0, 0],
             ['Price per Premium Connector', 0, 0],
-            ['Price per CP Commercial Connector Pack', 0, 0]
+            ['Price per CP Commercial Connector Pack', 0, 0],
+            ['Price per Add On', 0, 0]
         ];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(pricingData), 'Pricing');
 
