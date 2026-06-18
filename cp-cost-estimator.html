@@ -183,7 +183,10 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-4 py-2 border">Number of Open Source Connectors</td>
+                                <td class="px-4 py-2 border">
+                                    <div>Number of Open Source Connectors</div>
+                                    <div class="text-xs text-gray-500 italic mt-1">OSS Connectors don't need a license, this is for accounting only</div>
+                                </td>
                                 <td class="px-4 py-2 border">
                                     <input id="connector-opensource" type="number" min="0" value="0" class="w-24 border border-gray-300 rounded px-2 py-1 text-center">
                                 </td>
@@ -191,7 +194,7 @@
                             <tr>
                                 <td class="px-4 py-2 border">
                                     <div>CP Commercial Connector Pack</div>
-                                    <a href="https://confluentinc.atlassian.net/wiki/spaces/PM/pages/3351249960/End+Free+CP+-+Field+Enablement+and+FAQs#Bundle-SKUs" target="_blank" rel="noopener noreferrer" class="text-primary text-xs hover:underline">Connector Pack Guide</a>
+                                    <a href="https://docs.google.com/presentation/d/1UBwN1KYcfc29gszJqF0u7HPYD3GFpdl0wMQJ2z-N3MM/edit?slide=id.g3b1384a0fa2_1_2483#slide=id.g3b1384a0fa2_1_2483" target="_blank" rel="noopener noreferrer" class="text-primary text-xs hover:underline">Connector Pack Guide</a>
                                 </td>
                                 <td class="px-4 py-2 border">
                                     <input id="connector-cp-pack" type="number" min="0" value="0" class="w-24 border border-gray-300 rounded px-2 py-1 text-center">
@@ -397,17 +400,31 @@
                             </table>
                         </div>
 
-                        <h4 class="text-sm font-semibold text-amber-800 mt-4 mb-2">Add On Pricing</h4>
+                        <h4 class="text-sm font-semibold text-amber-800 mt-4 mb-2">Add On Pricing for Encryption</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
                             <div class="bg-white border border-gray-200 rounded p-3">
-                                <label class="block text-sm text-dark mb-1" for="price-addon-nonprod">Add On Cost in Non Production ($)</label>
+                                <label class="block text-sm text-dark mb-1" for="price-addon-nonprod">Encryption Cost in Non Production ($)</label>
                                 <input id="price-addon-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                                <div class="mt-2 text-sm">Total Non Prod Add On Cost: <span id="total-addon-nonprod-cost" class="font-semibold">$0</span></div>
+                                <div class="mt-2 text-sm">Total Non Prod Encryption Cost: <span id="total-addon-nonprod-cost" class="font-semibold">$0</span></div>
                             </div>
                             <div class="bg-white border border-gray-200 rounded p-3">
-                                <label class="block text-sm text-dark mb-1" for="price-addon-prod">Add On Cost in Production ($)</label>
+                                <label class="block text-sm text-dark mb-1" for="price-addon-prod">Encryption Cost in Production ($)</label>
                                 <input id="price-addon-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
-                                <div class="mt-2 text-sm">Total Prod Add On Cost: <span id="total-addon-prod-cost" class="font-semibold">$0</span></div>
+                                <div class="mt-2 text-sm">Total Prod Encryption Cost: <span id="total-addon-prod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                        </div>
+
+                        <h4 class="text-sm font-semibold text-amber-800 mt-4 mb-2">Add On Pricing for USM</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
+                            <div class="bg-white border border-gray-200 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-usm-nonprod">USM Cost in Non Production ($)</label>
+                                <input id="price-usm-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Non Prod USM Cost: <span id="total-usm-nonprod-cost" class="font-semibold">$0</span></div>
+                            </div>
+                            <div class="bg-white border border-gray-200 rounded p-3">
+                                <label class="block text-sm text-dark mb-1" for="price-usm-prod">USM Cost in Production ($)</label>
+                                <input id="price-usm-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
+                                <div class="mt-2 text-sm">Total Prod USM Cost: <span id="total-usm-prod-cost" class="font-semibold">$0</span></div>
                             </div>
                         </div>
                     </div>
@@ -488,6 +505,10 @@
         const priceAddonProdInput = document.getElementById('price-addon-prod');
         const totalAddonNonProdCostEl = document.getElementById('total-addon-nonprod-cost');
         const totalAddonProdCostEl = document.getElementById('total-addon-prod-cost');
+        const priceUsmNonProdInput = document.getElementById('price-usm-nonprod');
+        const priceUsmProdInput = document.getElementById('price-usm-prod');
+        const totalUsmNonProdCostEl = document.getElementById('total-usm-nonprod-cost');
+        const totalUsmProdCostEl = document.getElementById('total-usm-prod-cost');
         const totalAddonAmountEl = document.getElementById('total-addon-amount');
         const summaryAddonCsfleEl = document.getElementById('summary-addon-csfle');
         const summaryAddonFullEncEl = document.getElementById('summary-addon-full-encryption');
@@ -515,8 +536,8 @@
 
         const defaultClusters = [
             { name: 'prod', env: 'prod' },
-            { name: 'dev', env: 'dev' },
-            { name: 'uat', env: 'nonprod' }
+            { name: 'uat', env: 'nonprod' },
+            { name: 'dev', env: 'dev' }
         ];
 
         const loadState = () => {
@@ -579,6 +600,10 @@
                 addonPricing: {
                     npRate: Number(priceAddonNonProdInput?.value || 0),
                     pRate: Number(priceAddonProdInput?.value || 0)
+                },
+                usmPricing: {
+                    npRate: Number(priceUsmNonProdInput?.value || 0),
+                    pRate: Number(priceUsmProdInput?.value || 0)
                 },
                 preparedFor: preparedForInput?.value || '',
                 preparedBy: preparedByInput?.value || ''
@@ -687,14 +712,23 @@
             if (summaryAddonFullEncEl) summaryAddonFullEncEl.textContent = addonFullEncOn ? 'Yes' : 'No';
             if (summaryAddonUsmEl) summaryAddonUsmEl.textContent = addonUsmOn ? 'Yes' : 'No';
 
-            const addonCount = (addonCsfleOn ? 1 : 0) + (addonFullEncOn ? 1 : 0) + (addonUsmOn ? 1 : 0);
-            const addonNpRate = Number(priceAddonNonProdInput?.value || 0);
-            const addonPRate = Number(priceAddonProdInput?.value || 0);
-            const addonNpCost = (Number.isNaN(addonNpRate) ? 0 : addonNpRate) * addonCount;
-            const addonPCost = (Number.isNaN(addonPRate) ? 0 : addonPRate) * addonCount;
-            if (totalAddonNonProdCostEl) totalAddonNonProdCostEl.textContent = formatCurrency(addonNpCost);
-            if (totalAddonProdCostEl) totalAddonProdCostEl.textContent = formatCurrency(addonPCost);
-            const totalAddonCost = addonNpCost + addonPCost;
+            const encCount = (addonCsfleOn ? 1 : 0) + (addonFullEncOn ? 1 : 0);
+            const encNpRate = Number(priceAddonNonProdInput?.value || 0);
+            const encPRate = Number(priceAddonProdInput?.value || 0);
+            const encNpCost = (Number.isNaN(encNpRate) ? 0 : encNpRate) * encCount;
+            const encPCost = (Number.isNaN(encPRate) ? 0 : encPRate) * encCount;
+            if (totalAddonNonProdCostEl) totalAddonNonProdCostEl.textContent = formatCurrency(encNpCost);
+            if (totalAddonProdCostEl) totalAddonProdCostEl.textContent = formatCurrency(encPCost);
+
+            const usmCount = addonUsmOn ? 1 : 0;
+            const usmNpRate = Number(priceUsmNonProdInput?.value || 0);
+            const usmPRate = Number(priceUsmProdInput?.value || 0);
+            const usmNpCost = (Number.isNaN(usmNpRate) ? 0 : usmNpRate) * usmCount;
+            const usmPCost = (Number.isNaN(usmPRate) ? 0 : usmPRate) * usmCount;
+            if (totalUsmNonProdCostEl) totalUsmNonProdCostEl.textContent = formatCurrency(usmNpCost);
+            if (totalUsmProdCostEl) totalUsmProdCostEl.textContent = formatCurrency(usmPCost);
+
+            const totalAddonCost = encNpCost + encPCost + usmNpCost + usmPCost;
             if (totalAddonAmountEl) totalAddonAmountEl.textContent = formatCurrency(totalAddonCost);
 
             if (grandTotalEl) grandTotalEl.textContent = formatCurrency(totalNodeCost + totalCpCost + totalAddonCost);
@@ -790,6 +824,10 @@
             if (existingState.addonPricing) {
                 priceAddonNonProdInput.value = existingState.addonPricing.npRate ?? 0;
                 priceAddonProdInput.value = existingState.addonPricing.pRate ?? 0;
+            }
+            if (existingState.usmPricing) {
+                priceUsmNonProdInput.value = existingState.usmPricing.npRate ?? 0;
+                priceUsmProdInput.value = existingState.usmPricing.pRate ?? 0;
             }
             if (existingState.preparedFor !== undefined) preparedForInput.value = existingState.preparedFor;
             if (existingState.preparedBy !== undefined) preparedByInput.value = existingState.preparedBy;
@@ -1129,8 +1167,10 @@
             const ratePremRow = pr;
             pData.push(['Price per CP Commercial Connector Pack', Number(priceCpNonProdInput.value || 0), Number(priceCpProdInput.value || 0)]); pr++;
             const rateCpRow = pr;
-            pData.push(['Price per Add On', Number(priceAddonNonProdInput.value || 0), Number(priceAddonProdInput.value || 0)]); pr++;
-            const rateAddonRow = pr;
+            pData.push(['Price per Encryption Add On', Number(priceAddonNonProdInput.value || 0), Number(priceAddonProdInput.value || 0)]); pr++;
+            const rateEncRow = pr;
+            pData.push(['Price per USM Add On', Number(priceUsmNonProdInput.value || 0), Number(priceUsmProdInput.value || 0)]); pr++;
+            const rateUsmRow = pr;
             pData.push([]); pr++;
             pData.push([]); pr++;
 
@@ -1160,12 +1200,20 @@
             const cpSubRow = pr;
             pData.push([]); pr++;
 
-            const addonEnabledCount = (addonCsfleInput.checked ? 1 : 0) + (addonFullEncryptionInput.checked ? 1 : 0) + (addonUsmInput.checked ? 1 : 0);
-            pData.push([`CP Add Ons (${addonEnabledCount} enabled)`]); pr++;
-            pData.push(['  Price per Add On', { f: `B${rateAddonRow}` }, { f: `C${rateAddonRow}` }]); pr++;
-            const addonPrRow = pr;
-            pData.push(['  Add On Cost', { f: `${addonEnabledCount}*B${addonPrRow}` }, { f: `${addonEnabledCount}*C${addonPrRow}` }]); pr++;
-            const addonSubRow = pr;
+            const encCount = (addonCsfleInput.checked ? 1 : 0) + (addonFullEncryptionInput.checked ? 1 : 0);
+            pData.push([`Encryption Add Ons (${encCount} enabled)`]); pr++;
+            pData.push(['  Price per Encryption Add On', { f: `B${rateEncRow}` }, { f: `C${rateEncRow}` }]); pr++;
+            const encPrRow = pr;
+            pData.push(['  Encryption Cost', { f: `${encCount}*B${encPrRow}` }, { f: `${encCount}*C${encPrRow}` }]); pr++;
+            const encSubRow = pr;
+            pData.push([]); pr++;
+
+            const usmEnabled = addonUsmInput.checked ? 1 : 0;
+            pData.push([`USM Add On (${usmEnabled ? 'enabled' : 'disabled'})`]); pr++;
+            pData.push(['  Price per USM Add On', { f: `B${rateUsmRow}` }, { f: `C${rateUsmRow}` }]); pr++;
+            const usmPrRow = pr;
+            pData.push(['  USM Cost', { f: `${usmEnabled}*B${usmPrRow}` }, { f: `${usmEnabled}*C${usmPrRow}` }]); pr++;
+            const usmSubRow = pr;
             pData.push([]); pr++;
             pData.push([]); pr++;
 
@@ -1173,7 +1221,7 @@
             const tNodeRow = pr;
             pData.push(['TOTAL CONNECTOR COST', { f: `B${premSubRow}+B${cpSubRow}` }, { f: `C${premSubRow}+C${cpSubRow}` }]); pr++;
             const tConnRow = pr;
-            pData.push(['TOTAL ADD ON COST', { f: `B${addonSubRow}` }, { f: `C${addonSubRow}` }]); pr++;
+            pData.push(['TOTAL ADD ON COST', { f: `B${encSubRow}+B${usmSubRow}` }, { f: `C${encSubRow}+C${usmSubRow}` }]); pr++;
             const tAddonRow = pr;
             pData.push([]); pr++;
             pData.push(['GRAND TOTAL', { f: `B${tNodeRow}+C${tNodeRow}+B${tConnRow}+C${tConnRow}+B${tAddonRow}+C${tAddonRow}` }]); pr++;
@@ -1290,6 +1338,7 @@
                     let premNpRate = 0, premPRate = 0;
                     let cpNpRate = 0, cpPRate = 0;
                     let addonNpRateVal = 0, addonPRateVal = 0;
+                    let usmNpRateVal = 0, usmPRateVal = 0;
 
                     if (wsInputs) {
                         const pRows = XLSX.utils.sheet_to_json(wsInputs, { header: 1, defval: '' });
@@ -1309,7 +1358,8 @@
                             else if (label === 'Price per Node') { nodeNpRate = Number(pRow[1]) || 0; nodePRate = Number(pRow[2]) || 0; }
                             else if (label.startsWith('Price per Premium')) { premNpRate = Number(pRow[1]) || 0; premPRate = Number(pRow[2]) || 0; }
                             else if (label.startsWith('Price per CP')) { cpNpRate = Number(pRow[1]) || 0; cpPRate = Number(pRow[2]) || 0; }
-                            else if (label === 'Price per Add On') { addonNpRateVal = Number(pRow[1]) || 0; addonPRateVal = Number(pRow[2]) || 0; }
+                            else if (label === 'Price per Encryption Add On') { addonNpRateVal = Number(pRow[1]) || 0; addonPRateVal = Number(pRow[2]) || 0; }
+                            else if (label === 'Price per USM Add On') { usmNpRateVal = Number(pRow[1]) || 0; usmPRateVal = Number(pRow[2]) || 0; }
                         });
                     }
 
@@ -1332,6 +1382,8 @@
                     priceCpProdInput.value = cpPRate;
                     priceAddonNonProdInput.value = addonNpRateVal;
                     priceAddonProdInput.value = addonPRateVal;
+                    priceUsmNonProdInput.value = usmNpRateVal;
+                    priceUsmProdInput.value = usmPRateVal;
 
                     const uploadState = {
                         count: parsedClusters.length || 1,
@@ -1341,6 +1393,7 @@
                         addons: { csfle: parsedAddonCsfle, fullEncryption: parsedAddonFullEnc, usm: parsedAddonUsm },
                         addonNotes: parsedAddonNotes,
                         addonPricing: { npRate: addonNpRateVal, pRate: addonPRateVal },
+                        usmPricing: { npRate: usmNpRateVal, pRate: usmPRateVal },
                         preparedFor: preparedForInput.value,
                         preparedBy: preparedByInput.value
                     };
@@ -1372,6 +1425,8 @@
         addonNotesInput.addEventListener('input', saveState);
         priceAddonNonProdInput.addEventListener('input', updateSummary);
         priceAddonProdInput.addEventListener('input', updateSummary);
+        priceUsmNonProdInput.addEventListener('input', updateSummary);
+        priceUsmProdInput.addEventListener('input', updateSummary);
         preparedForInput.addEventListener('input', saveState);
         preparedByInput.addEventListener('input', saveState);
 

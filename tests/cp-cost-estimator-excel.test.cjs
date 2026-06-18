@@ -32,6 +32,7 @@ const defaultPricing = {
     premiumPricing: { nonProd: 0, prod: 0 },
     cpPackPricing: { nonProd: 0, prod: 0 },
     addonPricing: { nonProd: 0, prod: 0 },
+    usmPricing: { nonProd: 0, prod: 0 },
 };
 
 /* ════════════════════════════════════════════════════════════════
@@ -40,7 +41,7 @@ const defaultPricing = {
 function buildWorkbook(params) {
     const {
         clusters, services, connectors,
-        nodePricing, premiumPricing, cpPackPricing, addonPricing,
+        nodePricing, premiumPricing, cpPackPricing, addonPricing, usmPricing,
         notes, connectorNotes, addons, addonNotes, preparedFor, preparedBy
     } = params;
 
@@ -149,8 +150,10 @@ function buildWorkbook(params) {
     const ratePremRow = pr;
     pData.push(['Price per CP Commercial Connector Pack', cpPackPricing.nonProd, cpPackPricing.prod]); pr++;
     const rateCpRow = pr;
-    pData.push(['Price per Add On', (addonPricing || {}).nonProd || 0, (addonPricing || {}).prod || 0]); pr++;
-    const rateAddonRow = pr;
+    pData.push(['Price per Encryption Add On', (addonPricing || {}).nonProd || 0, (addonPricing || {}).prod || 0]); pr++;
+    const rateEncRow = pr;
+    pData.push(['Price per USM Add On', (usmPricing || {}).nonProd || 0, (usmPricing || {}).prod || 0]); pr++;
+    const rateUsmRow = pr;
     pData.push([]); pr++;
     pData.push([]); pr++;
 
@@ -180,12 +183,20 @@ function buildWorkbook(params) {
     const cpSubRow = pr;
     pData.push([]); pr++;
 
-    const addonEnabledCount = ((addons?.csfle ? 1 : 0) + (addons?.fullEncryption ? 1 : 0) + (addons?.usm ? 1 : 0));
-    pData.push([`CP Add Ons (${addonEnabledCount} enabled)`]); pr++;
-    pData.push(['  Price per Add On', { f: `B${rateAddonRow}` }, { f: `C${rateAddonRow}` }]); pr++;
-    const addonPrRow = pr;
-    pData.push(['  Add On Cost', { f: `${addonEnabledCount}*B${addonPrRow}` }, { f: `${addonEnabledCount}*C${addonPrRow}` }]); pr++;
-    const addonSubRow = pr;
+    const encCount = ((addons?.csfle ? 1 : 0) + (addons?.fullEncryption ? 1 : 0));
+    pData.push([`Encryption Add Ons (${encCount} enabled)`]); pr++;
+    pData.push(['  Price per Encryption Add On', { f: `B${rateEncRow}` }, { f: `C${rateEncRow}` }]); pr++;
+    const encPrRow = pr;
+    pData.push(['  Encryption Cost', { f: `${encCount}*B${encPrRow}` }, { f: `${encCount}*C${encPrRow}` }]); pr++;
+    const encSubRow = pr;
+    pData.push([]); pr++;
+
+    const usmEnabled = addons?.usm ? 1 : 0;
+    pData.push([`USM Add On (${usmEnabled ? 'enabled' : 'disabled'})`]); pr++;
+    pData.push(['  Price per USM Add On', { f: `B${rateUsmRow}` }, { f: `C${rateUsmRow}` }]); pr++;
+    const usmPrRow = pr;
+    pData.push(['  USM Cost', { f: `${usmEnabled}*B${usmPrRow}` }, { f: `${usmEnabled}*C${usmPrRow}` }]); pr++;
+    const usmSubRow = pr;
     pData.push([]); pr++;
     pData.push([]); pr++;
 
@@ -193,7 +204,7 @@ function buildWorkbook(params) {
     const tNodeRow = pr;
     pData.push(['TOTAL CONNECTOR COST', { f: `B${premSubRow}+B${cpSubRow}` }, { f: `C${premSubRow}+C${cpSubRow}` }]); pr++;
     const tConnRow = pr;
-    pData.push(['TOTAL ADD ON COST', { f: `B${addonSubRow}` }, { f: `C${addonSubRow}` }]); pr++;
+    pData.push(['TOTAL ADD ON COST', { f: `B${encSubRow}+B${usmSubRow}` }, { f: `C${encSubRow}+C${usmSubRow}` }]); pr++;
     const tAddonRow = pr;
     pData.push([]); pr++;
     pData.push(['GRAND TOTAL', { f: `B${tNodeRow}+C${tNodeRow}+B${tConnRow}+C${tConnRow}+B${tAddonRow}+C${tAddonRow}` }]); pr++;
@@ -203,7 +214,7 @@ function buildWorkbook(params) {
 
     return {
         wb, clusterData,
-        meta: { cntPremRow, cntCpRow, rateNodeRow, ratePremRow, rateCpRow, rateAddonRow, ncRow, npRow, nodeSubRow, premPrRow, premSubRow, cpPrRow, cpSubRow, addonPrRow, addonSubRow, tNodeRow, tConnRow, tAddonRow }
+        meta: { cntPremRow, cntCpRow, rateNodeRow, ratePremRow, rateCpRow, rateEncRow, rateUsmRow, ncRow, npRow, nodeSubRow, premPrRow, premSubRow, cpPrRow, cpSubRow, encPrRow, encSubRow, usmPrRow, usmSubRow, tNodeRow, tConnRow, tAddonRow }
     };
 }
 
@@ -226,7 +237,8 @@ function parseWorkbook(wb, knownServices) {
         nodePricing: { nonProd: 0, prod: 0 },
         premiumPricing: { nonProd: 0, prod: 0 },
         cpPackPricing: { nonProd: 0, prod: 0 },
-        addonPricing: { nonProd: 0, prod: 0 }
+        addonPricing: { nonProd: 0, prod: 0 },
+        usmPricing: { nonProd: 0, prod: 0 }
     };
 
     const wsCfg = wb.Sheets['Configurations'] || wb.Sheets['Cluster Configurations'];
@@ -297,7 +309,8 @@ function parseWorkbook(wb, knownServices) {
             else if (label === 'Price per Node') { result.nodePricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
             else if (label.startsWith('Price per Premium')) { result.premiumPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
             else if (label.startsWith('Price per CP')) { result.cpPackPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
-            else if (label === 'Price per Add On') { result.addonPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
+            else if (label === 'Price per Encryption Add On') { result.addonPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
+            else if (label === 'Price per USM Add On') { result.usmPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
         });
     }
 
@@ -775,7 +788,8 @@ describe('CP Cost Estimator Excel Upload (Round-trip)', () => {
             ['Price per Node', 0, 0],
             ['Price per Premium Connector', 0, 0],
             ['Price per CP Commercial Connector Pack', 0, 0],
-            ['Price per Add On', 0, 0]
+            ['Price per Encryption Add On', 0, 0],
+            ['Price per USM Add On', 0, 0]
         ];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(pricingData), 'Pricing');
 
