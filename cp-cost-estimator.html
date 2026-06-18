@@ -189,6 +189,53 @@
                 </div>
             </div>
 
+            <!-- CP Add Ons -->
+            <div id="sec-addons" class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-6 scroll-mt-4">
+                <h2 class="text-lg font-semibold text-dark mb-3">CP Add Ons</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border border-gray-200">
+                        <thead class="bg-gray-50 text-dark">
+                            <tr>
+                                <th class="px-4 py-2 border">Add On</th>
+                                <th class="px-4 py-2 border">Enabled</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-4 py-2 border">
+                                    <div>CSFLE Add-on</div>
+                                    <a href="https://docs.google.com/presentation/d/1UBwN1KYcfc29gszJqF0u7HPYD3GFpdl0wMQJ2z-N3MM/edit?slide=id.g3b1384a0fa2_1_2506#slide=id.g3b1384a0fa2_1_2506" target="_blank" rel="noopener noreferrer" class="text-primary text-xs hover:underline">Encryption Pricing Guide</a>
+                                </td>
+                                <td class="px-4 py-2 border text-center">
+                                    <input id="addon-csfle" type="checkbox" class="addon-toggle">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 border">
+                                    <div>Full Encryption Add-on (CSFLE + Full payload)</div>
+                                    <a href="https://docs.google.com/presentation/d/1UBwN1KYcfc29gszJqF0u7HPYD3GFpdl0wMQJ2z-N3MM/edit?slide=id.g3b1384a0fa2_1_2506#slide=id.g3b1384a0fa2_1_2506" target="_blank" rel="noopener noreferrer" class="text-primary text-xs hover:underline">Encryption Pricing Guide</a>
+                                </td>
+                                <td class="px-4 py-2 border text-center">
+                                    <input id="addon-full-encryption" type="checkbox" class="addon-toggle">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-2 border">
+                                    <div>USM (Unified Stream Manager)</div>
+                                </td>
+                                <td class="px-4 py-2 border text-center">
+                                    <input id="addon-usm" type="checkbox" class="addon-toggle">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <label class="block text-sm text-dark mb-1 font-semibold" for="addon-notes">Add On Notes</label>
+                    <textarea id="addon-notes" class="w-full border border-gray-300 rounded px-3 py-2 text-sm min-h-[80px]" placeholder="Add any notes about add-ons here..."></textarea>
+                </div>
+            </div>
+
             <div id="sec-summary" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 scroll-mt-4">
                 <h2 class="text-lg font-semibold text-dark mb-2">Licensed Nodes Summary</h2>
                 <div class="overflow-x-auto">
@@ -372,6 +419,10 @@
         const connectorOpensourceInput = document.getElementById('connector-opensource');
         const connectorCpPackInput = document.getElementById('connector-cp-pack');
         const connectorNotesInput = document.getElementById('connector-notes');
+        const addonCsfleInput = document.getElementById('addon-csfle');
+        const addonFullEncryptionInput = document.getElementById('addon-full-encryption');
+        const addonUsmInput = document.getElementById('addon-usm');
+        const addonNotesInput = document.getElementById('addon-notes');
         const preparedForInput = document.getElementById('prepared-for');
         const preparedByInput = document.getElementById('prepared-by');
         const CONNECTOR_PACK_SERVICE = 'CP Commercial Connector Pack';
@@ -390,10 +441,7 @@
             { name: 'Control Center', nonProd: 1, prod: 1 },
             { name: 'Confluent Operator', nonProd: 1, prod: 1 },
             { name: 'CP Flink Nodes', nonProd: 3, prod: 3 },
-            { name: 'CP Flink Nodes in 2 DC', nonProd: 6, prod: 6 },
-            { name: 'CSFLE Add-on', nonProd: 0, prod: 0, link: { url: 'https://docs.google.com/presentation/d/1UBwN1KYcfc29gszJqF0u7HPYD3GFpdl0wMQJ2z-N3MM/edit?slide=id.g3b1384a0fa2_1_2506#slide=id.g3b1384a0fa2_1_2506', label: 'Encryption Pricing Guide' } },
-            { name: 'Full Encryption Add-on', nonProd: 0, prod: 0, link: { url: 'https://docs.google.com/presentation/d/1UBwN1KYcfc29gszJqF0u7HPYD3GFpdl0wMQJ2z-N3MM/edit?slide=id.g3b1384a0fa2_1_2506#slide=id.g3b1384a0fa2_1_2506', label: 'Encryption Pricing Guide' } },
-            { name: 'CSFLE + Full Payload', nonProd: 0, prod: 0 }
+            { name: 'CP Flink Nodes in 2 DC', nonProd: 6, prod: 6 }
         ];
 
         const defaultClusters = [
@@ -453,6 +501,12 @@
                     cpPack: Number(connectorCpPackInput?.value || 0)
                 },
                 connectorNotes: connectorNotesInput?.value || '',
+                addons: {
+                    csfle: !!addonCsfleInput?.checked,
+                    fullEncryption: !!addonFullEncryptionInput?.checked,
+                    usm: !!addonUsmInput?.checked
+                },
+                addonNotes: addonNotesInput?.value || '',
                 preparedFor: preparedForInput?.value || '',
                 preparedBy: preparedByInput?.value || ''
             };
@@ -619,6 +673,7 @@
                 html += `<a href="#sec-cluster-${idx}" class="toc-sub">${label}</a>`;
             });
             html += '<a href="#sec-connectors">Connectors</a>';
+            html += '<a href="#sec-addons">CP Add Ons</a>';
             html += '<a href="#sec-summary">Licensed Nodes Summary</a>';
             html += '<a href="#sec-pricing">Pricing</a>';
             tocLinks.innerHTML = html;
@@ -635,6 +690,12 @@
                 connectorCpPackInput.value = existingState.connectors.cpPack ?? 0;
             }
             if (existingState.connectorNotes !== undefined) connectorNotesInput.value = existingState.connectorNotes;
+            if (existingState.addons) {
+                addonCsfleInput.checked = !!existingState.addons.csfle;
+                addonFullEncryptionInput.checked = !!existingState.addons.fullEncryption;
+                addonUsmInput.checked = !!existingState.addons.usm;
+            }
+            if (existingState.addonNotes !== undefined) addonNotesInput.value = existingState.addonNotes;
             if (existingState.preparedFor !== undefined) preparedForInput.value = existingState.preparedFor;
             if (existingState.preparedBy !== undefined) preparedByInput.value = existingState.preparedBy;
             clustersContainer.innerHTML = '';
@@ -951,6 +1012,13 @@
             const cntCpRow = pr;
             if (connNotes) { pData.push(['Connector Notes:', connNotes]); pr++; }
             pData.push([]); pr++;
+            pData.push(['CP ADD ONS']); pr++;
+            pData.push(['CSFLE Add-on', addonCsfleInput.checked ? 'Yes' : 'No']); pr++;
+            pData.push(['Full Encryption Add-on (CSFLE + Full payload)', addonFullEncryptionInput.checked ? 'Yes' : 'No']); pr++;
+            pData.push(['USM (Unified Stream Manager)', addonUsmInput.checked ? 'Yes' : 'No']); pr++;
+            const addonNotes = addonNotesInput.value || '';
+            if (addonNotes) { pData.push(['Add On Notes:', addonNotes]); pr++; }
+            pData.push([]); pr++;
             pData.push(['PRICING RATES', 'Non Production ($)', 'Production ($)']); pr++;
             pData.push(['Price per Node', Number(priceNonProdInput.value || 0), Number(priceProdInput.value || 0)]); pr++;
             const rateNodeRow = pr;
@@ -1102,6 +1170,7 @@
                     const wsInputs = wb.Sheets['Pricing'] || wb.Sheets['Connectors & Pricing'];
                     let connPremium = 0, connOpenSource = 0, connCpPack = 0;
                     let parsedConnNotes = '';
+                    let parsedAddonCsfle = false, parsedAddonFullEnc = false, parsedAddonUsm = false, parsedAddonNotes = '';
                     let nodeNpRate = 0, nodePRate = 0;
                     let premNpRate = 0, premPRate = 0;
                     let cpNpRate = 0, cpPRate = 0;
@@ -1117,6 +1186,10 @@
                             else if (label.startsWith('Number of Open Source')) connOpenSource = Number(pRow[1]) || 0;
                             else if (label.startsWith('CP Commercial Connector Pack') || label === 'CP Connector Pack') connCpPack = Number(pRow[1]) || 0;
                             else if (label === 'Connector Notes:') parsedConnNotes = String(pRow[1] || '').trim();
+                            else if (label === 'CSFLE Add-on') parsedAddonCsfle = String(pRow[1] || '').trim() === 'Yes';
+                            else if (label.startsWith('Full Encryption Add-on')) parsedAddonFullEnc = String(pRow[1] || '').trim() === 'Yes';
+                            else if (label.startsWith('USM')) parsedAddonUsm = String(pRow[1] || '').trim() === 'Yes';
+                            else if (label === 'Add On Notes:') parsedAddonNotes = String(pRow[1] || '').trim();
                             else if (label === 'Price per Node') { nodeNpRate = Number(pRow[1]) || 0; nodePRate = Number(pRow[2]) || 0; }
                             else if (label.startsWith('Price per Premium')) { premNpRate = Number(pRow[1]) || 0; premPRate = Number(pRow[2]) || 0; }
                             else if (label.startsWith('Price per CP')) { cpNpRate = Number(pRow[1]) || 0; cpPRate = Number(pRow[2]) || 0; }
@@ -1130,6 +1203,10 @@
                     connectorOpensourceInput.value = connOpenSource;
                     connectorCpPackInput.value = connCpPack;
                     connectorNotesInput.value = parsedConnNotes;
+                    addonCsfleInput.checked = parsedAddonCsfle;
+                    addonFullEncryptionInput.checked = parsedAddonFullEnc;
+                    addonUsmInput.checked = parsedAddonUsm;
+                    addonNotesInput.value = parsedAddonNotes;
                     priceNonProdInput.value = nodeNpRate;
                     priceProdInput.value = nodePRate;
                     pricePremNonProdInput.value = premNpRate;
@@ -1142,6 +1219,8 @@
                         clusters: parsedClusters,
                         connectors: { premium: connPremium, openSource: connOpenSource, cpPack: connCpPack },
                         connectorNotes: parsedConnNotes,
+                        addons: { csfle: parsedAddonCsfle, fullEncryption: parsedAddonFullEnc, usm: parsedAddonUsm },
+                        addonNotes: parsedAddonNotes,
                         preparedFor: preparedForInput.value,
                         preparedBy: preparedByInput.value
                     };
@@ -1167,6 +1246,10 @@
         connectorOpensourceInput.addEventListener('input', () => { updateSummary(); saveState(); });
         connectorCpPackInput.addEventListener('input', () => { updateSummary(); saveState(); });
         connectorNotesInput.addEventListener('input', saveState);
+        addonCsfleInput.addEventListener('change', saveState);
+        addonFullEncryptionInput.addEventListener('change', saveState);
+        addonUsmInput.addEventListener('change', saveState);
+        addonNotesInput.addEventListener('input', saveState);
         preparedForInput.addEventListener('input', saveState);
         preparedByInput.addEventListener('input', saveState);
 

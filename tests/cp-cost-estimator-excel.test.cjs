@@ -23,9 +23,6 @@ const defaultServices = [
     { name: 'Confluent Operator', nonProd: 1, prod: 1 },
     { name: 'CP Flink Nodes', nonProd: 3, prod: 3 },
     { name: 'CP Flink Nodes in 2 DC', nonProd: 6, prod: 6 },
-    { name: 'CSFLE Add-on', nonProd: 0, prod: 0 },
-    { name: 'Full Encryption Add-on', nonProd: 0, prod: 0 },
-    { name: 'CSFLE + Full Payload', nonProd: 0, prod: 0 },
 ];
 
 const licensedServices = defaultServices.filter(s => !s.free);
@@ -43,7 +40,7 @@ function buildWorkbook(params) {
     const {
         clusters, services, connectors,
         nodePricing, premiumPricing, cpPackPricing,
-        notes, connectorNotes, preparedFor, preparedBy
+        notes, connectorNotes, addons, addonNotes, preparedFor, preparedBy
     } = params;
 
     const wb = XLSX.utils.book_new();
@@ -138,6 +135,12 @@ function buildWorkbook(params) {
     const cntCpRow = pr;
     if (connectorNotes) { pData.push(['Connector Notes:', connectorNotes]); pr++; }
     pData.push([]); pr++;
+    pData.push(['CP ADD ONS']); pr++;
+    pData.push(['CSFLE Add-on', addons?.csfle ? 'Yes' : 'No']); pr++;
+    pData.push(['Full Encryption Add-on (CSFLE + Full payload)', addons?.fullEncryption ? 'Yes' : 'No']); pr++;
+    pData.push(['USM (Unified Stream Manager)', addons?.usm ? 'Yes' : 'No']); pr++;
+    if (addonNotes) { pData.push(['Add On Notes:', addonNotes]); pr++; }
+    pData.push([]); pr++;
     pData.push(['PRICING RATES', 'Non Production ($)', 'Production ($)']); pr++;
     pData.push(['Price per Node', nodePricing.nonProd, nodePricing.prod]); pr++;
     const rateNodeRow = pr;
@@ -205,6 +208,8 @@ function parseWorkbook(wb, knownServices) {
         clusters: [],
         connectors: { premium: 0, openSource: 0, cpPack: 0 },
         connectorNotes: '',
+        addons: { csfle: false, fullEncryption: false, usm: false },
+        addonNotes: '',
         nodePricing: { nonProd: 0, prod: 0 },
         premiumPricing: { nonProd: 0, prod: 0 },
         cpPackPricing: { nonProd: 0, prod: 0 }
@@ -271,6 +276,10 @@ function parseWorkbook(wb, knownServices) {
             else if (label.startsWith('Number of Open Source')) result.connectors.openSource = Number(pRow[1]) || 0;
             else if (label.startsWith('CP Commercial Connector Pack') || label === 'CP Connector Pack') result.connectors.cpPack = Number(pRow[1]) || 0;
             else if (label === 'Connector Notes:') result.connectorNotes = String(pRow[1] || '').trim();
+            else if (label === 'CSFLE Add-on') result.addons.csfle = String(pRow[1] || '').trim() === 'Yes';
+            else if (label.startsWith('Full Encryption Add-on')) result.addons.fullEncryption = String(pRow[1] || '').trim() === 'Yes';
+            else if (label.startsWith('USM')) result.addons.usm = String(pRow[1] || '').trim() === 'Yes';
+            else if (label === 'Add On Notes:') result.addonNotes = String(pRow[1] || '').trim();
             else if (label === 'Price per Node') { result.nodePricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
             else if (label.startsWith('Price per Premium')) { result.premiumPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
             else if (label.startsWith('Price per CP')) { result.cpPackPricing = { nonProd: Number(pRow[1]) || 0, prod: Number(pRow[2]) || 0 }; }
