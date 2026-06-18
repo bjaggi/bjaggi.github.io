@@ -255,54 +255,59 @@
 
             <!-- Pricing -->
             <div id="sec-pricing" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4 scroll-mt-4">
-                <h2 class="text-lg font-semibold text-dark mb-2">Pricing</h2>
+                <h2 class="text-lg font-semibold text-dark mb-4">Pricing</h2>
 
-                <!-- Nodes -->
-                <div class="mb-2">
-                    <button id="toggle-nodes" type="button" onclick="document.getElementById('nodes-detail').classList.toggle('hidden'); document.getElementById('nodes-chevron').classList.toggle('-rotate-90')" class="flex items-center gap-2 text-md font-semibold text-dark mt-2 mb-2 cursor-pointer hover:text-primary transition-colors">
+                <!-- 1. Nodes -->
+                <div class="bg-white border-l-4 border-l-blue-500 border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
+                    <button id="toggle-nodes" type="button" onclick="document.getElementById('nodes-detail').classList.toggle('hidden'); document.getElementById('nodes-chevron').classList.toggle('-rotate-90')" class="flex items-center gap-2 text-md font-bold text-blue-700 mb-2 cursor-pointer hover:text-blue-900 transition-colors">
                         <svg id="nodes-chevron" class="w-4 h-4 transform transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
-                        Nodes
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+                            Nodes
+                        </span>
                     </button>
                     <div id="nodes-detail">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
-                            <div class="bg-white border border-gray-100 rounded p-3">
-                                <div class="font-semibold">Non Production</div>
-                                <div id="summary-nonprod" class="text-xl">0</div>
+                            <div class="bg-blue-50 border border-blue-100 rounded p-3">
+                                <div class="font-semibold text-blue-800">Non Production</div>
+                                <div id="summary-nonprod" class="text-xl text-blue-900">0</div>
                             </div>
-                            <div class="bg-white border border-gray-100 rounded p-3">
-                                <div class="font-semibold">Production</div>
-                                <div id="summary-prod" class="text-xl">0</div>
+                            <div class="bg-blue-50 border border-blue-100 rounded p-3">
+                                <div class="font-semibold text-blue-800">Production</div>
+                                <div id="summary-prod" class="text-xl text-blue-900">0</div>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark mt-4">
-                            <div class="bg-white border border-gray-100 rounded p-3">
+                            <div class="bg-white border border-gray-200 rounded p-3">
                                 <label class="block text-sm text-dark mb-1" for="price-nonprod">Price per node in Non Production ($)</label>
                                 <input id="price-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
                                 <div class="mt-2 text-sm">Total Non Prod Node Cost: <span id="total-nonprod-cost" class="font-semibold">$0</span></div>
                             </div>
-                            <div class="bg-white border border-gray-100 rounded p-3">
+                            <div class="bg-white border border-gray-200 rounded p-3">
                                 <label class="block text-sm text-dark mb-1" for="price-prod">Price per node in Production ($)</label>
                                 <input id="price-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
                                 <div class="mt-2 text-sm">Total Prod Node Cost: <span id="total-prod-cost" class="font-semibold">$0</span></div>
                             </div>
                         </div>
                     </div>
-                    <div class="mt-3 text-sm text-dark font-semibold">
-                        Total Node Cost: <span id="total-amount" class="font-semibold">$0</span>
+                    <div class="mt-3 pt-2 border-t border-blue-100 text-sm text-dark font-bold">
+                        Total Node Cost: <span id="total-amount" class="font-bold text-blue-700">$0</span>
                     </div>
                 </div>
 
-                <!-- Connectors -->
-                <hr class="my-4 border-gray-200">
-                <div class="mb-2">
-                    <button id="toggle-connectors" type="button" onclick="document.getElementById('connectors-detail').classList.toggle('hidden'); document.getElementById('connectors-chevron').classList.toggle('-rotate-90')" class="flex items-center gap-2 text-md font-semibold text-dark mb-2 cursor-pointer hover:text-primary transition-colors">
+                <!-- 2. Connectors -->
+                <div class="bg-white border-l-4 border-l-emerald-500 border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
+                    <button id="toggle-connectors" type="button" onclick="document.getElementById('connectors-detail').classList.toggle('hidden'); document.getElementById('connectors-chevron').classList.toggle('-rotate-90')" class="flex items-center gap-2 text-md font-bold text-emerald-700 mb-2 cursor-pointer hover:text-emerald-900 transition-colors">
                         <svg id="connectors-chevron" class="w-4 h-4 transform transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
-                        Connectors
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                            Connectors
+                        </span>
                     </button>
                     <div id="connectors-detail">
                         <div class="overflow-x-auto mb-4">
                             <table class="w-full text-sm text-left border border-gray-200">
-                                <thead class="bg-gray-50 text-dark">
+                                <thead class="bg-emerald-50 text-dark">
                                     <tr>
                                         <th class="px-4 py-2 border">Item</th>
                                         <th class="px-4 py-2 border">Count</th>
@@ -324,51 +329,52 @@
                                 </tbody>
                             </table>
                         </div>
-                        <!-- Premium Connectors pricing -->
-                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Premium Connectors</h4>
+                        <h4 class="text-sm font-semibold text-emerald-800 mt-4 mb-2">Premium Connectors</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
-                            <div class="bg-white border border-gray-100 rounded p-3">
+                            <div class="bg-white border border-gray-200 rounded p-3">
                                 <label class="block text-sm text-dark mb-1" for="price-prem-nonprod">Price per Premium Connector in Non Production ($)</label>
                                 <input id="price-prem-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
                                 <div class="mt-2 text-sm">Total Non Prod Premium Cost: <span id="total-prem-nonprod-cost" class="font-semibold">$0</span></div>
                             </div>
-                            <div class="bg-white border border-gray-100 rounded p-3">
+                            <div class="bg-white border border-gray-200 rounded p-3">
                                 <label class="block text-sm text-dark mb-1" for="price-prem-prod">Price per Premium Connector in Production ($)</label>
                                 <input id="price-prem-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
                                 <div class="mt-2 text-sm">Total Prod Premium Cost: <span id="total-prem-prod-cost" class="font-semibold">$0</span></div>
                             </div>
                         </div>
 
-                        <!-- CP Commercial Connector Pack pricing -->
-                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">CP Commercial Connector Pack</h4>
+                        <h4 class="text-sm font-semibold text-emerald-800 mt-4 mb-2">CP Commercial Connector Pack</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
-                            <div class="bg-white border border-gray-100 rounded p-3">
+                            <div class="bg-white border border-gray-200 rounded p-3">
                                 <label class="block text-sm text-dark mb-1" for="price-cp-nonprod">Price per CP Commercial Connector Pack in Non Production ($)</label>
                                 <input id="price-cp-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
                                 <div class="mt-2 text-sm">Total Non Prod CP Cost: <span id="total-cp-nonprod-cost" class="font-semibold">$0</span></div>
                             </div>
-                            <div class="bg-white border border-gray-100 rounded p-3">
+                            <div class="bg-white border border-gray-200 rounded p-3">
                                 <label class="block text-sm text-dark mb-1" for="price-cp-prod">Price per CP Commercial Connector Pack in Production ($)</label>
                                 <input id="price-cp-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
                                 <div class="mt-2 text-sm">Total Prod CP Cost: <span id="total-cp-prod-cost" class="font-semibold">$0</span></div>
                             </div>
                         </div>
                     </div>
-                    <div class="mt-4 text-sm text-dark font-semibold">
-                        Total Connector Cost: <span id="total-cp-amount" class="font-semibold">$0</span>
+                    <div class="mt-3 pt-2 border-t border-emerald-100 text-sm text-dark font-bold">
+                        Total Connector Cost: <span id="total-cp-amount" class="font-bold text-emerald-700">$0</span>
                     </div>
                 </div>
 
-                <!-- CP Add Ons pricing -->
-                <div class="mb-2">
-                    <button id="toggle-addons-pricing" type="button" onclick="document.getElementById('addons-pricing-detail').classList.toggle('hidden'); document.getElementById('addons-pricing-chevron').classList.toggle('-rotate-90')" class="flex items-center gap-2 text-md font-semibold text-dark mb-2 cursor-pointer hover:text-primary transition-colors">
+                <!-- 3. CP Add Ons -->
+                <div class="bg-white border-l-4 border-l-amber-500 border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
+                    <button id="toggle-addons-pricing" type="button" onclick="document.getElementById('addons-pricing-detail').classList.toggle('hidden'); document.getElementById('addons-pricing-chevron').classList.toggle('-rotate-90')" class="flex items-center gap-2 text-md font-bold text-amber-700 mb-2 cursor-pointer hover:text-amber-900 transition-colors">
                         <svg id="addons-pricing-chevron" class="w-4 h-4 transform transition-transform -rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
-                        CP Add Ons
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+                            CP Add Ons
+                        </span>
                     </button>
                     <div id="addons-pricing-detail" class="hidden">
                         <div class="overflow-x-auto mb-4">
                             <table class="w-full text-sm text-left border border-gray-200">
-                                <thead class="bg-gray-50 text-dark">
+                                <thead class="bg-amber-50 text-dark">
                                     <tr>
                                         <th class="px-4 py-2 border">Add On</th>
                                         <th class="px-4 py-2 border">Status</th>
@@ -391,29 +397,30 @@
                             </table>
                         </div>
 
-                        <h4 class="text-sm font-semibold text-dark mt-4 mb-2">Add On Pricing</h4>
+                        <h4 class="text-sm font-semibold text-amber-800 mt-4 mb-2">Add On Pricing</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
-                            <div class="bg-white border border-gray-100 rounded p-3">
+                            <div class="bg-white border border-gray-200 rounded p-3">
                                 <label class="block text-sm text-dark mb-1" for="price-addon-nonprod">Add On Cost in Non Production ($)</label>
                                 <input id="price-addon-nonprod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
                                 <div class="mt-2 text-sm">Total Non Prod Add On Cost: <span id="total-addon-nonprod-cost" class="font-semibold">$0</span></div>
                             </div>
-                            <div class="bg-white border border-gray-100 rounded p-3">
+                            <div class="bg-white border border-gray-200 rounded p-3">
                                 <label class="block text-sm text-dark mb-1" for="price-addon-prod">Add On Cost in Production ($)</label>
                                 <input id="price-addon-prod" type="number" min="0" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2" value="0">
                                 <div class="mt-2 text-sm">Total Prod Add On Cost: <span id="total-addon-prod-cost" class="font-semibold">$0</span></div>
                             </div>
                         </div>
                     </div>
-                    <div class="mt-4 text-sm text-dark font-semibold">
-                        Total Add On Cost: <span id="total-addon-amount" class="font-semibold">$0</span>
+                    <div class="mt-3 pt-2 border-t border-amber-100 text-sm text-dark font-bold">
+                        Total Add On Cost: <span id="total-addon-amount" class="font-bold text-amber-700">$0</span>
                     </div>
                 </div>
 
                 <!-- Grand Total -->
-                <hr class="my-4 border-gray-200">
-                <div class="mt-2 text-dark text-lg font-bold">
-                    Grand Total: <span id="grand-total" class="text-primary">$0</span>
+                <div class="bg-gray-800 text-white rounded-lg p-4 mt-2">
+                    <div class="text-lg font-bold">
+                        Grand Total: <span id="grand-total" class="text-xl">$0</span>
+                    </div>
                 </div>
             </div>
             <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
