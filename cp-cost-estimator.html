@@ -263,12 +263,12 @@
                 <!-- 1. Nodes -->
                 <div class="bg-white border-l-4 border-l-blue-500 border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
                     <button id="toggle-nodes" type="button" onclick="document.getElementById('nodes-detail').classList.toggle('hidden'); document.getElementById('nodes-chevron').classList.toggle('-rotate-90')" class="flex items-center gap-2 text-md font-bold text-blue-700 mb-2 cursor-pointer hover:text-blue-900 transition-colors">
-                        <svg id="nodes-chevron" class="w-4 h-4 transform transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                        <svg id="nodes-chevron" class="w-4 h-4 transform transition-transform -rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
                         <span class="inline-flex items-center gap-1.5">
                             🖥️ Nodes
                         </span>
                     </button>
-                    <div id="nodes-detail">
+                    <div id="nodes-detail" class="hidden">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-dark">
                             <div class="bg-blue-50 border border-blue-100 rounded p-3">
                                 <div class="font-semibold text-blue-800">Non Production</div>
@@ -300,12 +300,12 @@
                 <!-- 2. Connectors -->
                 <div class="bg-white border-l-4 border-l-emerald-500 border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
                     <button id="toggle-connectors" type="button" onclick="document.getElementById('connectors-detail').classList.toggle('hidden'); document.getElementById('connectors-chevron').classList.toggle('-rotate-90')" class="flex items-center gap-2 text-md font-bold text-emerald-700 mb-2 cursor-pointer hover:text-emerald-900 transition-colors">
-                        <svg id="connectors-chevron" class="w-4 h-4 transform transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                        <svg id="connectors-chevron" class="w-4 h-4 transform transition-transform -rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
                         <span class="inline-flex items-center gap-1.5">
                             🔌 Connectors
                         </span>
                     </button>
-                    <div id="connectors-detail">
+                    <div id="connectors-detail" class="hidden">
                         <div class="overflow-x-auto mb-4">
                             <table class="w-full text-sm text-left border border-gray-200">
                                 <thead class="bg-emerald-50 text-dark">
