@@ -71,12 +71,12 @@
 
             <div class="category">
                 <h2>What this tool estimates</h2>
-                <p class="mb-3">The sizer recommends a <strong>self-managed Apache Kafka / Confluent Platform</strong> broker count and disk from three inputs: peak throughput, retention, and optional tiered storage.</p>
-                <p>The form stays at three inputs. Broker count uses Event Sizer granular’s <code>max(...)</code> of HA, network, disk IO, local disk, CPU, and replication factor. Recommendations appear when a dimension is binding.</p>
+                <p class="mb-3">The sizer recommends a <strong>self-managed Apache Kafka / Confluent Platform</strong> broker count and disk from peak throughput, retention, optional tiered storage, and usable disk per broker.</p>
+                <p>Broker count uses Event Sizer granular’s <code>max(...)</code> of HA, network, disk IO, local disk, CPU, and replication factor. Recommendations appear when a dimension is binding.</p>
             </div>
 
             <div class="category">
-                <h2>The three inputs</h2>
+                <h2>The inputs</h2>
                 <table>
                     <thead>
                         <tr><th>Input</th><th>What it means</th></tr>
@@ -98,6 +98,10 @@
                             <td>3a. Hot storage</td>
                             <td>Only shown when tiered storage is on. Slider for days on local disk. <code>tier days = retention − hot days</code>.</td>
                         </tr>
+                        <tr>
+                            <td>4. Disk storage (TB per broker)</td>
+                            <td>Usable local disk on <strong>each broker</strong>, not the cluster total and not the broker count. Default <strong>12 TB</strong> (Event Sizer recommended persistent volume). We recommend staying at 12 TB and not going over 16 TB. Changing this value recalculates broker count.</td>
+                        </tr>
                     </tbody>
                 </table>
                 <p>Fan-out, egress, NIC, and partition fields are not on the form. The model uses hidden defaults so the page stays as simple as Event Sizer’s primary controls.</p>
@@ -110,8 +114,8 @@
                     <li>Peak = average; egress = ingress</li>
                     <li>TLS on; utilization = 60%</li>
                     <li>10 GbE (1250 MB/s), used at 60%</li>
-                    <li>Disk IO = 2× SSD × 520 MB/s, used at 60%</li>
-                    <li>8 TB usable local disk per broker</li>
+                    <li>Disk IO = 1× SSD × 520 MB/s, used at 60%</li>
+                    <li>Disk storage defaults to 12 TB per broker (user-editable)</li>
                     <li>CPU ≈ 120 MB/s produce per broker at 60% with TLS</li>
                 </ul>
             </div>
@@ -125,16 +129,17 @@
                 </div>
                 <div class="effort-level">
                     <h3>Storage</h3>
-                    <p><code>hot_GB = ingress × 86,400 × local_days × 3 / 1024</code></p>
-                    <p class="mt-2">With tiered storage, <code>local_days = hot_days</code> and <code>tier_GB = ingress × 86,400 × (retention − hot) / 1024</code> (no RF on archival, matching Event Sizer).</p>
+                    <p><code>hot_GB = ingress × 1e6 × local_days × 86,400 × 3 / 1e9</code></p>
+                    <p class="mt-2"><code>storage_brokers = ceil(hot_GB / (disk_TB × 1000))</code></p>
+                    <p class="mt-2">With tiered storage, <code>local_days = hot_days</code> and <code>tier_GB = ingress × 1e6 × (retention − hot) × 86,400 / 1e9</code> (no RF on archival, matching Event Sizer).</p>
                 </div>
             </div>
 
             <div class="category">
                 <h2>Default example</h2>
-                <p class="mb-3">50 MB/s, 7-day retention, tiered storage off:</p>
+                <p class="mb-3">50 MB/s, 7-day retention, tiered storage off, 12 TB per broker:</p>
                 <ul class="list-disc list-inside ml-4 space-y-1">
-                    <li>Local disk ≈ 86.5 TB / 8 TB per broker → 11 brokers (storage binds)</li>
+                    <li>Local disk = 90.72 TB / 12 TB per broker → 8 brokers (storage binds)</li>
                     <li>Recommendation: enable tiered storage with 1 day hot → 4 brokers</li>
                 </ul>
             </div>
@@ -144,6 +149,7 @@
                 <ol class="list-decimal list-inside ml-2 space-y-2">
                     <li>Set peak ingress with the Throughput slider.</li>
                     <li>Set how long data must be kept with Retention.</li>
+                    <li>Set usable disk storage per broker (default 12 TB). Do not go over 16 TB.</li>
                     <li>If most reads are recent, enable tiered storage and set hot days. Tier days fill in automatically.</li>
                     <li>Read “Why this many brokers” — it names the one limit that set the count.</li>
                     <li>Compare with <a href="https://eventsizer.confluent.io/granular" target="_blank" rel="noopener noreferrer">Event Sizer granular</a> using the same throughput and retention.</li>
@@ -166,7 +172,11 @@
                 </div>
                 <div class="effort-level">
                     <h3>Network / disk IO / CPU</h3>
-                    <p>Shown only when that dimension is the max. Notes cite the Event Sizer default (60% utilization, TLS on, 10 GbE, 2× SSD).</p>
+                    <p>Shown only when that dimension is the max. Notes cite the Event Sizer default (60% utilization, TLS on, 10 GbE, 1× SSD at 520 MB/s).</p>
+                </div>
+                <div class="effort-level">
+                    <h3>Keep disk at or below 16 TB per broker</h3>
+                    <p>Shown when Disk storage is greater than 16 TB. The broker math still uses the number you typed.</p>
                 </div>
                 <div class="effort-level">
                     <h3>Confirm before you buy</h3>

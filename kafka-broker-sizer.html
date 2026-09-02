@@ -29,6 +29,20 @@
             accent-color: #0A85EA;
             cursor: pointer;
         }
+        input[type="number"] {
+            width: 5.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.35rem 0.5rem;
+            font-weight: 700;
+            color: #0A85EA;
+            font-size: 1.125rem;
+            text-align: right;
+        }
+        input[type="number"]:focus {
+            outline: 2px solid #0A85EA;
+            outline-offset: 1px;
+        }
         .slider-value {
             min-width: 6.5rem;
             text-align: right;
@@ -116,6 +130,14 @@
                         <p class="text-sm text-dark" id="split-copy"></p>
                     </div>
                 </div>
+
+                <div>
+                    <div class="flex items-center justify-between gap-3 mb-2">
+                        <label for="disk-tb" class="font-semibold text-dark">4. Disk storage (TB per broker)</label>
+                        <input type="number" id="disk-tb" min="1" step="1" value="12" aria-describedby="disk-tb-note">
+                    </div>
+                    <p class="text-sm text-gray-500" id="disk-tb-note">Usable local disk on each broker. Default 12 TB (Event Sizer). We recommend staying at 12 TB and not going over 16 TB.</p>
+                </div>
             </form>
 
             <div class="space-y-4">
@@ -161,32 +183,39 @@
             var MIN_BROKERS = 4;
             var UTIL = 0.6;
             var NIC_MB_S = 1250;
-            var DISK_IO_MB_S = 1040;
-            var DISK_GB_PER_BROKER = 8192;
+            var DISK_IO_MB_S = 520;
+            var DEFAULT_DISK_TB = 12;
+            var MAX_RECOMMENDED_DISK_TB = 16;
             var PRODUCE_MB_S_PER_BROKER_CPU = 120;
 
             function daysLabel(n) {
                 return n + (n === 1 ? ' day' : ' days');
             }
 
-            function formatMBs(value) {
-                if (value >= 1024) return (value / 1024).toFixed(2) + ' GB/s';
-                return value.toFixed(1) + ' MB/s';
-            }
-
             function formatBytesGB(gb) {
                 if (!gb) return '0 GB';
-                if (gb >= 1024) return (gb / 1024).toFixed(1) + ' TB';
+                if (gb >= 1000) return (gb / 1000).toFixed(1) + ' TB';
                 return Math.ceil(gb).toLocaleString() + ' GB';
             }
 
-            function storageGB(ingressMbs, days) {
-                return ingressMbs * 86400 * days * RF / 1024;
+            function diskTbPerBroker() {
+                var raw = parseFloat(document.getElementById('disk-tb').value);
+                if (!isFinite(raw) || raw < 1) return DEFAULT_DISK_TB;
+                return raw;
+            }
+
+            function storageGB(ingressMbs, days, replicate) {
+                var bytesPerSec = ingressMbs * 1e6;
+                var seconds = days * 86400;
+                var copies = replicate ? RF : 1;
+                return bytesPerSec * seconds * copies / 1e9;
             }
 
             function sizeCluster() {
                 var throughput = parseInt(document.getElementById('throughput').value, 10);
                 var retention = parseInt(document.getElementById('retention').value, 10);
+                var diskTb = diskTbPerBroker();
+                var diskGb = diskTb * 1000;
                 var tiered = document.getElementById('tiered').checked;
                 var hotSlider = document.getElementById('hot-days');
                 hotSlider.max = String(retention);
@@ -210,12 +239,12 @@
                 var egress = throughput;
                 var clusterNet = Math.max(throughput * RF, throughput * (RF - 1) + egress);
                 var diskWrite = throughput * RF;
-                var hotStorage = storageGB(throughput, localDays);
-                var tierStorage = tiered ? throughput * 86400 * tierDays / 1024 : 0;
+                var hotStorage = storageGB(throughput, localDays, true);
+                var tierStorage = tiered ? storageGB(throughput, tierDays, false) : 0;
 
                 var fromNetwork = Math.ceil(clusterNet / (NIC_MB_S * UTIL)) || 0;
                 var fromIo = Math.ceil(diskWrite / (DISK_IO_MB_S * UTIL)) || 0;
-                var fromStorage = Math.ceil(hotStorage / DISK_GB_PER_BROKER) || 0;
+                var fromStorage = Math.ceil(hotStorage / diskGb) || 0;
                 var fromCpu = Math.ceil(throughput / (PRODUCE_MB_S_PER_BROKER_CPU * UTIL)) || 0;
                 var fromRf = RF;
                 var brokers = Math.max(MIN_BROKERS, fromNetwork, fromIo, fromStorage, fromCpu, fromRf);
@@ -233,8 +262,8 @@
                     ha: 'We recommend ' + brokers + ' brokers because production clusters should not go below 4. Your throughput and disk would actually fit on fewer hosts, but RF=3 needs a spare so one broker can fail.',
                     rf: 'We recommend ' + brokers + ' brokers so each partition can live on 3 brokers and still have a spare.',
                     network: 'We recommend ' + brokers + ' brokers because the 10 GbE links, at 60% use, are the tightest limit. Disk space and CPU would have been fine with fewer.',
-                    io: 'We recommend ' + brokers + ' brokers because disks cannot write ingress × 3 copies fast enough on fewer hosts (2× SSD, 60% used).',
-                    storage: 'We recommend ' + brokers + ' brokers because local disk is the tightest limit: ' + formatBytesGB(hotStorage) + ' of data (ingress × ' + daysLabel(localDays) + ' × RF 3) at 8 TB per broker. Network and disk speed would have been fine with fewer.',
+                    io: 'We recommend ' + brokers + ' brokers because disks cannot write ingress × 3 copies fast enough on fewer hosts (1× SSD at 520 MB/s, 60% used).',
+                    storage: 'We recommend ' + brokers + ' brokers because local disk is the tightest limit: ' + formatBytesGB(hotStorage) + ' of data (ingress × ' + daysLabel(localDays) + ' × RF 3) at ' + diskTb + ' TB per broker. Network and disk speed would have been fine with fewer.',
                     cpu: 'We recommend ' + brokers + ' brokers because TLS CPU is the tightest limit. Network and disk would have been fine with fewer.'
                 };
 
@@ -268,10 +297,16 @@
                         note: 'Event Sizer sizes network at 60% of a 10 GbE card. Produce + replication + consume share that link.'
                     });
                 }
+                if (diskTb > MAX_RECOMMENDED_DISK_TB) {
+                    recs.push({
+                        title: 'Keep disk at or below 16 TB per broker',
+                        note: 'You entered ' + diskTb + ' TB per broker. We recommend 12 TB and not going over 16 TB; rebuild time and operational risk grow with larger disks. The broker count still uses your value.'
+                    });
+                }
                 if (bind.key === 'io') {
                     recs.push({
                         title: 'Add disk volumes or brokers',
-                        note: 'Writes are ingress × RF. Default is 2× SSD at 520 MB/s each, used at 60% — the Event Sizer SSD guideline.'
+                        note: 'Writes are ingress × RF. Event Sizer’s SSD guideline is 520 MB/s per volume, used at 60%.'
                     });
                 }
                 if (bind.key === 'cpu') {
@@ -300,14 +335,14 @@
                 }
                 recs.push({
                     title: 'Defaults used here',
-                    note: 'RF=3, TLS on, 60% utilization, 10 GbE, 8 TB usable disk per broker, peak = average, egress = ingress. Compare at eventsizer.confluent.io/granular.'
+                    note: 'RF=3, TLS on, 60% utilization, 10 GbE, 1× SSD at 520 MB/s, ' + diskTb + ' TB usable disk per broker, peak = average, egress = ingress. Compare at eventsizer.confluent.io/granular.'
                 });
                 document.getElementById('out-recs').innerHTML = recs.map(function (r) {
                     return '<li><span class="font-medium">' + r.title + '.</span> ' + r.note + '</li>';
                 }).join('');
             }
 
-            ['throughput', 'retention', 'hot-days'].forEach(function (id) {
+            ['throughput', 'retention', 'hot-days', 'disk-tb'].forEach(function (id) {
                 document.getElementById(id).addEventListener('input', sizeCluster);
             });
             document.getElementById('tiered').addEventListener('change', sizeCluster);
