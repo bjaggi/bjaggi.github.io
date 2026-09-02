@@ -100,7 +100,7 @@
                         </tr>
                         <tr>
                             <td>4. Disk storage (TB per broker)</td>
-                            <td>Usable local disk on <strong>each broker</strong>, not the cluster total and not the broker count. Default <strong>12 TB</strong> (Event Sizer recommended persistent volume). We recommend staying at 12 TB and not going over 16 TB. Changing this value recalculates broker count.</td>
+                            <td>Usable local disk on <strong>each broker</strong>, not the cluster total and not the broker count. Default and recommended: <strong>12 TB</strong>. Larger disks are constrained by targeted rebuild time if a host were to go down; do not go over 16 TB. Changing this value recalculates broker count.</td>
                         </tr>
                     </tbody>
                 </table>
