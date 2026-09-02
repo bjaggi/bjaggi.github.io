@@ -53,6 +53,34 @@
         .split-bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: #e5e7eb; }
         .split-hot { background: #0A85EA; }
         .split-tier { background: #94a3b8; }
+        .es-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
+        .es-row:last-child { border-bottom: 0; }
+        .es-row.binding { font-weight: 700; color: #0A85EA; }
+        .es-note { font-size: 0.75rem; color: #6b7280; font-weight: 400; }
+        .formula-block {
+            background: #f8fbff;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.5rem;
+            padding: 1rem 1.1rem;
+            margin-bottom: 0.75rem;
+        }
+        .formula-block h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0A3D62;
+            margin-bottom: 0.4rem;
+        }
+        .formula-block code {
+            display: block;
+            font-size: 0.82rem;
+            background: #eef4fb;
+            padding: 0.45rem 0.6rem;
+            border-radius: 0.35rem;
+            overflow-x: auto;
+            color: #0A3D62;
+            margin: 0.25rem 0;
+        }
+        .formula-block p { font-size: 0.85rem; color: #4b5563; }
     </style>
 </head>
 <body>
@@ -86,7 +114,7 @@
                     <input type="range" id="throughput" min="1" max="1000" step="1" value="50">
                     <div class="flex justify-between text-xs text-gray-400 mt-1">
                         <span>1 MB/s</span>
-                        <span>Peak produce ingress</span>
+                        <span>Producer Ingress</span>
                         <span>1000 MB/s</span>
                     </div>
                 </div>
@@ -175,6 +203,143 @@
                 </div>
             </div>
         </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto mt-6">
+            <div class="bg-white shadow-lg rounded-lg p-6 border border-gray-100">
+                <h2 class="text-xl font-semibold text-dark mb-4">Cluster Size</h2>
+                <div class="es-row">
+                    <span>Broker count</span>
+                    <span id="es-broker-count">—</span>
+                </div>
+                <div class="es-row">
+                    <span>Limiting resource</span>
+                    <span id="es-limit">—</span>
+                </div>
+                <h3 class="text-sm font-semibold text-dark mt-5 mb-2">Brokers required based on resource capacity</h3>
+                <div class="es-row" id="es-row-network">
+                    <span>Network throughput</span>
+                    <span id="es-network">—</span>
+                </div>
+                <div class="es-row" id="es-row-io">
+                    <span>IO throughput</span>
+                    <span id="es-io">—</span>
+                </div>
+                <div class="es-row" id="es-row-storage">
+                    <span>Storage</span>
+                    <span id="es-storage">—</span>
+                </div>
+                <div class="es-row" id="es-row-rf">
+                    <span>Replication factor<br><span class="es-note">based on a max replication factor of 3</span></span>
+                    <span id="es-rf">—</span>
+                </div>
+                <div class="es-row" id="es-row-ha">
+                    <span>High availability</span>
+                    <span id="es-ha">—</span>
+                </div>
+                <div class="es-row" id="es-row-rebuild">
+                    <span>Rebuild time</span>
+                    <span id="es-rebuild">not specified</span>
+                </div>
+                <div class="es-row" id="es-row-partitions">
+                    <span>Topic partitions</span>
+                    <span id="es-partitions">1</span>
+                </div>
+                <div class="es-row" id="es-row-cpu">
+                    <span>CPU</span>
+                    <span id="es-cpu">—</span>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-lg rounded-lg p-6 border border-gray-100">
+                <h2 class="text-xl font-semibold text-dark mb-4">Host Profile</h2>
+                <h3 class="text-sm font-semibold text-dark mb-2">Host Resources</h3>
+                <div class="es-row"><span>Environment</span><span>baremetal</span></div>
+                <div class="es-row"><span>Cores</span><span>24</span></div>
+                <div class="es-row"><span>Memory</span><span>64 GB</span></div>
+                <div class="es-row"><span>Network throughput</span><span>10 Gb/s</span></div>
+                <div class="es-row">
+                    <span>Raw storage</span>
+                    <span id="es-raw-storage">12 TB</span>
+                </div>
+                <div class="es-row"><span>IO throughput</span><span>520 MB/s</span></div>
+                <p class="es-note mt-2 mb-4">Raw storage is the Disk storage (TB per broker) input. Recommended: 12 TB. Constrained by targeted rebuild time if a host were to go down.</p>
+
+                <h3 class="text-sm font-semibold text-dark mt-2 mb-2">Resource utilization</h3>
+                <div class="es-row"><span>Network throughput</span><span id="es-util-network">—</span></div>
+                <div class="es-row"><span>IO throughput</span><span id="es-util-io">—</span></div>
+                <div class="es-row"><span>Storage</span><span id="es-util-storage">—</span></div>
+                <div class="es-row"><span>Topic partition limit</span><span>not specified</span></div>
+                <div class="es-row"><span>CPU</span><span id="es-util-cpu">—</span></div>
+                <p class="text-sm text-dark mt-4">Consider using Confluent Self-Balancing Clusters to increase utilization. <a class="text-primary hover:text-dark underline" href="https://docs.confluent.io/platform/current/kafka/sbc/index.html" target="_blank" rel="noopener noreferrer">Learn more.</a></p>
+            </div>
+        </div>
+
+        <div class="max-w-5xl mx-auto mt-6 mb-10 bg-white shadow-lg rounded-lg p-6 border border-gray-100">
+            <h2 class="text-xl font-semibold text-dark mb-2">How the broker count is calculated</h2>
+            <p class="text-sm text-gray-500 mb-5">We take your four inputs, apply Event Sizer’s hidden host assumptions, compute how many brokers each resource needs, then recommend the largest of those numbers (never below 4).</p>
+
+            <div class="formula-block">
+                <h3>Your inputs</h3>
+                <p>1. <strong>Throughput</strong> — producer ingress <em>I</em> in MB/s (the slider).</p>
+                <p>2. <strong>Retention</strong> — how many days to keep data.</p>
+                <p>3. <strong>Tiered storage</strong> — optional. If on, only hot days stay on local disk; the rest is object storage and does not add brokers.</p>
+                <p>4. <strong>Disk storage</strong> — usable TB on <em>each</em> broker (default 12). This is not the broker count.</p>
+            </div>
+
+            <div class="formula-block">
+                <h3>Assumptions we do not ask for</h3>
+                <p>Replication factor = 3. Egress = ingress. TLS on. Size at 60% of host capacity. Baremetal host: 24 cores, 64 GB RAM, 10 GbE (1,250 MB/s), 1× SSD at 520 MB/s. CPU ≈ 120 MB/s produce per broker before the 60% target. Production floor = 4 brokers. Rebuild time and partition count are not specified, so they do not raise the count.</p>
+            </div>
+
+            <div class="formula-block">
+                <h3>The result</h3>
+                <code>brokers = max(4, network, IO, storage, CPU, RF)</code>
+                <p>Each line below is “how many brokers this resource alone would need.” Cluster Size highlights the winner — that is the limiting resource. Example at the defaults (50 MB/s, 7 days, 12 TB/broker, no tier): storage needs 8, everything else needs 1–4, so we recommend <strong>8 brokers</strong>.</p>
+            </div>
+
+            <div class="formula-block">
+                <h3>From throughput, retention, and disk → storage brokers</h3>
+                <code>local_days = hot_days if tiered is on, else retention</code>
+                <code>hot_GB = I × 1,000,000 × local_days × 86,400 × 3 / 1,000,000,000</code>
+                <code>storage = ceil(hot_GB / (disk_TB × 1,000))</code>
+                <p>Three copies of the local window must fit on broker disks. Larger <em>I</em>, more retention (or more hot days), or smaller disk_TB all increase this number. Tier storage uses the same formula without the × 3 and does not add brokers.</p>
+            </div>
+
+            <div class="formula-block">
+                <h3>From throughput → network brokers</h3>
+                <code>cluster_net_MB/s = I × 3</code>
+                <code>network = ceil(cluster_net_MB/s / (1,250 × 0.60))</code>
+                <p>Produce, replication, and consume share a 10 GbE card, used at 60%.</p>
+            </div>
+
+            <div class="formula-block">
+                <h3>From throughput → IO brokers</h3>
+                <code>disk_write_MB/s = I × 3</code>
+                <code>IO = ceil(disk_write_MB/s / (520 × 0.60))</code>
+                <p>Each replica is written to disk. 520 MB/s is Event Sizer’s SSD guideline, used at 60%.</p>
+            </div>
+
+            <div class="formula-block">
+                <h3>From throughput → CPU brokers</h3>
+                <code>CPU = ceil(I / (120 × 0.60))</code>
+                <p>TLS is on. About 120 MB/s of produce per broker before the 60% target.</p>
+            </div>
+
+            <div class="formula-block">
+                <h3>From replication / HA (no extra input)</h3>
+                <code>RF = 3 &nbsp;&nbsp; high availability = at least 4</code>
+                <p>RF 3 needs three brokers for replicas. We add a spare, so the count never goes below 4 even if throughput and disk would fit on fewer.</p>
+            </div>
+
+            <div class="formula-block">
+                <h3>Resource utilization (after broker count is known)</h3>
+                <code>network % = cluster_net_MB/s / (brokers × 1,250)</code>
+                <code>IO % = disk_write_MB/s / (brokers × 520)</code>
+                <code>storage % = hot_GB / (brokers × disk_TB × 1,000)</code>
+                <code>CPU % = I / (brokers × 120)</code>
+                <p>Share of raw host capacity at the recommended broker count. This is not the 60% target used when sizing.</p>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -196,6 +361,20 @@
                 if (!gb) return '0 GB';
                 if (gb >= 1000) return (gb / 1000).toFixed(1) + ' TB';
                 return Math.ceil(gb).toLocaleString() + ' GB';
+            }
+
+            function utilPct(used, capacity) {
+                if (!capacity) return 'not specified';
+                var p = (used / capacity) * 100;
+                if (p > 0 && p < 1) return '<1%';
+                return Math.round(p) + '%';
+            }
+
+            function setBindingRow(key) {
+                ['network', 'io', 'storage', 'rf', 'ha', 'rebuild', 'partitions', 'cpu'].forEach(function (k) {
+                    var row = document.getElementById('es-row-' + k);
+                    if (row) row.classList.toggle('binding', k === key);
+                });
             }
 
             function diskTbPerBroker() {
@@ -277,6 +456,31 @@
                 document.getElementById('out-tier-storage').textContent = tiered ? formatBytesGB(tierStorage) : 'Off';
                 document.getElementById('out-storage-broker').textContent = formatBytesGB(hotStorage / brokers);
                 document.getElementById('out-why').textContent = why[bind.key];
+
+                var limitLabel = {
+                    ha: 'high availability',
+                    rf: 'replication factor',
+                    network: 'network throughput',
+                    io: 'storage throughput',
+                    storage: 'storage capacity',
+                    cpu: 'cpu'
+                };
+                var rfDisplay = MIN_BROKERS;
+                document.getElementById('es-broker-count').textContent = String(brokers);
+                document.getElementById('es-limit').textContent = limitLabel[bind.key] || bind.label.toLowerCase();
+                document.getElementById('es-network').textContent = String(fromNetwork);
+                document.getElementById('es-io').textContent = String(fromIo);
+                document.getElementById('es-storage').textContent = String(fromStorage);
+                document.getElementById('es-rf').textContent = String(rfDisplay);
+                document.getElementById('es-ha').textContent = 'at least ' + MIN_BROKERS;
+                document.getElementById('es-cpu').textContent = String(fromCpu);
+                document.getElementById('es-raw-storage').textContent = diskTb + ' TB';
+                document.getElementById('es-util-network').textContent = utilPct(clusterNet, brokers * NIC_MB_S);
+                document.getElementById('es-util-io').textContent = utilPct(diskWrite, brokers * DISK_IO_MB_S);
+                document.getElementById('es-util-storage').textContent = utilPct(hotStorage, brokers * diskGb);
+                document.getElementById('es-util-cpu').textContent = utilPct(throughput, brokers * PRODUCE_MB_S_PER_BROKER_CPU);
+                var bindRow = bind.key === 'io' ? 'io' : bind.key;
+                setBindingRow(bindRow);
 
                 var recs = [];
                 if (!tiered && fromStorage > MIN_BROKERS) {

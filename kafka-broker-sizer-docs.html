@@ -84,7 +84,7 @@
                     <tbody>
                         <tr>
                             <td>1. Throughput</td>
-                            <td>Peak produce ingress in MB/s (1–1000). Size on the busiest sustained rate, not the daily average.</td>
+                            <td>Producer ingress in MB/s (1–1000). Size on the busiest sustained rate, not the daily average.</td>
                         </tr>
                         <tr>
                             <td>2. Retention</td>
@@ -145,12 +145,19 @@
             </div>
 
             <div class="category">
+                <h2>Cluster Size and Host Profile</h2>
+                <p class="mb-3">These two cards match Event Sizer’s results page. Cluster Size lists broker count, the limiting resource, and brokers required for network, IO, storage, replication factor, HA, rebuild time, partitions, and CPU. Host Profile uses Event Sizer’s recommended baremetal host (24 cores, 64 GB, 10 GbE, 520 MB/s SSD). Raw storage is the Disk storage text box (default 12 TB per broker).</p>
+                <p>Rebuild time and topic partition limit show as not specified because this page does not collect those Event Sizer fields. Resource utilization is load at the recommended broker count against raw host capacity.</p>
+            </div>
+
+            <div class="category">
                 <h2>How to use it</h2>
                 <ol class="list-decimal list-inside ml-2 space-y-2">
                     <li>Set peak ingress with the Throughput slider.</li>
                     <li>Set how long data must be kept with Retention.</li>
                     <li>Set usable disk storage per broker (default 12 TB). Do not go over 16 TB.</li>
                     <li>If most reads are recent, enable tiered storage and set hot days. Tier days fill in automatically.</li>
+                    <li>Read Cluster Size and Host Profile — the same breakdown Event Sizer shows on its results page.</li>
                     <li>Read “Why this many brokers” — it names the one limit that set the count.</li>
                     <li>Compare with <a href="https://eventsizer.confluent.io/granular" target="_blank" rel="noopener noreferrer">Event Sizer granular</a> using the same throughput and retention.</li>
                 </ol>
