@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Broker Sizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #F5F9FF;
+            color: #0A3D62;
+        }
+        .logo-container {
+            padding: 0.75rem 1rem;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        .logo-container img { height: 36px; width: auto; }
+        .text-primary { color: #0A85EA; }
+        .text-dark { color: #0A3D62; }
+        .bg-primary { background-color: #0A85EA; }
+        .hover\:text-dark:hover { color: #0A3D62; }
+        .stat-value { font-size: 1.75rem; font-weight: 700; color: #0A3D62; line-height: 1.2; }
+        .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280; font-weight: 600; }
+        input[type="range"] {
+            width: 100%;
+            accent-color: #0A85EA;
+            cursor: pointer;
+        }
+        .slider-value {
+            min-width: 6.5rem;
+            text-align: right;
+            font-weight: 700;
+            color: #0A85EA;
+            font-size: 1.125rem;
+        }
+        .split-bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: #e5e7eb; }
+        .split-hot { background: #0A85EA; }
+        .split-tier { background: #94a3b8; }
+    </style>
+</head>
+<body>
+    <div class="logo-container flex items-center gap-4">
+        <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
+            <img src="assets/image.png" alt="Confluent Logo">
+        </a>
+        <a href="index.html" class="text-primary text-sm hover:text-dark">← Back to HomePage</a>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2 text-dark">Kafka Broker Sizer</h1>
+            <p class="text-dark">Easy way to size the number of brokers: throughput, retention, and optional tiered storage. For more accurate results use <a class="text-primary hover:text-dark underline" href="https://eventsizer.confluent.io/granular" target="_blank" rel="noopener noreferrer">eventsizer.confluent.io/granular</a>.</p>
+            <div id="visit-counter" class="mt-2 text-sm text-dark opacity-75">
+                <span id="visit-count">Loading views...</span>
+            </div>
+            <a href="kafka-broker-sizer-docs.html" class="text-primary hover:text-dark underline mt-3 inline-block">View documentation</a>
+            <div class="mt-2 text-sm text-dark">
+                <p><strong>Contact:</strong> Brijesh Jaggi · <a class="text-primary hover:text-dark" href="mailto:bjaggi@confluent.io">bjaggi@confluent.io</a> · <a class="text-primary hover:text-dark" href="https://www.linkedin.com/in/brijeshjaggi/" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            <form id="sizer-form" class="bg-white shadow-lg rounded-lg p-6 border border-gray-100 space-y-8">
+                <div>
+                    <div class="flex items-center justify-between gap-3 mb-2">
+                        <label for="throughput" class="font-semibold text-dark">1. Throughput</label>
+                        <span class="slider-value" id="throughput-label">50 MB/s</span>
+                    </div>
+                    <input type="range" id="throughput" min="1" max="1000" step="1" value="50">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>1 MB/s</span>
+                        <span>Peak produce ingress</span>
+                        <span>1000 MB/s</span>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between gap-3 mb-2">
+                        <label for="retention" class="font-semibold text-dark">2. Retention</label>
+                        <span class="slider-value" id="retention-label">7 days</span>
+                    </div>
+                    <input type="range" id="retention" min="1" max="365" step="1" value="7">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>1 day</span>
+                        <span>Total keep time</span>
+                        <span>365 days</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="tiered" class="mt-1 h-4 w-4 accent-[#0A85EA]">
+                        <span>
+                            <span class="font-semibold text-dark">3. Enable tiered storage</span>
+                            <span class="block text-sm text-gray-500">Keep recent data on local broker disk; older data goes to object storage.</span>
+                        </span>
+                    </label>
+
+                    <div id="tier-controls" class="mt-5 space-y-3 hidden">
+                        <div class="flex items-center justify-between gap-3">
+                            <label for="hot-days" class="font-semibold text-dark">3a. Hot storage (local disk)</label>
+                            <span class="slider-value" id="hot-label">1 day</span>
+                        </div>
+                        <input type="range" id="hot-days" min="1" max="7" step="1" value="1">
+                        <div class="flex justify-between text-xs text-gray-400">
+                            <span>1 day hot</span>
+                            <span id="tier-days-label">6 days in tier</span>
+                        </div>
+                        <div class="split-bar" title="Hot vs tier days">
+                            <div class="split-hot" id="split-hot" style="width: 14%"></div>
+                            <div class="split-tier" id="split-tier" style="width: 86%"></div>
+                        </div>
+                        <p class="text-sm text-dark" id="split-copy"></p>
+                    </div>
+                </div>
+            </form>
+
+            <div class="space-y-4">
+                <div class="bg-white shadow-lg rounded-lg p-6 border border-gray-100">
+                    <h2 class="text-xl font-semibold text-dark mb-1">Recommended size</h2>
+                    <p class="text-sm font-semibold text-primary mb-4" id="out-constraint">—</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="stat-label">Brokers</div>
+                            <div class="stat-value" id="out-brokers">—</div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Hot / local storage</div>
+                            <div class="stat-value" id="out-hot-storage">—</div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Tier storage</div>
+                            <div class="stat-value text-2xl" id="out-tier-storage">—</div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Storage / broker (hot)</div>
+                            <div class="stat-value text-2xl" id="out-storage-broker">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white shadow-lg rounded-lg p-6 border border-gray-100">
+                    <h2 class="text-lg font-semibold text-dark mb-2">Why this many brokers</h2>
+                    <p class="text-sm text-dark leading-relaxed" id="out-why"></p>
+                </div>
+
+                <div class="bg-white shadow-lg rounded-lg p-6 border border-gray-100">
+                    <h2 class="text-lg font-semibold text-dark mb-3">Recommendations</h2>
+                    <ul class="text-sm text-dark space-y-2 list-disc pl-5" id="out-recs"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var RF = 3;
+            var MIN_BROKERS = 4;
+            var UTIL = 0.6;
+            var NIC_MB_S = 1250;
+            var DISK_IO_MB_S = 1040;
+            var DISK_GB_PER_BROKER = 8192;
+            var PRODUCE_MB_S_PER_BROKER_CPU = 120;
+
+            function daysLabel(n) {
+                return n + (n === 1 ? ' day' : ' days');
+            }
+
+            function formatMBs(value) {
+                if (value >= 1024) return (value / 1024).toFixed(2) + ' GB/s';
+                return value.toFixed(1) + ' MB/s';
+            }
+
+            function formatBytesGB(gb) {
+                if (!gb) return '0 GB';
+                if (gb >= 1024) return (gb / 1024).toFixed(1) + ' TB';
+                return Math.ceil(gb).toLocaleString() + ' GB';
+            }
+
+            function storageGB(ingressMbs, days) {
+                return ingressMbs * 86400 * days * RF / 1024;
+            }
+
+            function sizeCluster() {
+                var throughput = parseInt(document.getElementById('throughput').value, 10);
+                var retention = parseInt(document.getElementById('retention').value, 10);
+                var tiered = document.getElementById('tiered').checked;
+                var hotSlider = document.getElementById('hot-days');
+                hotSlider.max = String(retention);
+                var hotDays = Math.min(parseInt(hotSlider.value, 10) || 1, retention);
+                if (parseInt(hotSlider.value, 10) !== hotDays) hotSlider.value = String(hotDays);
+                var tierDays = tiered ? Math.max(0, retention - hotDays) : 0;
+                var localDays = tiered ? hotDays : retention;
+
+                document.getElementById('throughput-label').textContent = throughput + ' MB/s';
+                document.getElementById('retention-label').textContent = daysLabel(retention);
+                document.getElementById('hot-label').textContent = daysLabel(hotDays);
+                document.getElementById('tier-days-label').textContent = daysLabel(tierDays) + ' in tier';
+                document.getElementById('tier-controls').classList.toggle('hidden', !tiered);
+                document.getElementById('split-copy').textContent = tiered
+                    ? daysLabel(hotDays) + ' hot on local disk, ' + daysLabel(tierDays) + ' in object storage (tier = retention − hot).'
+                    : '';
+                var hotPct = retention ? (hotDays / retention) * 100 : 0;
+                document.getElementById('split-hot').style.width = (tiered ? hotPct : 100) + '%';
+                document.getElementById('split-tier').style.width = (tiered ? (100 - hotPct) : 0) + '%';
+
+                var egress = throughput;
+                var clusterNet = Math.max(throughput * RF, throughput * (RF - 1) + egress);
+                var diskWrite = throughput * RF;
+                var hotStorage = storageGB(throughput, localDays);
+                var tierStorage = tiered ? throughput * 86400 * tierDays / 1024 : 0;
+
+                var fromNetwork = Math.ceil(clusterNet / (NIC_MB_S * UTIL)) || 0;
+                var fromIo = Math.ceil(diskWrite / (DISK_IO_MB_S * UTIL)) || 0;
+                var fromStorage = Math.ceil(hotStorage / DISK_GB_PER_BROKER) || 0;
+                var fromCpu = Math.ceil(throughput / (PRODUCE_MB_S_PER_BROKER_CPU * UTIL)) || 0;
+                var fromRf = RF;
+                var brokers = Math.max(MIN_BROKERS, fromNetwork, fromIo, fromStorage, fromCpu, fromRf);
+
+                var dims = [
+                    { key: 'ha', label: 'HA floor', count: MIN_BROKERS },
+                    { key: 'network', label: 'Network', count: fromNetwork },
+                    { key: 'io', label: 'Disk IO', count: fromIo },
+                    { key: 'storage', label: 'Local disk', count: fromStorage },
+                    { key: 'cpu', label: 'CPU (TLS)', count: fromCpu },
+                    { key: 'rf', label: 'Replication factor', count: fromRf }
+                ];
+                var bind = dims.reduce(function (best, d) { return d.count > best.count ? d : best; }, dims[0]);
+                var why = {
+                    ha: 'We recommend ' + brokers + ' brokers because production clusters should not go below 4. Your throughput and disk would actually fit on fewer hosts, but RF=3 needs a spare so one broker can fail.',
+                    rf: 'We recommend ' + brokers + ' brokers so each partition can live on 3 brokers and still have a spare.',
+                    network: 'We recommend ' + brokers + ' brokers because the 10 GbE links, at 60% use, are the tightest limit. Disk space and CPU would have been fine with fewer.',
+                    io: 'We recommend ' + brokers + ' brokers because disks cannot write ingress × 3 copies fast enough on fewer hosts (2× SSD, 60% used).',
+                    storage: 'We recommend ' + brokers + ' brokers because local disk is the tightest limit: ' + formatBytesGB(hotStorage) + ' of data (ingress × ' + daysLabel(localDays) + ' × RF 3) at 8 TB per broker. Network and disk speed would have been fine with fewer.',
+                    cpu: 'We recommend ' + brokers + ' brokers because TLS CPU is the tightest limit. Network and disk would have been fine with fewer.'
+                };
+
+                document.getElementById('out-constraint').textContent = bind.key === 'storage'
+                    ? 'Limited by local disk, not by throughput.'
+                    : bind.key === 'ha' || bind.key === 'rf'
+                        ? 'Limited by production HA, not by throughput.'
+                        : 'Limited by ' + bind.label.toLowerCase() + '.';
+                document.getElementById('out-brokers').textContent = String(brokers);
+                document.getElementById('out-hot-storage').textContent = formatBytesGB(hotStorage);
+                document.getElementById('out-tier-storage').textContent = tiered ? formatBytesGB(tierStorage) : 'Off';
+                document.getElementById('out-storage-broker').textContent = formatBytesGB(hotStorage / brokers);
+                document.getElementById('out-why').textContent = why[bind.key];
+
+                var recs = [];
+                if (!tiered && fromStorage > MIN_BROKERS) {
+                    recs.push({
+                        title: 'Enable tiered storage',
+                        note: 'Local disk is driving broker count. Event Sizer keeps a short hot set on brokers and archives the rest. One day hot often returns you to the 4-broker floor.'
+                    });
+                }
+                if (tiered && fromStorage > MIN_BROKERS && hotDays > 1) {
+                    recs.push({
+                        title: 'Shorten the hot window',
+                        note: 'Hot storage is still sized as ingress × hot days × RF. Each extra hot day can add brokers even when tiered storage is on.'
+                    });
+                }
+                if (bind.key === 'network') {
+                    recs.push({
+                        title: 'Scale for network, or use a faster NIC',
+                        note: 'Event Sizer sizes network at 60% of a 10 GbE card. Produce + replication + consume share that link.'
+                    });
+                }
+                if (bind.key === 'io') {
+                    recs.push({
+                        title: 'Add disk volumes or brokers',
+                        note: 'Writes are ingress × RF. Default is 2× SSD at 520 MB/s each, used at 60% — the Event Sizer SSD guideline.'
+                    });
+                }
+                if (bind.key === 'cpu') {
+                    recs.push({
+                        title: 'Add cores or brokers',
+                        note: 'TLS is on, which is Event Sizer’s default. CPU is treated as ~120 MB/s produce per broker at 60% utilization.'
+                    });
+                }
+                if (bind.key === 'ha' || bind.key === 'rf') {
+                    recs.push({
+                        title: 'Keep 4 brokers in production',
+                        note: 'Throughput fits on fewer hosts, but RF=3 needs a spare so one loss does not block acks. Event Sizer never sizes below replication factor.'
+                    });
+                }
+                if (brokers > 50) {
+                    recs.push({
+                        title: 'Confirm before you buy',
+                        note: 'Event Sizer warns above 50 brokers. Re-run the same inputs in granular mode and review with Confluent.'
+                    });
+                }
+                if (retention >= 7 && !tiered) {
+                    recs.push({
+                        title: 'Do not keep 7+ days only on local disk',
+                        note: 'Long retention multiplies RF=3 copies on every broker. Use tiered storage unless consumers must rewind the full window from local disks.'
+                    });
+                }
+                recs.push({
+                    title: 'Defaults used here',
+                    note: 'RF=3, TLS on, 60% utilization, 10 GbE, 8 TB usable disk per broker, peak = average, egress = ingress. Compare at eventsizer.confluent.io/granular.'
+                });
+                document.getElementById('out-recs').innerHTML = recs.map(function (r) {
+                    return '<li><span class="font-medium">' + r.title + '.</span> ' + r.note + '</li>';
+                }).join('');
+            }
+
+            ['throughput', 'retention', 'hot-days'].forEach(function (id) {
+                document.getElementById(id).addEventListener('input', sizeCluster);
+            });
+            document.getElementById('tiered').addEventListener('change', sizeCluster);
+            sizeCluster();
+        })();
+    </script>
+
+    <script>
+        (function() {
+            const visitCountElement = document.getElementById('visit-count');
+            if (!visitCountElement) return;
+            fetch('https://us-central1-solutionsarchitect-01.cloudfunctions.net/visit-counter?page=broker-sizer')
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    visitCountElement.textContent = data && typeof data.count === 'number'
+                        ? 'Views: ' + data.count.toLocaleString()
+                        : 'Views';
+                })
+                .catch(function () { visitCountElement.textContent = 'Views'; });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Broker Sizer - Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #F5F9FF;
+            color: #0A3D62;
+        }
+        .content { max-width: 800px; margin: 0 auto; }
+        .category { margin-bottom: 2rem; }
+        .category h2 {
+            color: #0A3D62;
+            border-bottom: 2px solid #E5E7EB;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .category h3 { color: #0A3D62; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        .effort-level {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #E5E7EB;
+        }
+        a { color: #0A85EA; }
+        a:hover { color: #0A3D62; }
+        .text-primary { color: #0A85EA; }
+        .text-dark { color: #0A3D62; }
+        .logo-container {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1000;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .logo-container img { height: 40px; width: auto; }
+        code {
+            background: #eef4fb;
+            padding: 0.1rem 0.35rem;
+            border-radius: 0.25rem;
+            font-size: 0.875em;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+        th, td { border: 1px solid #E5E7EB; padding: 0.5rem 0.65rem; text-align: left; vertical-align: top; }
+        th { background: #f8fbff; }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
+            <img src="assets/image.png" alt="Confluent Logo">
+        </a>
+    </div>
+    <div class="container mx-auto px-4 py-8">
+        <div class="content bg-white shadow-lg rounded-lg p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold mb-2 text-dark">Kafka Broker Sizer</h1>
+                <p class="text-dark">Documentation and sizing guide</p>
+                <a href="kafka-broker-sizer.html" class="text-primary hover:text-dark underline mt-4 inline-block">← Back to Broker Sizer</a>
+            </div>
+            <p class="text-sm text-dark mb-6 text-center opacity-80">Tip: Hard refresh on Mac with Cmd + Shift + R.</p>
+
+            <div class="category">
+                <h2>What this tool estimates</h2>
+                <p class="mb-3">The sizer recommends a <strong>self-managed Apache Kafka / Confluent Platform</strong> broker count and disk from three inputs: peak throughput, retention, and optional tiered storage.</p>
+                <p>The form stays at three inputs. Broker count uses Event Sizer granular’s <code>max(...)</code> of HA, network, disk IO, local disk, CPU, and replication factor. Recommendations appear when a dimension is binding.</p>
+            </div>
+
+            <div class="category">
+                <h2>The three inputs</h2>
+                <table>
+                    <thead>
+                        <tr><th>Input</th><th>What it means</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1. Throughput</td>
+                            <td>Peak produce ingress in MB/s (1–1000). Size on the busiest sustained rate, not the daily average.</td>
+                        </tr>
+                        <tr>
+                            <td>2. Retention</td>
+                            <td>How long to keep data (1–365 days). With tiered storage off, all of this lives on local broker disk.</td>
+                        </tr>
+                        <tr>
+                            <td>3. Enable tiered storage</td>
+                            <td>Checkbox. When on, recent data stays on local disk and older data goes to object storage.</td>
+                        </tr>
+                        <tr>
+                            <td>3a. Hot storage</td>
+                            <td>Only shown when tiered storage is on. Slider for days on local disk. <code>tier days = retention − hot days</code>.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>Fan-out, egress, NIC, and partition fields are not on the form. The model uses hidden defaults so the page stays as simple as Event Sizer’s primary controls.</p>
+            </div>
+
+            <div class="category">
+                <h2>Hidden defaults</h2>
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li>Replication factor = 3; production floor = 4 brokers</li>
+                    <li>Peak = average; egress = ingress</li>
+                    <li>TLS on; utilization = 60%</li>
+                    <li>10 GbE (1250 MB/s), used at 60%</li>
+                    <li>Disk IO = 2× SSD × 520 MB/s, used at 60%</li>
+                    <li>8 TB usable local disk per broker</li>
+                    <li>CPU ≈ 120 MB/s produce per broker at 60% with TLS</li>
+                </ul>
+            </div>
+
+            <div class="category">
+                <h2>Formulas</h2>
+                <div class="effort-level">
+                    <h3>Brokers</h3>
+                    <p><code>brokers = max(4, network, disk_io, local_disk, cpu, RF)</code></p>
+                    <p class="mt-2">Same shape as Event Sizer’s <code>broker_recommended_count</code>. The highest dimension is marked binding.</p>
+                </div>
+                <div class="effort-level">
+                    <h3>Storage</h3>
+                    <p><code>hot_GB = ingress × 86,400 × local_days × 3 / 1024</code></p>
+                    <p class="mt-2">With tiered storage, <code>local_days = hot_days</code> and <code>tier_GB = ingress × 86,400 × (retention − hot) / 1024</code> (no RF on archival, matching Event Sizer).</p>
+                </div>
+            </div>
+
+            <div class="category">
+                <h2>Default example</h2>
+                <p class="mb-3">50 MB/s, 7-day retention, tiered storage off:</p>
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li>Local disk ≈ 86.5 TB / 8 TB per broker → 11 brokers (storage binds)</li>
+                    <li>Recommendation: enable tiered storage with 1 day hot → 4 brokers</li>
+                </ul>
+            </div>
+
+            <div class="category">
+                <h2>How to use it</h2>
+                <ol class="list-decimal list-inside ml-2 space-y-2">
+                    <li>Set peak ingress with the Throughput slider.</li>
+                    <li>Set how long data must be kept with Retention.</li>
+                    <li>If most reads are recent, enable tiered storage and set hot days. Tier days fill in automatically.</li>
+                    <li>Read “Why this many brokers” — it names the one limit that set the count.</li>
+                    <li>Compare with <a href="https://eventsizer.confluent.io/granular" target="_blank" rel="noopener noreferrer">Event Sizer granular</a> using the same throughput and retention.</li>
+                </ol>
+            </div>
+
+            <div class="category">
+                <h2>Recommendation notes</h2>
+                <div class="effort-level">
+                    <h3>Enable tiered storage</h3>
+                    <p>Shown when local disk needs more than 4 brokers. Event Sizer archives old data so brokers only hold the hot set.</p>
+                </div>
+                <div class="effort-level">
+                    <h3>Keep 4 brokers in production</h3>
+                    <p>Shown when HA is binding. Throughput would fit on fewer hosts, but RF=3 needs a spare broker.</p>
+                </div>
+                <div class="effort-level">
+                    <h3>Do not keep 7+ days only on local disk</h3>
+                    <p>Shown for long retention without tiered storage. Three copies of a week of data is usually the expensive part.</p>
+                </div>
+                <div class="effort-level">
+                    <h3>Network / disk IO / CPU</h3>
+                    <p>Shown only when that dimension is the max. Notes cite the Event Sizer default (60% utilization, TLS on, 10 GbE, 2× SSD).</p>
+                </div>
+                <div class="effort-level">
+                    <h3>Confirm before you buy</h3>
+                    <p>Shown above 50 brokers — the same warning Event Sizer uses.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
