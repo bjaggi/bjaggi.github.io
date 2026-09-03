@@ -114,7 +114,7 @@
                     <input type="range" id="throughput" min="1" max="1000" step="1" value="50">
                     <div class="flex justify-between text-xs text-gray-400 mt-1">
                         <span>1 MB/s</span>
-                        <span>Producer Ingress</span>
+                        <span>Average Throughput</span>
                         <span>1000 MB/s</span>
                     </div>
                 </div>
@@ -160,8 +160,18 @@
                 </div>
 
                 <div>
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="two-dc" class="mt-1 h-4 w-4 accent-[#0A85EA]">
+                        <span>
+                            <span class="font-semibold text-dark">4. Two DC Architecture?</span>
+                            <span class="block text-sm text-gray-500">Select if brokers are distributed across two data centers or AZs. The number of brokers will be doubled to account for a DC/AZ failure.</span>
+                        </span>
+                    </label>
+                </div>
+
+                <div>
                     <div class="flex items-center justify-between gap-3 mb-2">
-                        <label for="disk-tb" class="font-semibold text-dark">4. Disk storage (TB per broker)</label>
+                        <label for="disk-tb" class="font-semibold text-dark">5. Disk storage (TB per broker)</label>
                         <input type="number" id="disk-tb" min="1" step="1" value="12" aria-describedby="disk-tb-note">
                     </div>
                     <p class="text-sm text-gray-500" id="disk-tb-note">Recommended: 12 TB. Constrained by targeted rebuild time if a host were to go down. Do not go over 16 TB.</p>
@@ -215,6 +225,7 @@
                     <span>Limiting resource</span>
                     <span id="es-limit">—</span>
                 </div>
+                <p class="text-sm text-dark leading-relaxed mt-3 mb-1" id="es-why"></p>
                 <h3 class="text-sm font-semibold text-dark mt-5 mb-2">Brokers required based on resource capacity</h3>
                 <div class="es-row" id="es-row-network">
                     <span>Network throughput</span>
@@ -225,7 +236,7 @@
                     <span id="es-io">—</span>
                 </div>
                 <div class="es-row" id="es-row-storage">
-                    <span>Storage</span>
+                    <span>Storage<br><span class="es-note" id="es-storage-math"></span></span>
                     <span id="es-storage">—</span>
                 </div>
                 <div class="es-row" id="es-row-rf">
@@ -253,6 +264,7 @@
             <div class="bg-white shadow-lg rounded-lg p-6 border border-gray-100">
                 <h2 class="text-xl font-semibold text-dark mb-4">Host Profile</h2>
                 <h3 class="text-sm font-semibold text-dark mb-2">Host Resources</h3>
+                <p class="es-note mb-3"><a class="text-primary hover:text-dark underline" href="https://docs.confluent.io/platform/current/installation/system-requirements.html#hardware" target="_blank" rel="noopener noreferrer">Recommended hardware</a></p>
                 <div class="es-row"><span>Environment</span><span>baremetal</span></div>
                 <div class="es-row"><span>Cores</span><span>24</span></div>
                 <div class="es-row"><span>Memory</span><span>64 GB</span></div>
@@ -270,20 +282,22 @@
                 <div class="es-row"><span>Storage</span><span id="es-util-storage">—</span></div>
                 <div class="es-row"><span>Topic partition limit</span><span>not specified</span></div>
                 <div class="es-row"><span>CPU</span><span id="es-util-cpu">—</span></div>
+                <p class="text-sm text-dark mt-3" id="es-util-why"></p>
                 <p class="text-sm text-dark mt-4">Consider using Confluent Self-Balancing Clusters to increase utilization. <a class="text-primary hover:text-dark underline" href="https://docs.confluent.io/platform/current/kafka/sbc/index.html" target="_blank" rel="noopener noreferrer">Learn more.</a></p>
             </div>
         </div>
 
         <div class="max-w-5xl mx-auto mt-6 mb-10 bg-white shadow-lg rounded-lg p-6 border border-gray-100">
             <h2 class="text-xl font-semibold text-dark mb-2">How the broker count is calculated</h2>
-            <p class="text-sm text-gray-500 mb-5">We take your four inputs, apply Event Sizer’s hidden host assumptions, compute how many brokers each resource needs, then recommend the largest of those numbers (never below 4).</p>
+            <p class="text-sm text-gray-500 mb-5">We take your five inputs, apply Event Sizer’s hidden host assumptions, compute how many brokers each resource needs, then recommend the largest of those numbers (never below 4). Two-DC/AZ architecture doubles that capacity count.</p>
 
             <div class="formula-block">
                 <h3>Your inputs</h3>
                 <p>1. <strong>Throughput</strong> — producer ingress <em>I</em> in MB/s (the slider).</p>
                 <p>2. <strong>Retention</strong> — how many days to keep data.</p>
                 <p>3. <strong>Tiered storage</strong> — optional. If on, only hot days stay on local disk; the rest is object storage and does not add brokers.</p>
-                <p>4. <strong>Disk storage</strong> — usable TB on <em>each</em> broker (default 12). This is not the broker count.</p>
+                <p>4. <strong>Two DC Architecture</strong> — optional. If selected, the capacity count is doubled so either data center or AZ can fail.</p>
+                <p>5. <strong>Disk storage</strong> — usable TB on <em>each</em> broker (default 12). This is not the broker count.</p>
             </div>
 
             <div class="formula-block">
@@ -293,8 +307,9 @@
 
             <div class="formula-block">
                 <h3>The result</h3>
-                <code>brokers = max(4, network, IO, storage, CPU, RF)</code>
-                <p>Each line below is “how many brokers this resource alone would need.” Cluster Size highlights the winner — that is the limiting resource. Example at the defaults (50 MB/s, 7 days, 12 TB/broker, no tier): storage needs 8, everything else needs 1–4, so we recommend <strong>8 brokers</strong>.</p>
+                <code>capacity_brokers = max(4, network, IO, storage, CPU, RF)</code>
+                <code>brokers = capacity_brokers × (2 if Two DC Architecture is selected, otherwise 1)</code>
+                <p>Each line below is “how many brokers this resource alone would need.” Cluster Size highlights the winner — that is the limiting resource. Example at the defaults (50 MB/s, 7 days, 12 TB/broker, no tier): storage needs 8, everything else needs 1–4, so we recommend <strong>8 brokers</strong>, or <strong>16</strong> for two DCs/AZs.</p>
             </div>
 
             <div class="formula-block">
@@ -396,6 +411,7 @@
                 var diskTb = diskTbPerBroker();
                 var diskGb = diskTb * 1000;
                 var tiered = document.getElementById('tiered').checked;
+                var twoDc = document.getElementById('two-dc').checked;
                 var hotSlider = document.getElementById('hot-days');
                 hotSlider.max = String(retention);
                 var hotDays = Math.min(parseInt(hotSlider.value, 10) || 1, retention);
@@ -426,7 +442,8 @@
                 var fromStorage = Math.ceil(hotStorage / diskGb) || 0;
                 var fromCpu = Math.ceil(throughput / (PRODUCE_MB_S_PER_BROKER_CPU * UTIL)) || 0;
                 var fromRf = RF;
-                var brokers = Math.max(MIN_BROKERS, fromNetwork, fromIo, fromStorage, fromCpu, fromRf);
+                var capacityBrokers = Math.max(MIN_BROKERS, fromNetwork, fromIo, fromStorage, fromCpu, fromRf);
+                var brokers = twoDc ? capacityBrokers * 2 : capacityBrokers;
 
                 var dims = [
                     { key: 'ha', label: 'HA floor', count: MIN_BROKERS },
@@ -438,13 +455,16 @@
                 ];
                 var bind = dims.reduce(function (best, d) { return d.count > best.count ? d : best; }, dims[0]);
                 var why = {
-                    ha: 'We recommend ' + brokers + ' brokers because production clusters should not go below 4. Your throughput and disk would actually fit on fewer hosts, but RF=3 needs a spare so one broker can fail.',
-                    rf: 'We recommend ' + brokers + ' brokers so each partition can live on 3 brokers and still have a spare.',
-                    network: 'We recommend ' + brokers + ' brokers because the 10 GbE links, at 60% use, are the tightest limit. Disk space and CPU would have been fine with fewer.',
-                    io: 'We recommend ' + brokers + ' brokers because disks cannot write ingress × 3 copies fast enough on fewer hosts (1× SSD at 520 MB/s, 60% used).',
-                    storage: 'We recommend ' + brokers + ' brokers because local disk is the tightest limit: ' + formatBytesGB(hotStorage) + ' of data (ingress × ' + daysLabel(localDays) + ' × RF 3) at ' + diskTb + ' TB per broker. Network and disk speed would have been fine with fewer.',
-                    cpu: 'We recommend ' + brokers + ' brokers because TLS CPU is the tightest limit. Network and disk would have been fine with fewer.'
+                    ha: 'We recommend ' + capacityBrokers + ' brokers because production clusters should not go below 4. Your throughput and disk would actually fit on fewer hosts, but RF=3 needs a spare so one broker can fail.',
+                    rf: 'We recommend ' + capacityBrokers + ' brokers so each partition can live on 3 brokers and still have a spare.',
+                    network: 'We recommend ' + capacityBrokers + ' brokers because the 10 GbE links, at 60% use, are the tightest limit. Disk space and CPU would have been fine with fewer.',
+                    io: 'We recommend ' + capacityBrokers + ' brokers because disks cannot write ingress × 3 copies fast enough on fewer hosts (1× SSD at 520 MB/s, 60% used).',
+                    storage: 'We recommend ' + capacityBrokers + ' brokers because local disk is the tightest limit: ' + formatBytesGB(hotStorage) + ' of data (ingress × ' + daysLabel(localDays) + ' × RF 3) at ' + diskTb + ' TB per broker. Network and disk speed would have been fine with fewer.',
+                    cpu: 'We recommend ' + capacityBrokers + ' brokers because TLS CPU is the tightest limit. Network and disk would have been fine with fewer.'
                 };
+                if (twoDc) {
+                    why[bind.key] += ' Two-DC/AZ architecture doubles the capacity requirement from ' + capacityBrokers + ' to ' + brokers + ' brokers so the cluster can account for a DC/AZ failure.';
+                }
 
                 document.getElementById('out-constraint').textContent = bind.key === 'storage'
                     ? 'Limited by local disk, not by throughput.'
@@ -466,11 +486,14 @@
                     cpu: 'cpu'
                 };
                 var rfDisplay = MIN_BROKERS;
+                var storageUtil = brokers * diskGb ? (hotStorage / (brokers * diskGb)) * 100 : 0;
                 document.getElementById('es-broker-count').textContent = String(brokers);
                 document.getElementById('es-limit').textContent = limitLabel[bind.key] || bind.label.toLowerCase();
+                document.getElementById('es-why').textContent = why[bind.key];
                 document.getElementById('es-network').textContent = String(fromNetwork);
                 document.getElementById('es-io').textContent = String(fromIo);
                 document.getElementById('es-storage').textContent = String(fromStorage);
+                document.getElementById('es-storage-math').textContent = formatBytesGB(hotStorage) + ' local data ÷ ' + diskTb + ' TB per broker → ' + fromStorage;
                 document.getElementById('es-rf').textContent = String(rfDisplay);
                 document.getElementById('es-ha').textContent = 'at least ' + MIN_BROKERS;
                 document.getElementById('es-cpu').textContent = String(fromCpu);
@@ -479,10 +502,17 @@
                 document.getElementById('es-util-io').textContent = utilPct(diskWrite, brokers * DISK_IO_MB_S);
                 document.getElementById('es-util-storage').textContent = utilPct(hotStorage, brokers * diskGb);
                 document.getElementById('es-util-cpu').textContent = utilPct(throughput, brokers * PRODUCE_MB_S_PER_BROKER_CPU);
+                document.getElementById('es-util-why').textContent = 'Storage is ~' + Math.round(storageUtil) + '% full because ' + formatBytesGB(hotStorage) + ' of local data is spread across ' + brokers + ' × ' + diskTb + ' TB disks.';
                 var bindRow = bind.key === 'io' ? 'io' : bind.key;
                 setBindingRow(bindRow);
 
                 var recs = [];
+                if (twoDc) {
+                    recs.push({
+                        title: 'Two-DC/AZ resilience included',
+                        note: 'The capacity model requires ' + capacityBrokers + ' brokers. This is doubled to ' + brokers + ' so the deployment can account for a DC/AZ failure.'
+                    });
+                }
                 if (!tiered && fromStorage > MIN_BROKERS) {
                     recs.push({
                         title: 'Enable tiered storage',
@@ -550,6 +580,7 @@
                 document.getElementById(id).addEventListener('input', sizeCluster);
             });
             document.getElementById('tiered').addEventListener('change', sizeCluster);
+            document.getElementById('two-dc').addEventListener('change', sizeCluster);
             sizeCluster();
         })();
     </script>

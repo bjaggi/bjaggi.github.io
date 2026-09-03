@@ -71,7 +71,7 @@
 
             <div class="category">
                 <h2>What this tool estimates</h2>
-                <p class="mb-3">The sizer recommends a <strong>self-managed Apache Kafka / Confluent Platform</strong> broker count and disk from peak throughput, retention, optional tiered storage, and usable disk per broker.</p>
+                <p class="mb-3">The sizer recommends a <strong>self-managed Apache Kafka / Confluent Platform</strong> broker count and disk from producer ingress, retention, optional tiered storage, optional two-DC/AZ architecture, and usable disk per broker.</p>
                 <p>Broker count uses Event Sizer granular’s <code>max(...)</code> of HA, network, disk IO, local disk, CPU, and replication factor. Recommendations appear when a dimension is binding.</p>
             </div>
 
@@ -99,7 +99,11 @@
                             <td>Only shown when tiered storage is on. Slider for days on local disk. <code>tier days = retention − hot days</code>.</td>
                         </tr>
                         <tr>
-                            <td>4. Disk storage (TB per broker)</td>
+                            <td>4. Two DC Architecture?</td>
+                            <td>Checkbox. Select when brokers are distributed across two data centers or AZs. The calculated capacity count is doubled to account for a DC/AZ failure.</td>
+                        </tr>
+                        <tr>
+                            <td>5. Disk storage (TB per broker)</td>
                             <td>Usable local disk on <strong>each broker</strong>, not the cluster total and not the broker count. Default and recommended: <strong>12 TB</strong>. Larger disks are constrained by targeted rebuild time if a host were to go down; do not go over 16 TB. Changing this value recalculates broker count.</td>
                         </tr>
                     </tbody>
@@ -124,7 +128,8 @@
                 <h2>Formulas</h2>
                 <div class="effort-level">
                     <h3>Brokers</h3>
-                    <p><code>brokers = max(4, network, disk_io, local_disk, cpu, RF)</code></p>
+                    <p><code>capacity_brokers = max(4, network, disk_io, local_disk, cpu, RF)</code></p>
+                    <p class="mt-2"><code>brokers = capacity_brokers × 2</code> when Two DC Architecture is selected; otherwise <code>brokers = capacity_brokers</code>.</p>
                     <p class="mt-2">Same shape as Event Sizer’s <code>broker_recommended_count</code>. The highest dimension is marked binding.</p>
                 </div>
                 <div class="effort-level">
@@ -146,7 +151,7 @@
 
             <div class="category">
                 <h2>Cluster Size and Host Profile</h2>
-                <p class="mb-3">These two cards match Event Sizer’s results page. Cluster Size lists broker count, the limiting resource, and brokers required for network, IO, storage, replication factor, HA, rebuild time, partitions, and CPU. Host Profile uses Event Sizer’s recommended baremetal host (24 cores, 64 GB, 10 GbE, 520 MB/s SSD). Raw storage is the Disk storage text box (default 12 TB per broker).</p>
+                <p class="mb-3">These two cards match Event Sizer’s results page. Cluster Size repeats the “Why this many brokers” sentence and shows storage math (<code>local data ÷ TB per broker</code>). Host Profile uses Event Sizer’s recommended baremetal host (24 cores, 64 GB, 10 GbE, 520 MB/s SSD). See <a href="https://docs.confluent.io/platform/current/installation/system-requirements.html#hardware" target="_blank" rel="noopener noreferrer">recommended hardware</a>. Raw storage is the Disk storage text box (default 12 TB per broker).</p>
                 <p>Rebuild time and topic partition limit show as not specified because this page does not collect those Event Sizer fields. Resource utilization is load at the recommended broker count against raw host capacity.</p>
             </div>
 
@@ -155,6 +160,7 @@
                 <ol class="list-decimal list-inside ml-2 space-y-2">
                     <li>Set peak ingress with the Throughput slider.</li>
                     <li>Set how long data must be kept with Retention.</li>
+                    <li>Select Two DC Architecture when brokers span two data centers or AZs and the count must account for a DC/AZ failure.</li>
                     <li>Set usable disk storage per broker (default 12 TB). Do not go over 16 TB.</li>
                     <li>If most reads are recent, enable tiered storage and set hot days. Tier days fill in automatically.</li>
                     <li>Read Cluster Size and Host Profile — the same breakdown Event Sizer shows on its results page.</li>
