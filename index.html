@@ -83,32 +83,49 @@
             </div>
         </div>
         <p class="text-sm text-dark mb-6 text-center opacity-80">Tip: Hard refresh on Mac with Cmd + Shift + R.</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            <a href="estimator.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 class="text-xl font-semibold text-dark mb-2">AWS MSK to Confluent Cloud Migration Estimator</h2>
-                <p class="text-dark">Estimate complexity and effort required for your migration.</p>
-                <p class="text-primary mt-3 inline-block">Open estimator →</p>
-            </a>
-            <a href="cp-cost-estimator.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 class="text-xl font-semibold text-dark mb-2">CP Cost Estimator</h2>
-                <p class="text-dark">Estimate platform costs for your deployment.</p>
-                <p class="text-primary mt-3 inline-block">Open cost estimator →</p>
-            </a>
-            <a href="my-accounts.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 class="text-xl font-semibold text-dark mb-2">My Accounts - AI Assistant</h2>
-                <p class="text-dark">View assigned accounts and notes captured per account.</p>
-                <p class="text-primary mt-3 inline-block">Open my accounts →</p>
-            </a>
-            <a href="kafka-broker-sizer.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 class="text-xl font-semibold text-dark mb-2">Kafka Broker Sizer</h2>
-                <p class="text-dark">Estimate broker count, disk, and network from peak ingress, egress, and retention.</p>
-                <p class="text-primary mt-3 inline-block">Open broker sizer →</p>
-            </a>
-            <a href="multi-dc-architecture.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-                <h2 class="text-xl font-semibold text-dark mb-2">Multi-DC Architecture</h2>
-                <p class="text-dark">Choose a Confluent Platform resilience and disaster recovery architecture.</p>
-                <p class="text-primary mt-3 inline-block">Open architecture advisor →</p>
-            </a>
+        <div class="space-y-8">
+            <section aria-labelledby="sizing-heading">
+                <h2 id="sizing-heading" class="text-2xl font-semibold text-dark mb-4">CP Sizing &amp; Estimation</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <a href="cp-cost-estimator.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+                        <h3 class="text-xl font-semibold text-dark mb-2">CP Cost Estimator</h3>
+                        <p class="text-dark">Estimate platform costs for your deployment.</p>
+                        <p class="text-primary mt-3 inline-block">Open cost estimator →</p>
+                    </a>
+                    <a href="kafka-broker-sizer.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+                        <h3 class="text-xl font-semibold text-dark mb-2">Kafka Broker Sizer</h3>
+                        <p class="text-dark">Estimate broker count, disk, and network from peak ingress, egress, and retention.</p>
+                        <p class="text-primary mt-3 inline-block">Open broker sizer →</p>
+                    </a>
+                    <a href="multi-dc-architecture.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+                        <h3 class="text-xl font-semibold text-dark mb-2">Multi-DC Architecture Advisor</h3>
+                        <p class="text-dark">Choose a Confluent Platform resilience and disaster recovery architecture.</p>
+                        <p class="text-primary mt-3 inline-block">Open architecture advisor →</p>
+                    </a>
+                </div>
+            </section>
+
+            <section aria-labelledby="migration-heading">
+                <h2 id="migration-heading" class="text-2xl font-semibold text-dark mb-4">Migration to Confluent Cloud</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <a href="estimator.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+                        <h3 class="text-xl font-semibold text-dark mb-2">AWS MSK to Confluent Cloud Migration Estimator</h3>
+                        <p class="text-dark">Estimate complexity and effort required for your migration.</p>
+                        <p class="text-primary mt-3 inline-block">Open estimator →</p>
+                    </a>
+                </div>
+            </section>
+
+            <section aria-labelledby="productivity-heading">
+                <h2 id="productivity-heading" class="text-2xl font-semibold text-dark mb-4">Misc/Productivity</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <a href="my-accounts.html" class="block bg-white shadow-lg rounded-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+                        <h3 class="text-xl font-semibold text-dark mb-2">My Accounts - AI Assistant</h3>
+                        <p class="text-dark">View assigned accounts and notes captured per account.</p>
+                        <p class="text-primary mt-3 inline-block">Open my accounts →</p>
+                    </a>
+                </div>
+            </section>
         </div>
         <div class="text-center mt-6">
             <a href="docs.html" class="text-primary hover:text-dark underline">View Documentation</a>

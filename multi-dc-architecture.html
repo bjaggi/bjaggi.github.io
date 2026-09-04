@@ -75,9 +75,103 @@
             text-decoration-thickness: 1px;
             text-underline-offset: 3px;
         }
+        .flow-start {
+            max-width: 22rem;
+            margin: 0 auto;
+            text-align: center;
+            border: 2px solid #0A85EA;
+            border-radius: 0.5rem;
+            background: #eff7ff;
+            padding: 0.8rem 1rem;
+            font-weight: 700;
+        }
+        .flow-trunk {
+            text-align: center;
+            color: #0A85EA;
+            font-size: 1.5rem;
+            line-height: 1;
+            padding: 0.4rem 0;
+        }
+        .flow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+            gap: 0.75rem;
+        }
+        .flow-path {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            opacity: 0.42;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .flow-path.active {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+        .flow-condition,
+        .flow-product {
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 0.7rem;
+            text-align: center;
+            font-size: 0.8rem;
+            line-height: 1.35;
+            background: white;
+        }
+        .flow-condition {
+            min-height: 4.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        .flow-product {
+            min-height: 5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #0A85EA;
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .flow-path.active .flow-condition,
+        .flow-path.active .flow-product {
+            border: 2px solid #0A85EA;
+            background: #eff7ff;
+        }
+        .flow-path[data-flow="no-fit"] .flow-product {
+            color: #991b1b;
+        }
+        .flow-path[data-flow="no-fit"].active .flow-condition,
+        .flow-path[data-flow="no-fit"].active .flow-product {
+            border-color: #dc2626;
+            background: #fef2f2;
+        }
+        .flow-arrow {
+            text-align: center;
+            color: #64748b;
+            line-height: 1;
+            padding: 0.25rem;
+        }
+        .flow-selected {
+            margin-top: 0.35rem;
+            border-radius: 999px;
+            background: #0A85EA;
+            color: white;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.68rem;
+            text-decoration: none;
+        }
+        .flow-path[data-flow="no-fit"] .flow-selected {
+            background: #dc2626;
+        }
         @media (max-width: 640px) {
             .question, .result-card { padding: 1rem; }
             .pill { display: block; width: fit-content; }
+            .flow-grid { grid-template-columns: 1fr; }
+            .flow-condition, .flow-product { min-height: auto; }
         }
     </style>
 </head>
@@ -98,6 +192,10 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-5xl mx-auto items-start">
             <form id="advisor-form" class="space-y-4">
+                <div class="callout">
+                    <p class="text-sm text-dark"><strong>Multi-Region Clusters (MRC)</strong> is a Confluent Platform feature set that supports seamless failover and simpler multi-data center architectures.</p>
+                </div>
+
                 <section class="question">
                     <label for="deployment" class="block font-semibold text-dark mb-2">1. Will Confluent Platform be deployed on-premises or in a cloud?</label>
                     <select id="deployment">
@@ -155,7 +253,7 @@
                         <option value="">Select an operating model</option>
                         <option value="passive">Active/passive is acceptable</option>
                         <option value="active">Independent active clusters in multiple regions</option>
-                        <option value="single">One logical cluster stretched across DCs</option>
+                        <option value="single">One logical cluster stretched across DCs (MRC)</option>
                         <option value="unknown">Not sure</option>
                     </select>
                 </section>
@@ -215,6 +313,71 @@
         </div>
 
         <section class="max-w-5xl mx-auto mt-5 result-card">
+            <h2 class="text-xl font-semibold text-dark mb-2">Confluent Product Decision Flow</h2>
+            <p class="text-sm text-gray-500 mb-4" id="flow-status" aria-live="polite">Complete the questionnaire to highlight a path.</p>
+            <div class="flow-start">Your failure tolerance, RTO/RPO, operating model, and network</div>
+            <div class="flow-trunk" aria-hidden="true">↓</div>
+            <div class="flow-grid">
+                <div class="flow-path" data-flow="single-region">
+                    <div class="flow-condition">One AZ or DC outage</div>
+                    <div class="flow-arrow" aria-hidden="true">↓</div>
+                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region.html#bmrr" target="_blank" rel="noopener noreferrer">
+                        Confluent Platform<br>Single Regional Multi-AZ/DC
+                        <span class="flow-selected hidden">Selected path</span>
+                    </a>
+                </div>
+                <div class="flow-path" data-flow="mrc-review">
+                    <div class="flow-condition">Two AZ or DC outages</div>
+                    <div class="flow-arrow" aria-hidden="true">↓</div>
+                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#id6" target="_blank" rel="noopener noreferrer">
+                        Confluent Platform MRC<br>2.5/3-DC Design Review
+                        <span class="flow-selected hidden">Selected path</span>
+                    </a>
+                </div>
+                <div class="flow-path" data-flow="passive">
+                    <div class="flow-condition">Full region + active/passive acceptable</div>
+                    <div class="flow-arrow" aria-hidden="true">↓</div>
+                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#cluster-active-passive" target="_blank" rel="noopener noreferrer">
+                        Confluent Cluster Linking<br>2-Cluster Active-Passive
+                        <span class="flow-selected hidden">Selected path</span>
+                    </a>
+                </div>
+                <div class="flow-path" data-flow="active">
+                    <div class="flow-condition">Full region + independently active regions</div>
+                    <div class="flow-arrow" aria-hidden="true">↓</div>
+                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#id1" target="_blank" rel="noopener noreferrer">
+                        Confluent Cluster Linking<br>2+ Cluster Active-Active
+                        <span class="flow-selected hidden">Selected path</span>
+                    </a>
+                </div>
+                <div class="flow-path" data-flow="stretched">
+                    <div class="flow-condition">Full region + one cluster + zero RPO/near-zero RTO + three DCs within 50 ms</div>
+                    <div class="flow-arrow" aria-hidden="true">↓</div>
+                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region.html#bmrr" target="_blank" rel="noopener noreferrer">
+                        Confluent Platform<br>Multi-Region Clusters (MRC)
+                        <span class="flow-selected hidden">Selected path</span>
+                    </a>
+                </div>
+                <div class="flow-path" data-flow="no-fit">
+                    <div class="flow-condition">One stretched cluster without recovery or network prerequisites</div>
+                    <div class="flow-arrow" aria-hidden="true">↓</div>
+                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html" target="_blank" rel="noopener noreferrer">
+                        No good fit<br>Validate requirements
+                        <span class="flow-selected hidden">Selected path</span>
+                    </a>
+                </div>
+                <div class="flow-path" data-flow="requirements">
+                    <div class="flow-condition">Unknown failure scope, RTO, RPO, or operating model</div>
+                    <div class="flow-arrow" aria-hidden="true">↓</div>
+                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html" target="_blank" rel="noopener noreferrer">
+                        Confluent Architecture Review<br>Define requirements first
+                        <span class="flow-selected hidden">Selected path</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="max-w-5xl mx-auto mt-5 result-card">
             <h2 class="text-lg font-semibold text-dark mb-2">References</h2>
             <ul class="list-disc pl-5 space-y-2 text-sm">
                 <li><a class="text-primary hover:text-dark underline" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region.html#bmrr" target="_blank" rel="noopener noreferrer">Confluent Platform Multi-Region Clusters (MRC)</a></li>
@@ -263,6 +426,8 @@
                 var base = {
                     title: 'Confluent Platform Multi-DC Architecture Review',
                     link: links.overview,
+                    path: 'requirements',
+                    complete: true,
                     summary: 'The current answers do not establish enough constraints for a defensible architecture recommendation.',
                     confidence: 'Needs validation',
                     rationale: [],
@@ -281,6 +446,7 @@
                 var required = [v.deployment, v.failure, v.objectives, v.operating, v.latency];
                 if (required.some(function (x) { return !x; })) {
                     base.title = 'Confluent Platform — Complete the questionnaire';
+                    base.complete = false;
                     base.summary = 'Select an answer for each question to receive a recommendation.';
                     base.confidence = 'Waiting for answers';
                     base.rationale = ['Every answer affects failure-domain, recovery, or replication design.'];
@@ -298,6 +464,7 @@
                 if (v.failure === 'one') {
                     base.title = 'Confluent Platform — Single Regional Multi-AZ/DC Cluster';
                     base.link = links.mrc;
+                    base.path = 'single-region';
                     base.summary = 'Distribute brokers and KRaft controllers across three ' + env + ' using rack awareness and resilient replica placement.';
                     base.confidence = v.objectives === 'unknown' ? 'Provisional' : 'Good starting point';
                     base.recovery = 'Designed to remain available through one AZ/DC outage. Application behavior, min.insync.replicas, replication factor, and client retry settings determine the achieved RTO/RPO.';
@@ -312,6 +479,7 @@
                 } else if (v.failure === 'region' && strictRecovery && v.operating === 'single' && v.latency === 'yes') {
                     base.title = 'Confluent Platform Multi-Region Clusters (MRC) — Stretched 3-DC';
                     base.link = links.mrc;
+                    base.path = 'stretched';
                     base.summary = 'Use Confluent Platform Multi-Region Clusters with brokers, replicas, and KRaft quorum distributed across three low-latency data centers.';
                     base.confidence = 'Validate with Confluent';
                     base.recovery = 'A correctly designed stretched MRC can target RPO = 0 and RTO near 0. The outcome depends on synchronous replica placement, automatic observer promotion, clients, and application failover.';
@@ -326,6 +494,7 @@
                 } else if (v.failure === 'region' && v.operating === 'passive') {
                     base.title = 'Confluent Cluster Linking — 2-Cluster Active-Passive';
                     base.link = links.passive;
+                    base.path = 'passive';
                     base.summary = 'Run the application against an active regional cluster and asynchronously mirror required topics to a passive cluster in another region.';
                     base.confidence = v.objectives === 'unknown' ? 'Provisional' : 'Good starting point';
                     base.recovery = 'Cross-cluster replication is asynchronous, so RPO > 0. Application and client failover take time, so RTO > 0.';
@@ -345,6 +514,7 @@
                 } else if (v.failure === 'region' && v.operating === 'active') {
                     base.title = 'Confluent Cluster Linking — 2+ Cluster Active-Active';
                     base.link = links.active;
+                    base.path = 'active';
                     base.summary = 'Run independent regional clusters and applications, replicating selected topics between regions with Cluster Linking.';
                     base.confidence = v.objectives === 'unknown' ? 'Provisional' : 'Validate application design';
                     base.recovery = 'At least one region remains active, so RTO can be low. Cross-region replication is asynchronous, so RPO remains greater than zero for an irrecoverable source-region failure.';
@@ -364,6 +534,7 @@
                 } else if (v.failure === 'two') {
                     base.title = 'Confluent Platform MRC — 2.5/3-DC Design Review';
                     base.link = links.stretched;
+                    base.path = 'mrc-review';
                     base.summary = 'Tolerating two AZ/DC failures requires explicit quorum, replica-placement, capacity, and client-failover analysis; a generic three-zone layout is not enough.';
                     base.confidence = 'Architecture review required';
                     base.noGoodReason = 'There is no generic topology that safely guarantees two simultaneous AZ/DC failures without detailed quorum, replica-placement, and surviving-capacity analysis.';
@@ -379,6 +550,7 @@
                 } else {
                     base.title = 'Confluent Platform Multi-DC Architecture Review';
                     base.link = links.overview;
+                    base.path = 'requirements';
                     base.summary = 'Resolve the “not sure” answers before selecting a topology. Start with application criticality, acceptable data loss, and acceptable outage time.';
                     base.confidence = 'Needs requirements';
                     base.noGoodReason = 'The failure scope, RTO, RPO, or operating model is not defined well enough to select a safe architecture.';
@@ -398,6 +570,7 @@
                 if (v.failure === 'region' && v.operating === 'single' && !(strictRecovery && v.latency === 'yes')) {
                     base.title = 'Confluent Platform MRC — Feasibility Review';
                     base.link = links.mrc;
+                    base.path = 'no-fit';
                     base.summary = 'One logical cluster across locations is requested, but the recovery or network answers do not establish a safe stretched-cluster design.';
                     base.confidence = 'Requirements conflict';
                     base.noGoodReason = v.latency === 'yes'
@@ -424,6 +597,24 @@
                 }).join('');
             }
 
+            function updateFlowchart(recommendation) {
+                document.querySelectorAll('.flow-path').forEach(function (path) {
+                    var selected = recommendation.complete && path.dataset.flow === recommendation.path;
+                    path.classList.toggle('active', selected);
+                    var product = path.querySelector('.flow-product');
+                    var badge = path.querySelector('.flow-selected');
+                    badge.classList.toggle('hidden', !selected);
+                    if (selected) {
+                        product.setAttribute('aria-current', 'step');
+                    } else {
+                        product.removeAttribute('aria-current');
+                    }
+                });
+                document.getElementById('flow-status').textContent = recommendation.complete
+                    ? 'Selected path: ' + recommendation.title
+                    : 'Complete the questionnaire to highlight a path.';
+            }
+
             function render() {
                 var v = values();
                 document.getElementById('objective-details').classList.toggle('hidden', v.objectives !== 'known');
@@ -441,6 +632,7 @@
                 renderList('rationale', recommendation.rationale, false);
                 renderList('risks', recommendation.risks, false);
                 renderList('validation', recommendation.validation, true);
+                updateFlowchart(recommendation);
             }
 
             ids.forEach(function (id) {
