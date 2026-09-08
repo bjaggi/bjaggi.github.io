@@ -886,10 +886,10 @@
                                             lastGroup = service.group;
                                             const brokerReferences = service.group === 'Broker Architecture'
                                                 ? `<div class="mt-1 text-xs font-normal text-gray-600">
-                                                    Choose the appropriate architecture with the
-                                                    <a href="multi-dc-architecture.html" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-dark">Multi-DC Architecture Advisor</a>,
-                                                    then calculate the broker count with the
-                                                    <a href="kafka-broker-sizer.html" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-dark">Kafka Broker Sizer</a>.
+                                                    First calculate the broker count with the
+                                                    <a href="kafka-broker-sizer.html" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-dark">Kafka Broker Sizer</a>,
+                                                    then optionally evaluate a Multi-DC architecture with the
+                                                    <a href="multi-dc-architecture.html" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-dark">Multi-DC Architecture Advisor</a>.
                                                 </div>`
                                                 : '';
                                             groupHeader = `<tr class="bg-blue-50"><td colspan="4" class="px-4 py-2 border font-semibold text-sm text-primary">${service.group} <span class="text-xs font-normal text-gray-500">(choose one)</span>${brokerReferences}</td></tr>`;
