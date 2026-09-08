@@ -228,7 +228,7 @@
     <main class="container mx-auto px-4 py-8">
         <div class="text-center max-w-3xl mx-auto mb-8">
             <h1 class="text-3xl font-bold mb-2 text-dark">Multi-DC Architecture Advisor</h1>
-            <p class="text-dark">Answer five questions to get a starting recommendation for Confluent Platform resilience and disaster recovery.</p>
+            <p class="text-dark">Define your recovery targets and network latency to get a starting Confluent Platform architecture recommendation.</p>
             <p class="text-sm text-gray-500 mt-2">This is architectural guidance, not a substitute for design validation with Confluent.</p>
         </div>
 
@@ -239,77 +239,35 @@
                 </div>
 
                 <section class="question">
-                    <label for="deployment" class="block font-semibold text-dark mb-2">1. Will Confluent Platform be deployed on-premises or in a cloud?</label>
-                    <select id="deployment">
-                        <option value="">Select an environment</option>
-                        <option value="onprem">On-premises</option>
-                        <option value="aws">AWS</option>
-                        <option value="azure">Azure</option>
-                        <option value="gcp">GCP</option>
-                        <option value="unknown">Not sure</option>
-                    </select>
-                </section>
-
-                <section class="question">
-                    <label for="failure" class="block font-semibold text-dark mb-2">2. What failure must the deployment tolerate?</label>
-                    <select id="failure">
-                        <option value="">Select a failure scope</option>
-                        <option value="one">One AZ or data center outage</option>
-                        <option value="two">Two AZ or data center outages</option>
-                        <option value="region">One full region outage</option>
-                        <option value="unknown">Not sure</option>
-                    </select>
-                </section>
-
-                <section class="question">
-                    <label for="objectives" class="block font-semibold text-dark mb-2">3. Do you know your organization’s RTO and RPO?</label>
+                    <label for="objectives" class="block font-semibold text-dark mb-2">1. Have acceptable RTO and RPO targets been defined?</label>
                     <select id="objectives">
                         <option value="">Select an answer</option>
-                        <option value="known">Yes</option>
-                        <option value="unknown">No / not sure</option>
+                        <option value="known">Yes, the targets are defined</option>
+                        <option value="unknown">No / not sure — define them first</option>
                     </select>
-                    <div id="objective-details" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                        <div>
-                            <label for="rto" class="block text-sm font-medium mb-1">RTO target</label>
-                            <select id="rto">
-                                <option value="zero">Zero / near zero</option>
-                                <option value="minutes">Minutes</option>
-                                <option value="hours">Hours or more</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="rpo" class="block text-sm font-medium mb-1">RPO target</label>
-                            <select id="rpo">
-                                <option value="zero">Zero data loss</option>
-                                <option value="minutes">Minutes of data loss</option>
-                                <option value="hours">Hours or more</option>
-                            </select>
-                        </div>
-                    </div>
                     <p class="text-xs text-gray-500 mt-2"><strong>RTO</strong> is acceptable recovery time. <strong>RPO</strong> is acceptable data loss.</p>
                 </section>
 
-                <section class="question">
-                    <label for="operating" class="block font-semibold text-dark mb-2">4. Is active/passive acceptable, or is another operating model required?</label>
-                    <select id="operating">
-                        <option value="">Select an operating model</option>
-                        <option value="passive">Active/passive is acceptable</option>
-                        <option value="active">Independent active clusters in multiple regions</option>
-                        <option value="single">One logical cluster stretched across DCs (MRC)</option>
-                        <option value="unknown">Not sure</option>
+                <section class="question hidden" id="recovery-question">
+                    <label for="recovery-target" class="block font-semibold text-dark mb-2">2. What RTO and RPO must the architecture support?</label>
+                    <select id="recovery-target">
+                        <option value="">Select a recovery target</option>
+                        <option value="zero">RTO = 0 and RPO = 0 — no downtime or data loss</option>
+                        <option value="nearzero">RTO/RPO are near zero</option>
+                        <option value="positive">RTO/RPO are greater than zero — minutes or hours are acceptable</option>
                     </select>
+                    <p class="text-xs text-gray-500 mt-2">Zero and near-zero targets require substantially stronger network, placement, client, and operational prerequisites.</p>
                 </section>
 
-                <section class="question">
-                    <label for="latency" class="block font-semibold text-dark mb-2">5. What is the measured latency between the locations?</label>
+                <section class="question hidden" id="latency-question">
+                    <label for="latency" class="block font-semibold text-dark mb-2">3. What is the measured latency between the DCs/AZs?</label>
                     <select id="latency">
                         <option value="">Select a latency range</option>
-                        <option value="le5">5 ms or less</option>
-                        <option value="le50">More than 5 ms, up to 50 ms</option>
+                        <option value="le50">50 ms or less</option>
                         <option value="over50">More than 50 ms</option>
                         <option value="unknown">Not sure / not measured</option>
                     </select>
-                    <p class="text-xs text-gray-500 mt-2">Multi-AZ/stretch designs typically need ≤5 ms. MRC candidates require stable ≤50 ms connectivity with tight p99 performance. Measure the exact network path.</p>
+                    <p class="text-xs text-gray-500 mt-2">Use measured latency, jitter, bandwidth, and p99 stability—not geographic distance or an assumed cloud-region value.</p>
                 </section>
             </form>
 
@@ -357,76 +315,54 @@
 
         <section class="max-w-5xl mx-auto mt-5 result-card">
             <h2 class="text-xl font-semibold text-dark mb-2">Confluent Product Decision Flow</h2>
-            <p class="text-sm text-gray-500 mb-4">Start with the outage you must survive, then use recovery objectives and measured latency to select a candidate.</p>
+            <p class="text-sm text-gray-500 mb-4">Follow the same sequence as the questionnaire: define recovery targets, select the target, then use measured latency.</p>
             <p class="callout text-sm text-dark mb-4" id="flow-status" aria-live="polite">Complete the questionnaire to highlight a path.</p>
-            <div class="flow-start">Are the failure scope and RTO/RPO defined?</div>
-            <div class="flow-trunk" aria-hidden="true">↓</div>
-            <div class="flow-decision">What failure must the deployment tolerate?</div>
-            <div class="flow-trunk" aria-hidden="true">↓</div>
-            <div class="flow-branch-grid">
-                <div class="flow-path" data-flow="single-region">
-                    <div class="flow-condition">One AZ/DC outage + three nearby locations + ≤5 ms</div>
-                    <div class="flow-arrow" aria-hidden="true">↓</div>
-                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region.html#bmrr" target="_blank" rel="noopener noreferrer">
-                        Multi-AZ / Stretch Cluster
-                        <span class="flow-selected hidden">Selected path</span>
-                    </a>
-                </div>
-                <div class="flow-path" data-flow="mrc-review">
-                    <div class="flow-condition">Two AZ or DC outages</div>
-                    <div class="flow-arrow" aria-hidden="true">↓</div>
-                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#id6" target="_blank" rel="noopener noreferrer">
-                        Confluent Platform MRC<br>2.5/3-DC Design Review
-                        <span class="flow-selected hidden">Selected path</span>
-                    </a>
-                </div>
-                <div class="flow-region">
-                    <div class="flow-condition">One full-region outage</div>
-                    <div class="flow-arrow" aria-hidden="true">↓</div>
-                    <div class="flow-region-grid">
-                        <div class="flow-path" data-flow="stretched">
-                            <div class="flow-condition">Zero RPO + near-zero RTO + one cluster + ≤50 ms</div>
-                            <div class="flow-arrow" aria-hidden="true">↓</div>
-                            <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region.html#bmrr" target="_blank" rel="noopener noreferrer">
-                                Multi-Region Clusters (MRC)
-                                <span class="flow-selected hidden">Selected path</span>
-                            </a>
-                        </div>
-                        <div class="flow-path" data-flow="passive">
-                            <div class="flow-condition">RPO/RTO &gt; 0 + active/passive</div>
-                            <div class="flow-arrow" aria-hidden="true">↓</div>
-                            <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#cluster-active-passive" target="_blank" rel="noopener noreferrer">
-                                Cluster Linking<br>Active-Passive
-                                <span class="flow-selected hidden">Selected path</span>
-                            </a>
-                        </div>
-                        <div class="flow-path" data-flow="active">
-                            <div class="flow-condition">RPO &gt; 0 + independently active regions</div>
-                            <div class="flow-arrow" aria-hidden="true">↓</div>
-                            <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#id1" target="_blank" rel="noopener noreferrer">
-                                Cluster Linking<br>Active-Active
-                                <span class="flow-selected hidden">Selected path</span>
-                            </a>
-                        </div>
-                        <div class="flow-path" data-flow="no-fit">
-                            <div class="flow-condition">One cluster without the recovery or latency prerequisites</div>
-                            <div class="flow-arrow" aria-hidden="true">↓</div>
-                            <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html" target="_blank" rel="noopener noreferrer">
-                                No good fit<br>Validate requirements
-                                <span class="flow-selected hidden">Selected path</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div class="flow-start">Are acceptable RTO and RPO targets defined?</div>
             <div class="flow-trunk" aria-hidden="true">↓</div>
             <div class="flow-path max-w-md mx-auto" data-flow="requirements">
-                <div class="flow-condition">Requirements are unknown or conflict</div>
+                <div class="flow-condition">No / not sure</div>
                 <div class="flow-arrow" aria-hidden="true">↓</div>
                 <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html" target="_blank" rel="noopener noreferrer">
-                    Define RTO/RPO and complete an architecture review
+                    Define acceptable RTO/RPO first
                     <span class="flow-selected hidden">Selected path</span>
                 </a>
+            </div>
+            <div class="flow-trunk" aria-hidden="true">↓</div>
+            <div class="flow-decision">If yes: what recovery target is required?</div>
+            <div class="flow-trunk" aria-hidden="true">↓</div>
+            <div class="flow-branch-grid">
+                <div class="flow-path" data-flow="mrc">
+                    <div class="flow-condition">RTO/RPO = 0 or near zero + latency ≤50 ms</div>
+                    <div class="flow-arrow" aria-hidden="true">↓</div>
+                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region.html#bmrr" target="_blank" rel="noopener noreferrer">
+                        Use Multi-Region Clusters (MRC)
+                        <span class="flow-selected hidden">Selected path</span>
+                    </a>
+                </div>
+                <div class="flow-path" data-flow="no-fit">
+                    <div class="flow-condition">RTO/RPO = 0 or near zero + latency &gt;50 ms</div>
+                    <div class="flow-arrow" aria-hidden="true">↓</div>
+                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html" target="_blank" rel="noopener noreferrer">
+                        MRC cannot be used<br>Address latency or recovery targets
+                        <span class="flow-selected hidden">Selected path</span>
+                    </a>
+                </div>
+                <div class="flow-path" data-flow="stretch">
+                    <div class="flow-condition">RTO/RPO &gt; 0 + latency ≤50 ms</div>
+                    <div class="flow-arrow" aria-hidden="true">↓</div>
+                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#id6" target="_blank" rel="noopener noreferrer">
+                        Use a Stretch Cluster
+                        <span class="flow-selected hidden">Selected path</span>
+                    </a>
+                </div>
+                <div class="flow-path" data-flow="linking">
+                    <div class="flow-condition">RTO/RPO &gt; 0 + latency &gt;50 ms</div>
+                    <div class="flow-arrow" aria-hidden="true">↓</div>
+                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/cluster-linking/index.html" target="_blank" rel="noopener noreferrer">
+                        Use two independent clusters<br>with Cluster Linking
+                        <span class="flow-selected hidden">Selected path</span>
+                    </a>
+                </div>
             </div>
             <figure class="mt-6">
                 <img class="reference-diagram" src="assets/multi-dc-decision-reference.jpg" alt="Detailed reference flow comparing MRC, stretch clusters, and independent clusters with Cluster Linking based on RTO, RPO, and latency">
@@ -444,10 +380,10 @@
                         <h3 class="text-lg font-bold text-dark mt-1">Multi-AZ / Stretch Cluster</h3>
                     </div>
                     <div class="solution-body">
-                        <p class="text-sm text-dark mb-3"><strong>Use when:</strong> One logical cluster must remain available through one AZ or nearby data-center outage.</p>
+                        <p class="text-sm text-dark mb-3"><strong>Use when:</strong> RTO/RPO greater than zero is acceptable and the proposed locations are connected within the flow’s 50 ms screening threshold.</p>
                         <h4 class="font-semibold text-dark text-sm">Prerequisites</h4>
                         <ul class="list-disc space-y-1 text-sm text-dark mt-1">
-                            <li>Three nearby AZs/DCs, typically with stable ≤5 ms latency.</li>
+                            <li>Locations within 50 ms for initial screening; typical Multi-AZ designs should target stable ≤5 ms latency.</li>
                             <li>Rack-aware broker and KRaft controller placement.</li>
                             <li>Replication factor, min ISR, and capacity sized for one location loss.</li>
                             <li>Measured bandwidth, jitter, and p99 latency between locations.</li>
@@ -482,7 +418,7 @@
                     <div class="solution-body">
                         <p class="text-xs font-bold uppercase tracking-wide text-primary">Independent regional clusters</p>
                         <h3 class="text-lg font-bold text-dark mt-1">Cluster Linking</h3>
-                        <p class="text-sm text-dark mt-2"><strong>Use when:</strong> Non-zero RPO/RTO is acceptable and independent active/passive or active/active regional clusters are preferred.</p>
+                        <p class="text-sm text-dark mt-2"><strong>Use when:</strong> Non-zero RPO/RTO is acceptable and latency is above the stretch-cluster threshold, requiring independent clusters.</p>
                         <h4 class="font-semibold text-dark text-sm mt-3">Prerequisites</h4>
                         <ul class="list-disc space-y-1 text-sm text-dark mt-1">
                             <li>Reachable source and destination clusters with replication bandwidth.</li>
@@ -516,13 +452,12 @@
 
     <script>
         (function () {
-            var ids = ['deployment', 'failure', 'objectives', 'rto', 'rpo', 'operating', 'latency'];
+            var ids = ['objectives', 'recovery-target', 'latency'];
             var links = {
                 overview: 'https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html',
                 mrc: 'https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region.html#bmrr',
-                passive: 'https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#cluster-active-passive',
-                active: 'https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#id1',
-                stretched: 'https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#id6'
+                stretched: 'https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#id6',
+                linking: 'https://docs.confluent.io/platform/current/multi-dc-deployments/cluster-linking/index.html'
             };
 
             function label(id) {
@@ -532,12 +467,8 @@
 
             function values() {
                 return {
-                    deployment: document.getElementById('deployment').value,
-                    failure: document.getElementById('failure').value,
                     objectives: document.getElementById('objectives').value,
-                    rto: document.getElementById('rto').value,
-                    rpo: document.getElementById('rpo').value,
-                    operating: document.getElementById('operating').value,
+                    recovery: document.getElementById('recovery-target').value,
                     latency: document.getElementById('latency').value
                 };
             }
@@ -546,7 +477,7 @@
                 return { onprem: 'on-premises data centers', aws: 'AWS Availability Zones', azure: 'Azure Availability Zones', gcp: 'GCP zones', unknown: 'the selected locations' }[value] || 'the selected locations';
             }
 
-            function result(v) {
+            function legacyResult(v) {
                 var base = {
                     title: 'Confluent Platform Multi-DC Architecture Review',
                     link: links.overview,
@@ -742,6 +673,115 @@
                 return base;
             }
 
+            function result(v) {
+                var base = {
+                    title: 'Confluent Platform Multi-DC Architecture Review',
+                    link: links.overview,
+                    path: 'requirements',
+                    complete: true,
+                    summary: 'Define recovery requirements before selecting an architecture.',
+                    confidence: 'Needs requirements',
+                    rationale: [],
+                    recovery: 'RTO and RPO cannot be inferred until acceptable downtime and data loss are defined.',
+                    risks: [],
+                    noGoodReason: '',
+                    suggestion: '',
+                    validation: [
+                        'Confirm RTO and RPO with application owners.',
+                        'Measure latency, jitter, bandwidth, and p99 network stability.',
+                        'Validate broker, controller, replica, and application placement with Confluent.',
+                        'Test failover and recovery behavior before production.'
+                    ]
+                };
+
+                if (!v.objectives || (v.objectives === 'known' && (!v.recovery || !v.latency))) {
+                    base.title = 'Confluent Platform — Complete the questionnaire';
+                    base.complete = false;
+                    base.summary = 'Complete each visible question to receive a recommendation.';
+                    base.confidence = 'Waiting for answers';
+                    base.rationale = ['The next question appears after the current requirement is defined.'];
+                    base.risks = ['Do not select an architecture from incomplete recovery requirements.'];
+                    return base;
+                }
+
+                if (v.objectives === 'unknown' || v.latency === 'unknown') {
+                    base.noGoodReason = v.objectives === 'unknown'
+                        ? 'Acceptable downtime and data loss have not been defined.'
+                        : 'Network latency and stability have not been measured.';
+                    base.suggestion = v.objectives === 'unknown'
+                        ? 'Work with application owners to agree on acceptable RTO and RPO, then return to the advisor.'
+                        : 'Measure latency, jitter, bandwidth, and p99 stability between the proposed locations.';
+                    base.rationale = ['Architecture selection starts with approved recovery requirements and measured network behavior.'];
+                    base.risks = ['Choosing first and defining requirements later can produce an expensive design that still misses business objectives.'];
+                    return base;
+                }
+
+                var zeroOrNearZero = v.recovery === 'zero' || v.recovery === 'nearzero';
+                if (zeroOrNearZero && v.latency === 'le50') {
+                    base.title = 'Confluent Platform Multi-Region Clusters (MRC)';
+                    base.link = links.mrc;
+                    base.path = 'mrc';
+                    base.confidence = 'Validate with Confluent';
+                    base.summary = 'Use an MRC candidate to support zero or near-zero recovery objectives across suitably connected locations.';
+                    base.recovery = v.recovery === 'zero'
+                        ? 'A correctly designed MRC can target RPO = 0 and RTO near 0; end-to-end downtime still depends on clients and applications.'
+                        : 'MRC can support near-zero RTO/RPO when replica placement, observers, quorum, clients, and applications are designed together.';
+                    base.rationale = [
+                        'The selected RTO/RPO requires a tightly integrated multi-location cluster.',
+                        'Measured latency is at or below the 50 ms decision threshold.'
+                    ];
+                    base.risks = [
+                        'Average latency alone is insufficient; validate jitter, bandwidth, packet loss, and p99 behavior.',
+                        'Synchronous replicas can increase producer latency.',
+                        'Surviving-location capacity, KRaft quorum, replica placement, and observer promotion must be validated.'
+                    ];
+                } else if (zeroOrNearZero) {
+                    base.title = 'MRC is not currently a good fit';
+                    base.link = links.overview;
+                    base.path = 'no-fit';
+                    base.confidence = 'Network prerequisite not met';
+                    base.summary = 'The recovery target points to MRC, but the measured latency is above the decision threshold.';
+                    base.recovery = 'The selected zero or near-zero target cannot be promised with this network path.';
+                    base.noGoodReason = 'MRC requires a suitable stable network; the selected latency is greater than 50 ms.';
+                    base.suggestion = 'Address the network latency, relax the RTO/RPO targets, or evaluate independent clusters with an accepted non-zero RPO.';
+                    base.rationale = ['Strict recovery targets and high inter-location latency conflict.'];
+                    base.risks = ['Attempting synchronous multi-region replication on this path can severely reduce throughput and availability.'];
+                } else if (v.latency === 'le50') {
+                    base.title = 'Confluent Platform Multi-AZ / Stretch Cluster';
+                    base.link = links.stretched;
+                    base.path = 'stretch';
+                    base.confidence = 'Architecture review required';
+                    base.summary = 'Use a stretched-cluster candidate because non-zero recovery time or data loss is acceptable and the locations are within 50 ms.';
+                    base.recovery = 'Achieved RTO/RPO depends on replica placement, min ISR, surviving capacity, and client recovery behavior.';
+                    base.rationale = [
+                        'The business accepts RTO/RPO greater than zero.',
+                        'The measured network is within the flow’s stretch-cluster threshold.'
+                    ];
+                    base.risks = [
+                        'For typical Multi-AZ designs, target much lower latency—often ≤5 ms—even though this flow uses a 50 ms screening threshold.',
+                        'Cross-location synchronous replication adds latency and network cost.',
+                        'A stretch cluster does not automatically satisfy full-region disaster recovery.'
+                    ];
+                } else {
+                    base.title = 'Confluent Cluster Linking — Two Independent Clusters';
+                    base.link = links.linking;
+                    base.path = 'linking';
+                    base.confidence = 'Good starting point';
+                    base.summary = 'Use two independent Confluent Platform clusters and replicate selected topics with Cluster Linking.';
+                    base.recovery = 'Replication is asynchronous, so RPO and RTO are greater than zero and depend on mirror lag and the failover runbook.';
+                    base.rationale = [
+                        'The business accepts downtime or data loss greater than zero.',
+                        'The locations are too far apart for the flow’s stretched-cluster threshold.'
+                    ];
+                    base.risks = [
+                        'Monitor mirror lag and size cross-region replication bandwidth.',
+                        'Test topic promotion/failover, consumer offsets, security, applications, and failback.',
+                        'Independent active writers require conflict-free topic and application ownership.'
+                    ];
+                }
+                return base;
+            }
+
             function renderList(id, items, checkbox) {
                 document.getElementById(id).innerHTML = items.map(function (item) {
                     return '<li>' + (checkbox ? '□ ' : '') + item + '</li>';
@@ -762,11 +802,9 @@
                     }
                 });
                 var solutionByPath = {
-                    'single-region': 'stretch',
-                    'mrc-review': 'mrc',
-                    stretched: 'mrc',
-                    passive: 'linking',
-                    active: 'linking'
+                    mrc: 'mrc',
+                    stretch: 'stretch',
+                    linking: 'linking'
                 };
                 document.querySelectorAll('.solution-card').forEach(function (card) {
                     var selected = recommendation.complete && card.dataset.solution === solutionByPath[recommendation.path];
@@ -784,7 +822,8 @@
 
             function render() {
                 var v = values();
-                document.getElementById('objective-details').classList.toggle('hidden', v.objectives !== 'known');
+                document.getElementById('recovery-question').classList.toggle('hidden', v.objectives !== 'known');
+                document.getElementById('latency-question').classList.toggle('hidden', v.objectives !== 'known' || !v.recovery);
                 var recommendation = result(v);
                 var title = document.getElementById('recommendation-title');
                 title.textContent = recommendation.title;
