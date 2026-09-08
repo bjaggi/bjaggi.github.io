@@ -75,6 +75,15 @@
             text-decoration-thickness: 1px;
             text-underline-offset: 3px;
         }
+        .recommendation-thumbnail {
+            display: block;
+            width: 100%;
+            max-height: 12rem;
+            object-fit: contain;
+            border: 1px solid #dbe4ee;
+            border-radius: 0.5rem;
+            background: #f8fafc;
+        }
         .flow-start, .flow-decision {
             max-width: 32rem;
             margin: 0 auto;
@@ -259,8 +268,19 @@
                     <p class="text-xs text-gray-500 mt-2">Zero and near-zero targets require substantially stronger network, placement, client, and operational prerequisites.</p>
                 </section>
 
+                <section class="question hidden" id="failure-question">
+                    <label for="failure" class="block font-semibold text-dark mb-2">3. What failure must the deployment tolerate?</label>
+                    <select id="failure">
+                        <option value="">Select a failure scope</option>
+                        <option value="one">One AZ or data center outage</option>
+                        <option value="two">Two AZ or data center outages</option>
+                        <option value="region">One full region outage</option>
+                        <option value="unknown">Not sure</option>
+                    </select>
+                </section>
+
                 <section class="question hidden" id="latency-question">
-                    <label for="latency" class="block font-semibold text-dark mb-2">3. What is the measured latency between the DCs/AZs?</label>
+                    <label for="latency" class="block font-semibold text-dark mb-2">4. What is the measured latency between the DCs/AZs?</label>
                     <select id="latency">
                         <option value="">Select a latency range</option>
                         <option value="le50">50 ms or less</option>
@@ -279,6 +299,11 @@
                     </div>
                     <h3 class="text-xl font-bold mb-2"><a class="text-primary hover:text-dark" id="recommendation-title" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html" target="_blank" rel="noopener noreferrer">Complete the questionnaire</a></h3>
                     <p class="text-dark leading-relaxed" id="recommendation-summary">Select an answer for each question to receive a recommendation.</p>
+                    <p class="callout hidden text-sm text-dark mt-4" id="failure-guidance"></p>
+                    <a class="hidden mt-4" id="recommendation-image-link" href="#" target="_blank" rel="noopener noreferrer">
+                        <img class="recommendation-thumbnail" id="recommendation-image" alt="">
+                        <span class="block text-xs text-primary underline mt-1">Open architecture documentation →</span>
+                    </a>
                     <div class="no-option hidden mt-4" id="no-option">
                         <p class="font-semibold">No good fit with the current requirements</p>
                         <p class="text-sm mt-1"><strong>Reason:</strong> <span id="no-option-reason"></span></p>
@@ -312,63 +337,6 @@
                 </section>
             </div>
         </div>
-
-        <section class="max-w-5xl mx-auto mt-5 result-card">
-            <h2 class="text-xl font-semibold text-dark mb-2">Confluent Product Decision Flow</h2>
-            <p class="text-sm text-gray-500 mb-4">Follow the same sequence as the questionnaire: define recovery targets, select the target, then use measured latency.</p>
-            <p class="callout text-sm text-dark mb-4" id="flow-status" aria-live="polite">Complete the questionnaire to highlight a path.</p>
-            <div class="flow-start">Are acceptable RTO and RPO targets defined?</div>
-            <div class="flow-trunk" aria-hidden="true">↓</div>
-            <div class="flow-path max-w-md mx-auto" data-flow="requirements">
-                <div class="flow-condition">No / not sure</div>
-                <div class="flow-arrow" aria-hidden="true">↓</div>
-                <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html" target="_blank" rel="noopener noreferrer">
-                    Define acceptable RTO/RPO first
-                    <span class="flow-selected hidden">Selected path</span>
-                </a>
-            </div>
-            <div class="flow-trunk" aria-hidden="true">↓</div>
-            <div class="flow-decision">If yes: what recovery target is required?</div>
-            <div class="flow-trunk" aria-hidden="true">↓</div>
-            <div class="flow-branch-grid">
-                <div class="flow-path" data-flow="mrc">
-                    <div class="flow-condition">RTO/RPO = 0 or near zero + latency ≤50 ms</div>
-                    <div class="flow-arrow" aria-hidden="true">↓</div>
-                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region.html#bmrr" target="_blank" rel="noopener noreferrer">
-                        Use Multi-Region Clusters (MRC)
-                        <span class="flow-selected hidden">Selected path</span>
-                    </a>
-                </div>
-                <div class="flow-path" data-flow="no-fit">
-                    <div class="flow-condition">RTO/RPO = 0 or near zero + latency &gt;50 ms</div>
-                    <div class="flow-arrow" aria-hidden="true">↓</div>
-                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html" target="_blank" rel="noopener noreferrer">
-                        MRC cannot be used<br>Address latency or recovery targets
-                        <span class="flow-selected hidden">Selected path</span>
-                    </a>
-                </div>
-                <div class="flow-path" data-flow="stretch">
-                    <div class="flow-condition">RTO/RPO &gt; 0 + latency ≤50 ms</div>
-                    <div class="flow-arrow" aria-hidden="true">↓</div>
-                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html#id6" target="_blank" rel="noopener noreferrer">
-                        Use a Stretch Cluster
-                        <span class="flow-selected hidden">Selected path</span>
-                    </a>
-                </div>
-                <div class="flow-path" data-flow="linking">
-                    <div class="flow-condition">RTO/RPO &gt; 0 + latency &gt;50 ms</div>
-                    <div class="flow-arrow" aria-hidden="true">↓</div>
-                    <a class="flow-product" href="https://docs.confluent.io/platform/current/multi-dc-deployments/cluster-linking/index.html" target="_blank" rel="noopener noreferrer">
-                        Use two independent clusters<br>with Cluster Linking
-                        <span class="flow-selected hidden">Selected path</span>
-                    </a>
-                </div>
-            </div>
-            <figure class="mt-6">
-                <img class="reference-diagram" src="assets/multi-dc-decision-reference.jpg" alt="Detailed reference flow comparing MRC, stretch clusters, and independent clusters with Cluster Linking based on RTO, RPO, and latency">
-                <figcaption class="text-xs text-gray-500 mt-2">Detailed source decision flow used to simplify the interactive guidance above.</figcaption>
-            </figure>
-        </section>
 
         <section class="max-w-5xl mx-auto mt-5 result-card">
             <h2 class="text-xl font-semibold text-dark mb-2">Solutions, prerequisites, and trade-offs</h2>
@@ -452,7 +420,7 @@
 
     <script>
         (function () {
-            var ids = ['objectives', 'recovery-target', 'latency'];
+            var ids = ['objectives', 'recovery-target', 'failure', 'latency'];
             var links = {
                 overview: 'https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html',
                 mrc: 'https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region.html#bmrr',
@@ -469,6 +437,7 @@
                 return {
                     objectives: document.getElementById('objectives').value,
                     recovery: document.getElementById('recovery-target').value,
+                    failure: document.getElementById('failure').value,
                     latency: document.getElementById('latency').value
                 };
             }
@@ -694,7 +663,7 @@
                     ]
                 };
 
-                if (!v.objectives || (v.objectives === 'known' && (!v.recovery || !v.latency))) {
+                if (!v.objectives || (v.objectives === 'known' && (!v.recovery || !v.failure || !v.latency))) {
                     base.title = 'Confluent Platform — Complete the questionnaire';
                     base.complete = false;
                     base.summary = 'Complete each visible question to receive a recommendation.';
@@ -704,20 +673,38 @@
                     return base;
                 }
 
-                if (v.objectives === 'unknown' || v.latency === 'unknown') {
+                if (v.objectives === 'unknown' || v.failure === 'unknown' || v.latency === 'unknown') {
                     base.noGoodReason = v.objectives === 'unknown'
                         ? 'Acceptable downtime and data loss have not been defined.'
-                        : 'Network latency and stability have not been measured.';
+                        : v.failure === 'unknown'
+                            ? 'The required failure scope has not been defined.'
+                            : 'Network latency and stability have not been measured.';
                     base.suggestion = v.objectives === 'unknown'
                         ? 'Work with application owners to agree on acceptable RTO and RPO, then return to the advisor.'
-                        : 'Measure latency, jitter, bandwidth, and p99 stability between the proposed locations.';
+                        : v.failure === 'unknown'
+                            ? 'Confirm whether the deployment must survive one AZ/DC, two AZs/DCs, or a full region outage.'
+                            : 'Measure latency, jitter, bandwidth, and p99 stability between the proposed locations.';
                     base.rationale = ['Architecture selection starts with approved recovery requirements and measured network behavior.'];
                     base.risks = ['Choosing first and defining requirements later can produce an expensive design that still misses business objectives.'];
                     return base;
                 }
 
                 var zeroOrNearZero = v.recovery === 'zero' || v.recovery === 'nearzero';
-                if (zeroOrNearZero && v.latency === 'le50') {
+                if (v.failure === 'two') {
+                    base.title = 'Confluent Platform MRC — 2.5/3-DC Design Review';
+                    base.link = links.mrc;
+                    base.path = 'mrc';
+                    base.confidence = 'Architecture review required';
+                    base.summary = 'Tolerating two AZ/DC outages requires a validated MRC or multi-cluster design; a generic topology is not sufficient.';
+                    base.recovery = 'Achievable RTO/RPO depends on quorum, replica placement, observer policy, surviving capacity, and client behavior.';
+                    base.noGoodReason = 'Two simultaneous failure domains require detailed quorum and surviving-capacity analysis.';
+                    base.suggestion = 'Engage Confluent architecture or Professional Services and test the two-failure scenario before production.';
+                    base.rationale = ['The selected failure scope can leave only one of three locations available.'];
+                    base.risks = [
+                        'Quorum or min ISR settings may sacrifice availability or durability after the second failure.',
+                        'The surviving location must carry the required workload.'
+                    ];
+                } else if (zeroOrNearZero && v.latency === 'le50') {
                     base.title = 'Confluent Platform Multi-Region Clusters (MRC)';
                     base.link = links.mrc;
                     base.path = 'mrc';
@@ -779,6 +766,7 @@
                         'Independent active writers require conflict-free topic and application ownership.'
                     ];
                 }
+                base.rationale.unshift('Required failure tolerance: ' + label('failure') + '.');
                 return base;
             }
 
@@ -788,23 +776,36 @@
                 }).join('');
             }
 
-            function updateFlowchart(recommendation) {
-                document.querySelectorAll('.flow-path').forEach(function (path) {
-                    var selected = recommendation.complete && path.dataset.flow === recommendation.path;
-                    path.classList.toggle('active', selected);
-                    var product = path.querySelector('.flow-product');
-                    var badge = path.querySelector('.flow-selected');
-                    badge.classList.toggle('hidden', !selected);
-                    if (selected) {
-                        product.setAttribute('aria-current', 'step');
-                    } else {
-                        product.removeAttribute('aria-current');
-                    }
-                });
+            function updateFailureGuidance(failure) {
+                var guidance = {
+                    one: 'To tolerate one AZ/DC failure, place replicas across additional AZs/DCs. A production design typically uses three failure domains so quorum and min ISR can survive one outage.',
+                    two: 'To tolerate two AZ/DC failures, use enough independent failure domains for quorum and replica placement, and size the surviving locations for the workload. This requires a detailed Confluent architecture review.',
+                    region: 'To tolerate an entire region failure, maintain a replica in a second region—either in a validated MRC or in an independent cluster replicated with Cluster Linking, depending on RTO/RPO and latency.'
+                };
+                var element = document.getElementById('failure-guidance');
+                element.textContent = guidance[failure] || '';
+                element.classList.toggle('hidden', !guidance[failure]);
+            }
+
+            function updateRecommendationVisual(recommendation) {
                 var solutionByPath = {
                     mrc: 'mrc',
                     stretch: 'stretch',
                     linking: 'linking'
+                };
+                var imageByPath = {
+                    mrc: {
+                        src: 'assets/mrc-topology.png',
+                        alt: 'MRC topology with brokers across west and east regions and a central controller'
+                    },
+                    stretch: {
+                        src: 'assets/stretch-cluster-topology.png',
+                        alt: 'Stretch Cluster topology with brokers and metadata nodes across west, central, and east locations'
+                    },
+                    linking: {
+                        src: 'assets/cluster-linking-migration.png',
+                        alt: 'Cluster Linking moving data and metadata between independent clusters'
+                    }
                 };
                 document.querySelectorAll('.solution-card').forEach(function (card) {
                     var selected = recommendation.complete && card.dataset.solution === solutionByPath[recommendation.path];
@@ -815,15 +816,26 @@
                         card.removeAttribute('aria-current');
                     }
                 });
-                document.getElementById('flow-status').textContent = recommendation.complete
-                    ? 'Selected path: ' + recommendation.title
-                    : 'Complete the questionnaire to highlight a path.';
+                var imageLink = document.getElementById('recommendation-image-link');
+                var image = document.getElementById('recommendation-image');
+                var imageDetails = imageByPath[recommendation.path];
+                imageLink.classList.toggle('hidden', !imageDetails);
+                if (imageDetails) {
+                    image.src = imageDetails.src;
+                    image.alt = imageDetails.alt;
+                    imageLink.href = recommendation.link;
+                } else {
+                    image.removeAttribute('src');
+                    image.alt = '';
+                    imageLink.removeAttribute('href');
+                }
             }
 
             function render() {
                 var v = values();
                 document.getElementById('recovery-question').classList.toggle('hidden', v.objectives !== 'known');
-                document.getElementById('latency-question').classList.toggle('hidden', v.objectives !== 'known' || !v.recovery);
+                document.getElementById('failure-question').classList.toggle('hidden', v.objectives !== 'known' || !v.recovery);
+                document.getElementById('latency-question').classList.toggle('hidden', v.objectives !== 'known' || !v.recovery || !v.failure);
                 var recommendation = result(v);
                 var title = document.getElementById('recommendation-title');
                 title.textContent = recommendation.title;
@@ -835,10 +847,11 @@
                 noOption.classList.toggle('hidden', !recommendation.noGoodReason);
                 document.getElementById('no-option-reason').textContent = recommendation.noGoodReason;
                 document.getElementById('no-option-suggestion').textContent = recommendation.suggestion;
+                updateFailureGuidance(v.failure);
                 renderList('rationale', recommendation.rationale, false);
                 renderList('risks', recommendation.risks, false);
                 renderList('validation', recommendation.validation, true);
-                updateFlowchart(recommendation);
+                updateRecommendationVisual(recommendation);
             }
 
             ids.forEach(function (id) {
