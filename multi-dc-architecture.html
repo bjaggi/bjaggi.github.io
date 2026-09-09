@@ -268,8 +268,19 @@
                     <p class="text-xs text-gray-500 mt-2">Zero and near-zero targets require substantially stronger network, placement, client, and operational prerequisites.</p>
                 </section>
 
+                <section class="question hidden" id="location-count-question">
+                    <label for="location-count" class="block font-semibold text-dark mb-2">3. How many AZs/DCs do you currently have?</label>
+                    <select id="location-count">
+                        <option value="">Select the current number</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="more">More than 3</option>
+                    </select>
+                </section>
+
                 <section class="question hidden" id="failure-question">
-                    <label for="failure" class="block font-semibold text-dark mb-2">3. What failure must the deployment tolerate?</label>
+                    <label for="failure" class="block font-semibold text-dark mb-2">4. What failure must the deployment tolerate?</label>
                     <select id="failure">
                         <option value="">Select a failure scope</option>
                         <option value="one">One AZ or data center outage</option>
@@ -280,7 +291,7 @@
                 </section>
 
                 <section class="question hidden" id="latency-question">
-                    <label for="latency" class="block font-semibold text-dark mb-2">4. What is the measured latency between the DCs/AZs?</label>
+                    <label for="latency" class="block font-semibold text-dark mb-2">5. What is the measured latency between the DCs/AZs?</label>
                     <select id="latency">
                         <option value="">Select a latency range</option>
                         <option value="le50">50 ms or less</option>
@@ -421,7 +432,7 @@
 
     <script>
         (function () {
-            var ids = ['objectives', 'recovery-target', 'failure', 'latency'];
+            var ids = ['objectives', 'recovery-target', 'location-count', 'failure', 'latency'];
             var links = {
                 overview: 'https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region-architectures.html',
                 mrc: 'https://docs.confluent.io/platform/current/multi-dc-deployments/multi-region.html#bmrr',
@@ -439,6 +450,7 @@
                     objectives: document.getElementById('objectives').value,
                     recovery: document.getElementById('recovery-target').value,
                     failure: document.getElementById('failure').value,
+                    locationCount: document.getElementById('location-count').value,
                     latency: document.getElementById('latency').value
                 };
             }
@@ -664,7 +676,7 @@
                     ]
                 };
 
-                if (!v.objectives || (v.objectives === 'known' && (!v.recovery || !v.failure || !v.latency))) {
+                if (!v.objectives || (v.objectives === 'known' && (!v.recovery || !v.failure || !v.locationCount || !v.latency))) {
                     base.title = 'Confluent Platform — Complete the questionnaire';
                     base.complete = false;
                     base.summary = 'Complete each visible question to receive a recommendation.';
@@ -767,8 +779,19 @@
                         'Independent active writers require conflict-free topic and application ownership.'
                     ];
                 }
+                base.rationale.unshift('Current footprint: ' + (v.locationCount === 'more' ? 'more than 3' : v.locationCount) + ' AZ(s)/DC(s).');
                 base.rationale.unshift('Required failure tolerance: ' + label('failure') + '.');
+                if ((recommendationNeedsThreeLocations(base.path)) && (v.locationCount === '1' || v.locationCount === '2')) {
+                    base.validation.unshift('Add or identify at least three suitable AZs/DCs before implementing this architecture.');
+                }
+                if (base.path === 'linking' && v.locationCount === '1') {
+                    base.validation.unshift('Add a second independent location for the destination cluster.');
+                }
                 return base;
+            }
+
+            function recommendationNeedsThreeLocations(path) {
+                return path === 'mrc' || path === 'stretch';
             }
 
             function renderList(id, items, checkbox) {
@@ -835,8 +858,9 @@
             function render() {
                 var v = values();
                 document.getElementById('recovery-question').classList.toggle('hidden', v.objectives !== 'known');
-                document.getElementById('failure-question').classList.toggle('hidden', v.objectives !== 'known' || !v.recovery);
-                document.getElementById('latency-question').classList.toggle('hidden', v.objectives !== 'known' || !v.recovery || !v.failure);
+                document.getElementById('location-count-question').classList.toggle('hidden', v.objectives !== 'known' || !v.recovery);
+                document.getElementById('failure-question').classList.toggle('hidden', v.objectives !== 'known' || !v.recovery || !v.locationCount);
+                document.getElementById('latency-question').classList.toggle('hidden', v.objectives !== 'known' || !v.recovery || !v.failure || !v.locationCount);
                 var recommendation = result(v);
                 var title = document.getElementById('recommendation-title');
                 title.textContent = recommendation.title;
