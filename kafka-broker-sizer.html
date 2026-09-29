@@ -81,6 +81,23 @@
             margin: 0.25rem 0;
         }
         .formula-block p { font-size: 0.85rem; color: #4b5563; }
+        .provision-note {
+            background: #F4F6FB;
+            border-left: 4px solid #0A85EA;
+            border-radius: 0.5rem;
+            padding: 0.7rem 0.9rem;
+        }
+        .provision-note strong {
+            display: block;
+            font-size: 0.95rem;
+            color: #0A3D62;
+        }
+        .provision-note span {
+            display: block;
+            margin-top: 0.15rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
     </style>
 </head>
 <body>
@@ -112,6 +129,16 @@
                         <span>1 MB/s</span>
                         <span>Average Throughput</span>
                         <span>1000 MB/s</span>
+                    </div>
+                    <div class="mt-4 space-y-2">
+                        <div class="provision-note">
+                            <strong>Provision for peak</strong>
+                            <span>Accept sustained underutilization and idle cost.</span>
+                        </div>
+                        <div class="provision-note">
+                            <strong>Provision for average</strong>
+                            <span>Risk latency or availability loss during spikes.</span>
+                        </div>
                     </div>
                 </div>
 
