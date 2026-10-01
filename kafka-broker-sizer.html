@@ -207,15 +207,7 @@
                 </div>
 
                 <div>
-                    <div class="flex items-center justify-between gap-3 mb-2">
-                        <label for="disk-tb" class="font-semibold text-dark">5. Disk storage (TB per broker)</label>
-                        <input type="number" id="disk-tb" min="1" step="1" value="12" aria-describedby="disk-tb-note">
-                    </div>
-                    <p class="text-sm text-gray-500" id="disk-tb-note">Recommended: 12 TB. Constrained by targeted rebuild time if a host were to go down. Do not go over 16 TB.</p>
-                </div>
-
-                <div>
-                    <label for="machine-type" class="font-semibold text-dark">6. Broker machine type</label>
+                    <label for="machine-type" class="font-semibold text-dark">5. Broker machine type</label>
                     <select id="machine-type" class="machine-type mt-2">
                         <option value="n2-custom-56-229376">56 vCPU / 224 GB</option>
                         <option value="n2-standard-32">32 vCPU / 128 GB</option>
@@ -224,6 +216,14 @@
                         <option value="n2-standard-4">4 vCPU / 16 GB</option>
                     </select>
                     <p class="text-sm text-gray-500 mt-2">Tested on standard cloud VMs that run 2 vCPUs per physical core.</p>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between gap-3 mb-2">
+                        <label for="disk-tb" class="font-semibold text-dark">6. Disk storage (TB per broker)</label>
+                        <input type="number" id="disk-tb" min="1" step="1" value="12" aria-describedby="disk-tb-note">
+                    </div>
+                    <p class="text-sm text-gray-500" id="disk-tb-note">Recommended: 12 TB. Constrained by targeted rebuild time if a host were to go down. Do not go over 16 TB.</p>
                 </div>
             </form>
 
@@ -346,8 +346,8 @@
                 <p>2. <strong>Retention</strong> — how many days to keep data.</p>
                 <p>3. <strong>Tiered storage</strong> — optional. If on, only hot days stay on local disk; the rest is object storage and does not add brokers.</p>
                 <p>4. <strong>Two DC Architecture</strong> — optional. If selected, the capacity count is doubled so either data center or AZ can fail.</p>
-                <p>5. <strong>Disk storage</strong> — usable TB on <em>each</em> broker (default 12). This is not the broker count.</p>
-                <p>6. <strong>Broker machine type</strong> — cloud VM size. Physical cores = vCPU ÷ 2. Default is 16 vCPU / 64 GB (8 physical cores).</p>
+                <p>5. <strong>Broker machine type</strong> — cloud VM size. Physical cores = vCPU ÷ 2. Default is 16 vCPU / 64 GB (8 physical cores).</p>
+                <p>6. <strong>Disk storage</strong> — usable TB on <em>each</em> broker (default 12). This is not the broker count.</p>
             </div>
 
             <div class="formula-block">
