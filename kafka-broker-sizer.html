@@ -43,6 +43,20 @@
             outline: 2px solid #0A85EA;
             outline-offset: 1px;
         }
+        select.machine-type {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.55rem 0.75rem;
+            font-weight: 700;
+            color: #0A3D62;
+            background: #fff;
+            font-size: 1rem;
+        }
+        select.machine-type:focus {
+            outline: 2px solid #0A85EA;
+            outline-offset: 1px;
+        }
         .slider-value {
             min-width: 6.5rem;
             text-align: right;
@@ -199,6 +213,18 @@
                     </div>
                     <p class="text-sm text-gray-500" id="disk-tb-note">Recommended: 12 TB. Constrained by targeted rebuild time if a host were to go down. Do not go over 16 TB.</p>
                 </div>
+
+                <div>
+                    <label for="machine-type" class="font-semibold text-dark">6. Broker machine type</label>
+                    <select id="machine-type" class="machine-type mt-2">
+                        <option value="n2-custom-56-229376">56 vCPU / 224 GB</option>
+                        <option value="n2-standard-32">32 vCPU / 128 GB</option>
+                        <option value="n2-standard-16" selected>16 vCPU / 64 GB</option>
+                        <option value="n2-standard-8">8 vCPU / 32 GB</option>
+                        <option value="n2-standard-4">4 vCPU / 16 GB</option>
+                    </select>
+                    <p class="text-sm text-gray-500 mt-2">Tested on standard cloud VMs that run 2 vCPUs per physical core.</p>
+                </div>
             </form>
 
             <div class="space-y-4">
@@ -288,15 +314,15 @@
                 <h2 class="text-xl font-semibold text-dark mb-4">Host Profile</h2>
                 <h3 class="text-sm font-semibold text-dark mb-2">Host Resources</h3>
                 <p class="es-note mb-3"><a class="text-primary hover:text-dark underline" href="https://docs.confluent.io/platform/current/installation/system-requirements.html#hardware" target="_blank" rel="noopener noreferrer">Recommended hardware</a></p>
-                <div class="es-row"><span>Environment</span><span>baremetal</span></div>
-                <div class="es-row"><span>Cores</span><span>24</span></div>
-                <div class="es-row"><span>Memory</span><span>64 GB</span></div>
-                <div class="es-row"><span>Network throughput</span><span>10 Gb/s</span></div>
+                <div class="es-row"><span>Environment</span><span id="es-env">cloud VM</span></div>
+                <div class="es-row"><span>Cores</span><span id="es-cores">8 physical (16 vCPU)</span></div>
+                <div class="es-row"><span>Memory</span><span id="es-memory">64 GB</span></div>
+                <div class="es-row"><span>Network throughput</span><span id="es-nic">10 Gb/s</span></div>
                 <div class="es-row">
                     <span>Raw storage</span>
                     <span id="es-raw-storage">12 TB</span>
                 </div>
-                <div class="es-row"><span>IO throughput</span><span>520 MB/s</span></div>
+                <div class="es-row"><span>IO throughput</span><span id="es-io-cap">1,200 MB/s</span></div>
                 <p class="es-note mt-2 mb-4">Raw storage is the Disk storage (TB per broker) input. Recommended: 12 TB. Constrained by targeted rebuild time if a host were to go down.</p>
 
                 <h3 class="text-sm font-semibold text-dark mt-2 mb-2">Resource utilization</h3>
@@ -312,7 +338,7 @@
 
         <div class="max-w-5xl mx-auto mt-6 mb-10 bg-white shadow-lg rounded-lg p-6 border border-gray-100">
             <h2 class="text-xl font-semibold text-dark mb-2">How the broker count is calculated</h2>
-            <p class="text-sm text-gray-500 mb-5">We take your five inputs, apply Event Sizer’s hidden host assumptions, compute how many brokers each resource needs, then recommend the largest of those numbers (never below 4). Two-DC/AZ architecture doubles that capacity count.</p>
+            <p class="text-sm text-gray-500 mb-5">We take your inputs, apply the selected broker machine type, compute how many brokers each resource needs, then recommend the largest of those numbers (never below 4). Two-DC/AZ architecture doubles that capacity count.</p>
 
             <div class="formula-block">
                 <h3>Your inputs</h3>
@@ -321,11 +347,12 @@
                 <p>3. <strong>Tiered storage</strong> — optional. If on, only hot days stay on local disk; the rest is object storage and does not add brokers.</p>
                 <p>4. <strong>Two DC Architecture</strong> — optional. If selected, the capacity count is doubled so either data center or AZ can fail.</p>
                 <p>5. <strong>Disk storage</strong> — usable TB on <em>each</em> broker (default 12). This is not the broker count.</p>
+                <p>6. <strong>Broker machine type</strong> — cloud VM size. Physical cores = vCPU ÷ 2. Default is 16 vCPU / 64 GB (8 physical cores).</p>
             </div>
 
             <div class="formula-block">
                 <h3>Assumptions we do not ask for</h3>
-                <p>Replication factor = 3. Egress = ingress. TLS on. Size at 60% of host capacity. Baremetal host: 24 cores, 64 GB RAM, 10 GbE (1,250 MB/s), 1× SSD at 520 MB/s. CPU ≈ 120 MB/s produce per broker before the 60% target. Production floor = 4 brokers. Rebuild time and partition count are not specified, so they do not raise the count.</p>
+                <p>Replication factor = 3. Egress = ingress. TLS on. Network and disk IO are sized at 60% of the selected machine. Production floor = 4 brokers. Rebuild time and partition count are not specified, so they do not raise the count. The per-broker produce ceiling already includes latency headroom, so it is not reduced by another 60%.</p>
             </div>
 
             <div class="formula-block">
@@ -346,21 +373,22 @@
             <div class="formula-block">
                 <h3>From throughput → network brokers</h3>
                 <code>cluster_net_MB/s = I × 3</code>
-                <code>network = ceil(cluster_net_MB/s / (1,250 × 0.60))</code>
-                <p>Produce, replication, and consume share a 10 GbE card, used at 60%.</p>
+                <code>network = ceil(cluster_net_MB/s / (nic_MB/s × 0.60))</code>
+                <p>Produce, replication, and consume share the machine’s NIC, used at 60%. A 16 vCPU VM is 10 Gb/s (1,250 MB/s). A 32 or 56 vCPU VM is 32 Gb/s (4,000 MB/s).</p>
             </div>
 
             <div class="formula-block">
                 <h3>From throughput → IO brokers</h3>
                 <code>disk_write_MB/s = I × 3</code>
-                <code>IO = ceil(disk_write_MB/s / (520 × 0.60))</code>
-                <p>Each replica is written to disk. 520 MB/s is Event Sizer’s SSD guideline, used at 60%.</p>
+                <code>IO = ceil(disk_write_MB/s / (io_cap_MB/s × 0.60))</code>
+                <p>Each replica is written to disk. The IO cap follows the machine: 1,200 MB/s at 16 vCPU and above, 800 MB/s at 8 vCPU, 400 MB/s at 4 vCPU, used at 60%.</p>
             </div>
 
             <div class="formula-block">
-                <h3>From throughput → CPU brokers</h3>
-                <code>CPU = ceil(I / (120 × 0.60))</code>
-                <p>TLS is on. About 120 MB/s of produce per broker before the 60% target.</p>
+                <h3>From throughput and machine type → CPU brokers</h3>
+                <code>physical_cores = vCPU / 2</code>
+                <code>CPU = ceil(I / produce_ceiling_MB/s)</code>
+                <p>Produce ceiling is per broker, from the cloud VM calibration: 14 MB/s at 4 vCPU, 38 at 8, 75 at 16, 167 at 32, and 200 at 56. A 4 vCPU cluster still reaches 50 MB/s: 4 brokers × 14 MB/s = 56 MB/s, and 50 MB/s is 12.5 MB/s on each broker. These ceilings already include latency headroom, so they are not multiplied by 0.60 again.</p>
             </div>
 
             <div class="formula-block">
@@ -371,11 +399,11 @@
 
             <div class="formula-block">
                 <h3>Resource utilization (after broker count is known)</h3>
-                <code>network % = cluster_net_MB/s / (brokers × 1,250)</code>
-                <code>IO % = disk_write_MB/s / (brokers × 520)</code>
+                <code>network % = cluster_net_MB/s / (brokers × nic_MB/s)</code>
+                <code>IO % = disk_write_MB/s / (brokers × io_cap_MB/s)</code>
                 <code>storage % = hot_GB / (brokers × disk_TB × 1,000)</code>
-                <code>CPU % = I / (brokers × 120)</code>
-                <p>Share of raw host capacity at the recommended broker count. This is not the 60% target used when sizing.</p>
+                <code>CPU % = I / (brokers × produce_ceiling_MB/s)</code>
+                <p>Share of the selected machine at the recommended broker count. Network and IO percentages are against raw NIC and disk caps, not the 60% target used when sizing. CPU percentage is against the produce ceiling.</p>
             </div>
         </div>
 
@@ -390,11 +418,28 @@
             var RF = 3;
             var MIN_BROKERS = 4;
             var UTIL = 0.6;
-            var NIC_MB_S = 1250;
-            var DISK_IO_MB_S = 520;
             var DEFAULT_DISK_TB = 12;
             var MAX_RECOMMENDED_DISK_TB = 16;
-            var PRODUCE_MB_S_PER_BROKER_CPU = 120;
+            // Cloud VM profiles from the CPC sizing model. Physical cores = vCPU / 2.
+            // produceMbps is the latency-stable produce ceiling per broker (not scaled by 60% again).
+            // nicMbps and ioMbps are raw caps; network and disk IO are sized at 60%.
+            var MACHINES = {
+                'n2-custom-56-229376': { vcpu: 56, ramGb: 224, nicMbps: 4000, ioMbps: 1200, produceMbps: 200 },
+                'n2-standard-32': { vcpu: 32, ramGb: 128, nicMbps: 4000, ioMbps: 1200, produceMbps: 167 },
+                'n2-standard-16': { vcpu: 16, ramGb: 64, nicMbps: 1250, ioMbps: 1200, produceMbps: 75 },
+                'n2-standard-8': { vcpu: 8, ramGb: 32, nicMbps: 900, ioMbps: 800, produceMbps: 38 },
+                'n2-standard-4': { vcpu: 4, ramGb: 16, nicMbps: 700, ioMbps: 400, produceMbps: 14 }
+            };
+
+            function selectedMachine() {
+                var id = document.getElementById('machine-type').value;
+                return MACHINES[id] || MACHINES['n2-standard-16'];
+            }
+
+            function gbpsLabel(nicMbps) {
+                var gbps = nicMbps / 125;
+                return (gbps % 1 === 0 ? String(gbps) : gbps.toFixed(1)) + ' Gb/s';
+            }
 
             function daysLabel(n) {
                 return n + (n === 1 ? ' day' : ' days');
@@ -436,6 +481,8 @@
             function sizeCluster() {
                 var throughput = parseInt(document.getElementById('throughput').value, 10);
                 var retention = parseInt(document.getElementById('retention').value, 10);
+                var machine = selectedMachine();
+                var physicalCores = machine.vcpu / 2;
                 var diskTb = diskTbPerBroker();
                 var diskGb = diskTb * 1000;
                 var tiered = document.getElementById('tiered').checked;
@@ -465,10 +512,10 @@
                 var hotStorage = storageGB(throughput, localDays, true);
                 var tierStorage = tiered ? storageGB(throughput, tierDays, false) : 0;
 
-                var fromNetwork = Math.ceil(clusterNet / (NIC_MB_S * UTIL)) || 0;
-                var fromIo = Math.ceil(diskWrite / (DISK_IO_MB_S * UTIL)) || 0;
+                var fromNetwork = Math.ceil(clusterNet / (machine.nicMbps * UTIL)) || 0;
+                var fromIo = Math.ceil(diskWrite / (machine.ioMbps * UTIL)) || 0;
                 var fromStorage = Math.ceil(hotStorage / diskGb) || 0;
-                var fromCpu = Math.ceil(throughput / (PRODUCE_MB_S_PER_BROKER_CPU * UTIL)) || 0;
+                var fromCpu = Math.ceil(throughput / machine.produceMbps) || 0;
                 var fromRf = RF;
                 var capacityBrokers = Math.max(MIN_BROKERS, fromNetwork, fromIo, fromStorage, fromCpu, fromRf);
                 var brokers = twoDc ? capacityBrokers * 2 : capacityBrokers;
@@ -482,13 +529,18 @@
                     { key: 'rf', label: 'Replication factor', count: fromRf }
                 ];
                 var bind = dims.reduce(function (best, d) { return d.count > best.count ? d : best; }, dims[0]);
+                if (fromCpu >= capacityBrokers && fromCpu >= fromStorage && fromCpu >= fromNetwork && fromCpu >= fromIo) {
+                    bind = { key: 'cpu', label: 'Produce per broker', count: fromCpu };
+                }
+                var perBrokerProduce = throughput / brokers;
+                var clusterProduceCap = machine.produceMbps * brokers;
                 var why = {
                     ha: 'We recommend ' + capacityBrokers + ' brokers because production clusters should not go below 4. Your throughput and disk would actually fit on fewer hosts, but RF=3 needs a spare so one broker can fail.',
                     rf: 'We recommend ' + capacityBrokers + ' brokers so each partition can live on 3 brokers and still have a spare.',
-                    network: 'We recommend ' + capacityBrokers + ' brokers because the 10 GbE links, at 60% use, are the tightest limit. Disk space and CPU would have been fine with fewer.',
-                    io: 'We recommend ' + capacityBrokers + ' brokers because disks cannot write ingress × 3 copies fast enough on fewer hosts (1× SSD at 520 MB/s, 60% used).',
+                    network: 'We recommend ' + capacityBrokers + ' brokers because the ' + gbpsLabel(machine.nicMbps) + ' NICs, at 60% use, are the tightest limit. Disk space and CPU would have been fine with fewer.',
+                    io: 'We recommend ' + capacityBrokers + ' brokers because disks cannot write ingress × 3 copies fast enough on fewer hosts (' + machine.ioMbps + ' MB/s cap, 60% used).',
                     storage: 'We recommend ' + capacityBrokers + ' brokers because local disk is the tightest limit: ' + formatBytesGB(hotStorage) + ' of data (ingress × ' + daysLabel(localDays) + ' × RF 3) at ' + diskTb + ' TB per broker. Network and disk speed would have been fine with fewer.',
-                    cpu: 'We recommend ' + capacityBrokers + ' brokers because TLS CPU is the tightest limit. Network and disk would have been fine with fewer.'
+                    cpu: 'We recommend ' + brokers + ' brokers so ' + throughput + ' MB/s fits on this ' + machine.vcpu + ' vCPU machine. Each broker carries ' + (Math.round(perBrokerProduce * 10) / 10) + ' MB/s, under the ' + machine.produceMbps + ' MB/s per-broker cap (' + clusterProduceCap + ' MB/s across ' + brokers + ' brokers).'
                 };
                 if (twoDc) {
                     why[bind.key] += ' Two-DC/AZ architecture doubles the capacity requirement from ' + capacityBrokers + ' to ' + brokers + ' brokers so the cluster can account for a DC/AZ failure.';
@@ -496,9 +548,11 @@
 
                 document.getElementById('out-constraint').textContent = bind.key === 'storage'
                     ? 'Limited by local disk, not by throughput.'
-                    : bind.key === 'ha' || bind.key === 'rf'
-                        ? 'Limited by production HA, not by throughput.'
-                        : 'Limited by ' + bind.label.toLowerCase() + '.';
+                    : bind.key === 'cpu'
+                        ? throughput + ' MB/s fits on this ' + machine.vcpu + ' vCPU machine.'
+                        : bind.key === 'ha' || bind.key === 'rf'
+                            ? 'Limited by production HA, not by throughput.'
+                            : 'Limited by ' + bind.label.toLowerCase() + '.';
                 document.getElementById('out-brokers').textContent = String(brokers);
                 document.getElementById('out-hot-storage').textContent = formatBytesGB(hotStorage);
                 document.getElementById('out-tier-storage').textContent = tiered ? formatBytesGB(tierStorage) : 'Off';
@@ -526,11 +580,16 @@
                 document.getElementById('es-ha').textContent = 'at least ' + MIN_BROKERS;
                 document.getElementById('es-cpu').textContent = String(fromCpu);
                 document.getElementById('es-raw-storage').textContent = diskTb + ' TB';
-                document.getElementById('es-util-network').textContent = utilPct(clusterNet, brokers * NIC_MB_S);
-                document.getElementById('es-util-io').textContent = utilPct(diskWrite, brokers * DISK_IO_MB_S);
+                document.getElementById('es-env').textContent = 'cloud VM';
+                document.getElementById('es-cores').textContent = physicalCores + ' physical (' + machine.vcpu + ' vCPU)';
+                document.getElementById('es-memory').textContent = machine.ramGb + ' GB';
+                document.getElementById('es-nic').textContent = gbpsLabel(machine.nicMbps);
+                document.getElementById('es-io-cap').textContent = machine.ioMbps.toLocaleString() + ' MB/s';
+                document.getElementById('es-util-network').textContent = utilPct(clusterNet, brokers * machine.nicMbps);
+                document.getElementById('es-util-io').textContent = utilPct(diskWrite, brokers * machine.ioMbps);
                 document.getElementById('es-util-storage').textContent = utilPct(hotStorage, brokers * diskGb);
-                document.getElementById('es-util-cpu').textContent = utilPct(throughput, brokers * PRODUCE_MB_S_PER_BROKER_CPU);
-                document.getElementById('es-util-why').textContent = 'Storage is ~' + Math.round(storageUtil) + '% full because ' + formatBytesGB(hotStorage) + ' of local data is spread across ' + brokers + ' × ' + diskTb + ' TB disks.';
+                document.getElementById('es-util-cpu').textContent = utilPct(throughput, brokers * machine.produceMbps);
+                document.getElementById('es-util-why').textContent = 'Storage is ~' + Math.round(storageUtil) + '% full because ' + formatBytesGB(hotStorage) + ' of local data is spread across ' + brokers + ' × ' + diskTb + ' TB disks. Produce is ' + (Math.round(perBrokerProduce * 10) / 10) + ' MB/s per broker against a ' + machine.produceMbps + ' MB/s cap, so ' + throughput + ' MB/s is within this ' + machine.vcpu + ' vCPU machine.';
                 var bindRow = bind.key === 'io' ? 'io' : bind.key;
                 setBindingRow(bindRow);
 
@@ -556,7 +615,7 @@
                 if (bind.key === 'network') {
                     recs.push({
                         title: 'Scale for network, or use a faster NIC',
-                        note: 'Event Sizer sizes network at 60% of a 10 GbE card. Produce + replication + consume share that link.'
+                        note: 'Network is sized at 60% of this machine’s ' + gbpsLabel(machine.nicMbps) + ' NIC. Produce + replication + consume share that link.'
                     });
                 }
                 if (diskTb > MAX_RECOMMENDED_DISK_TB) {
@@ -568,13 +627,13 @@
                 if (bind.key === 'io') {
                     recs.push({
                         title: 'Add disk volumes or brokers',
-                        note: 'Writes are ingress × RF. Event Sizer’s SSD guideline is 520 MB/s per volume, used at 60%.'
+                        note: 'Writes are ingress × RF. This machine’s disk IO cap is ' + machine.ioMbps + ' MB/s, used at 60%.'
                     });
                 }
-                if (bind.key === 'cpu') {
+                if (bind.key === 'cpu' && fromCpu > MIN_BROKERS) {
                     recs.push({
                         title: 'Add cores or brokers',
-                        note: 'TLS is on, which is Event Sizer’s default. CPU is treated as ~120 MB/s produce per broker at 60% utilization.'
+                        note: 'This ' + machine.vcpu + ' vCPU VM has ' + physicalCores + ' physical cores (2 vCPUs per core). The calibrated produce ceiling is ' + machine.produceMbps + ' MB/s per broker, so ' + throughput + ' MB/s needs ' + fromCpu + ' brokers.'
                     });
                 }
                 if (bind.key === 'ha' || bind.key === 'rf') {
@@ -597,7 +656,7 @@
                 }
                 recs.push({
                     title: 'Defaults used here',
-                    note: 'RF=3, TLS on, 60% utilization, 10 GbE, 1× SSD at 520 MB/s, ' + diskTb + ' TB usable disk per broker, peak = average, egress = ingress. Compare at eventsizer.confluent.io/granular.'
+                    note: 'RF=3, TLS on, network and disk IO at 60%, ' + machine.vcpu + ' vCPU / ' + machine.ramGb + ' GB (' + physicalCores + ' physical cores), ' + machine.produceMbps + ' MB/s produce per broker (' + clusterProduceCap + ' MB/s across ' + brokers + ' brokers), ' + diskTb + ' TB usable disk per broker, peak = average, egress = ingress.'
                 });
                 document.getElementById('out-recs').innerHTML = recs.map(function (r) {
                     return '<li><span class="font-medium">' + r.title + '.</span> ' + r.note + '</li>';
@@ -609,6 +668,7 @@
             });
             document.getElementById('tiered').addEventListener('change', sizeCluster);
             document.getElementById('two-dc').addEventListener('change', sizeCluster);
+            document.getElementById('machine-type').addEventListener('change', sizeCluster);
             sizeCluster();
         })();
     </script>

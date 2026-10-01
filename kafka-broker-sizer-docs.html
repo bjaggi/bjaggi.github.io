@@ -106,6 +106,10 @@
                             <td>5. Disk storage (TB per broker)</td>
                             <td>Usable local disk on <strong>each broker</strong>, not the cluster total and not the broker count. Default and recommended: <strong>12 TB</strong>. Larger disks are constrained by targeted rebuild time if a host were to go down; do not go over 16 TB. Changing this value recalculates broker count.</td>
                         </tr>
+                        <tr>
+                            <td>6. Broker machine type</td>
+                            <td>Cloud VM size. Default <strong>16 vCPU / 64 GB</strong>. Physical cores = vCPU ÷ 2. The choice sets NIC bandwidth, disk IO cap, and the per-broker produce ceiling used in the broker count.</td>
+                        </tr>
                     </tbody>
                 </table>
                 <p>Fan-out, egress, NIC, and partition fields are not on the form. The model uses hidden defaults so the page stays as simple as Event Sizer’s primary controls.</p>
@@ -117,10 +121,10 @@
                     <li>Replication factor = 3; production floor = 4 brokers</li>
                     <li>Peak = average; egress = ingress</li>
                     <li>TLS on; utilization = 60%</li>
-                    <li>10 GbE (1250 MB/s), used at 60%</li>
-                    <li>Disk IO = 1× SSD × 520 MB/s, used at 60%</li>
+                    <li>Default machine: 16 vCPU / 64 GB (8 physical cores, 2 vCPUs per core)</li>
+                    <li>NIC and disk IO follow the machine and are used at 60%. 16 vCPU: 10 Gb/s and 1,200 MB/s</li>
                     <li>Disk storage defaults to 12 TB per broker (user-editable)</li>
-                    <li>CPU ≈ 120 MB/s produce per broker at 60% with TLS</li>
+                    <li>Produce ceiling per broker: 75 MB/s at 16 vCPU (14 / 38 / 167 / 200 at 4 / 8 / 32 / 56 vCPU). Not reduced by another 60%</li>
                 </ul>
             </div>
 
@@ -151,7 +155,7 @@
 
             <div class="category">
                 <h2>Cluster Size and Host Profile</h2>
-                <p class="mb-3">These two cards match Event Sizer’s results page. Cluster Size repeats the “Why this many brokers” sentence and shows storage math (<code>local data ÷ TB per broker</code>). Host Profile uses Event Sizer’s recommended baremetal host (24 cores, 64 GB, 10 GbE, 520 MB/s SSD). See <a href="https://docs.confluent.io/platform/current/installation/system-requirements.html#hardware" target="_blank" rel="noopener noreferrer">recommended hardware</a>. Raw storage is the Disk storage text box (default 12 TB per broker).</p>
+                <p class="mb-3">These two cards match Event Sizer’s results page. Cluster Size repeats the “Why this many brokers” sentence and shows storage math (<code>local data ÷ TB per broker</code>). Host Profile follows the selected cloud VM (default 16 vCPU / 64 GB, 8 physical cores, 10 Gb/s, 1,200 MB/s disk IO). See <a href="https://docs.confluent.io/platform/current/installation/system-requirements.html#hardware" target="_blank" rel="noopener noreferrer">recommended hardware</a>. Raw storage is the Disk storage text box (default 12 TB per broker).</p>
                 <p>Rebuild time and topic partition limit show as not specified because this page does not collect those Event Sizer fields. Resource utilization is load at the recommended broker count against raw host capacity.</p>
             </div>
 
@@ -162,6 +166,7 @@
                     <li>Set how long data must be kept with Retention.</li>
                     <li>Select Two DC Architecture when brokers span two data centers or AZs and the count must account for a DC/AZ failure.</li>
                     <li>Set usable disk storage per broker (default 12 TB). Do not go over 16 TB.</li>
+                    <li>Pick a broker machine type. Smaller VMs lower the produce ceiling and can raise the broker count.</li>
                     <li>If most reads are recent, enable tiered storage and set hot days. Tier days fill in automatically.</li>
                     <li>Read Cluster Size and Host Profile — the same breakdown Event Sizer shows on its results page.</li>
                     <li>Read “Why this many brokers” — it names the one limit that set the count.</li>
