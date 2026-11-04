@@ -118,13 +118,13 @@
             <div class="category">
                 <h2>Hidden defaults</h2>
                 <ul class="list-disc list-inside ml-4 space-y-1">
-                    <li>Replication factor = 3; production floor = 4 brokers</li>
+                    <li>Replication factor = 3; production floor = 3 brokers</li>
                     <li>Peak = average; egress = ingress</li>
                     <li>TLS on; utilization = 60%</li>
                     <li>Default machine: 16 vCPU / 64 GB (8 physical cores, 2 vCPUs per core)</li>
-                    <li>NIC and disk IO follow the machine and are used at 60%. 16 vCPU: 10 Gb/s and 1,200 MB/s</li>
+                    <li>NIC and disk IO follow the machine and are used at 60%. 16 vCPU and larger: 32 Gb/s and 1,200 MB/s. 4 vCPU: 10 Gb/s and 240 MB/s</li>
                     <li>Disk storage defaults to 12 TB per broker (user-editable)</li>
-                    <li>Produce ceiling per broker: 75 MB/s at 16 vCPU (14 / 38 / 167 / 200 at 4 / 8 / 32 / 56 vCPU). Not reduced by another 60%</li>
+                    <li>Produce ceiling per broker, CP Event-Sizer v0.7.0: 18 / 37 / 75 / 120 / 175 MB/s at 4 / 8 / 16 / 32 / 56 vCPU. Under 6 brokers the ceiling is used at 70%</li>
                 </ul>
             </div>
 
@@ -149,13 +149,13 @@
                 <p class="mb-3">50 MB/s, 7-day retention, tiered storage off, 12 TB per broker:</p>
                 <ul class="list-disc list-inside ml-4 space-y-1">
                     <li>Local disk = 90.72 TB / 12 TB per broker → 8 brokers (storage binds)</li>
-                    <li>Recommendation: enable tiered storage with 1 day hot → 4 brokers</li>
+                    <li>Recommendation: enable tiered storage with 1 day hot → 3 brokers</li>
                 </ul>
             </div>
 
             <div class="category">
                 <h2>Cluster Size and Host Profile</h2>
-                <p class="mb-3">These two cards match Event Sizer’s results page. Cluster Size repeats the “Why this many brokers” sentence and shows storage math (<code>local data ÷ TB per broker</code>). Host Profile follows the selected cloud VM (default 16 vCPU / 64 GB, 8 physical cores, 10 Gb/s, 1,200 MB/s disk IO). See <a href="https://docs.confluent.io/platform/current/installation/system-requirements.html#hardware" target="_blank" rel="noopener noreferrer">recommended hardware</a>. Raw storage is the Disk storage text box (default 12 TB per broker).</p>
+                <p class="mb-3">These two cards match Event Sizer’s results page. Cluster Size repeats the “Why this many brokers” sentence and shows storage math (<code>local data ÷ TB per broker</code>). Host Profile follows the selected cloud VM (default 16 vCPU / 64 GB, 8 physical cores, 32 Gb/s, 1,200 MB/s disk IO). See <a href="https://docs.confluent.io/platform/current/installation/system-requirements.html#hardware" target="_blank" rel="noopener noreferrer">recommended hardware</a>. Raw storage is the Disk storage text box (default 12 TB per broker).</p>
                 <p>Rebuild time and topic partition limit show as not specified because this page does not collect those Event Sizer fields. Resource utilization is load at the recommended broker count against raw host capacity.</p>
             </div>
 
