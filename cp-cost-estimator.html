@@ -1082,6 +1082,7 @@
             const clusterData = collectClusterData();
             const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             const currencyFmt = '$#,##0';
+            const customerName = preparedForInput.value?.trim() || '';
 
             /* ── Tab 1: Configurations ── */
             const cfgData = [];
@@ -1090,20 +1091,32 @@
 
             cfgData.push(['Confluent Platform — Cost Estimate']); cfgMerges.push({ s: { r, c: 0 }, e: { r, c: 3 } }); r++;
             cfgData.push([]); r++;
-            cfgData.push(['Date:', today, 'Prepared For:', preparedForInput.value || '']); r++;
+            cfgData.push(['Date:', today, 'Prepared For:', customerName]); r++;
             cfgData.push(['Prepared By:', preparedByInput.value || '', 'Notes:', document.getElementById('notes')?.value || '']); r++;
+            cfgData.push(['Enabled = False rows are omitted. Each environment is its own table.']); r++;
             cfgData.push([]); r++;
 
             clusterData.forEach(cluster => {
                 const envLabel = ENV_LABELS[cluster.env] || 'Production';
+                const enabledRows = cluster.svcRows.filter(svc => svc.enabled);
                 cfgData.push(['Cluster:', cluster.clusterName, 'Environment:', envLabel]);
                 r++;
+                if (!enabledRows.length) {
+                    cfgData.push(['No enabled services']);
+                    r++;
+                    cfgData.push([]); r++;
+                    return;
+                }
                 cfgData.push(['Service', 'Number of Nodes', 'Enabled']);
                 r++;
-                cluster.svcRows.forEach(svc => {
-                    cfgData.push([svc.svcName, svc.nodeVal, svc.enabled]);
+                const firstDataRow = r + 1;
+                enabledRows.forEach(svc => {
+                    cfgData.push([svc.svcName, svc.nodeVal, true]);
                     r++;
                 });
+                const lastDataRow = r;
+                cfgData.push(['Total nodes', { f: `SUM(B${firstDataRow}:B${lastDataRow})` }]);
+                r++;
                 cfgData.push([]); r++;
             });
 
@@ -1124,6 +1137,7 @@
                     if (!svc || !svc.enabled) return 0;
                     return Number.isNaN(svc.nodeVal) ? 0 : svc.nodeVal;
                 });
+                if (vals.every(v => v === 0)) return;
                 summaryData.push([service.name, ...vals]);
             });
 
@@ -1248,8 +1262,8 @@
 
             XLSX.utils.book_append_sheet(wb, wsPricing, 'Pricing');
 
-            const customerName = preparedForInput.value?.trim() || 'Estimate';
-            XLSX.writeFile(wb, `CP-Cost-Estimate-${customerName.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`);
+            const fileCustomer = customerName || 'Estimate';
+            XLSX.writeFile(wb, `CP-Cost-Estimate-${fileCustomer.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`);
         });
 
         /* ══════════════════════════════════════════════════════════
