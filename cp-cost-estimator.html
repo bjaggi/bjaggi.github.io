@@ -70,12 +70,27 @@
         }
         details summary::-webkit-details-marker { display: none; }
         details summary::marker { content: ''; }
+        .print-report { display: none; }
         @media print {
             .no-print,
             .logo-container,
-            .toc-sidebar {
+            .toc-sidebar,
+            .screen-app {
                 display: none !important;
             }
+            .print-report {
+                display: block !important;
+                color: #0A3D62;
+                font-size: 11px;
+            }
+            .print-report h1 { font-size: 18px; margin: 0 0 4px; }
+            .print-report h2 { font-size: 13px; margin: 16px 0 6px; }
+            .print-report table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+            .print-report th, .print-report td { border: 1px solid #d1d5db; padding: 4px 6px; text-align: left; }
+            .print-report th { background: #0A3D62; color: white; }
+            .print-report .num { text-align: right; }
+            .print-report .grand { background: #0A3D62; color: white; font-weight: 700; font-size: 13px; }
+            .print-report .section { break-inside: avoid; }
         }
     </style>
 </head>
@@ -86,7 +101,8 @@
         </a>
         <a href="index.html" class="text-primary text-sm hover:text-dark">← Back to HomePage</a>
     </div>
-    <div class="container mx-auto px-4 py-8">
+    <div id="print-report" class="print-report"></div>
+    <div class="container mx-auto px-4 py-8 screen-app">
         <div class="max-w-6xl mx-auto flex gap-6">
             <!-- Table of Contents Sidebar -->
             <nav id="toc-nav" class="toc-sidebar hidden lg:block w-48 shrink-0 no-print">
@@ -1036,7 +1052,182 @@
             }
         });
 
+        const money = (value) => `$${Math.round(Number(value) || 0).toLocaleString('en-US')}`;
+        const escHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[ch]));
+
+        const quoteFigures = () => {
+            const clusters = collectClusterData();
+            const num = (value) => {
+                const n = Number(value || 0);
+                return Number.isNaN(n) ? 0 : n;
+            };
+            const nonProdRate = num(priceNonProdInput.value);
+            const prodRate = num(priceProdInput.value);
+            const premCount = num(connectorPremiumInput.value);
+            const osCount = num(connectorOpensourceInput.value);
+            const cpPackCount = num(connectorCpPackInput.value);
+            const premNpRate = num(pricePremNonProdInput.value);
+            const premPRate = num(pricePremProdInput.value);
+            const cpNpRate = num(priceCpNonProdInput.value);
+            const cpPRate = num(priceCpProdInput.value);
+            const encNpRate = num(priceAddonNonProdInput.value);
+            const encPRate = num(priceAddonProdInput.value);
+            const usmNpRate = num(priceUsmNonProdInput.value);
+            const usmPRate = num(priceUsmProdInput.value);
+            const csfleOn = !!addonCsfleInput.checked;
+            const fullEncOn = !!addonFullEncryptionInput.checked;
+            const usmOn = !!addonUsmInput.checked;
+
+            const nodeLines = [];
+            clusters.forEach(cluster => {
+                cluster.svcRows.filter(svc => svc.enabled).forEach(svc => {
+                    const licensed = !cluster.isDev && !svc.free;
+                    const unitPrice = !licensed ? 0 : (cluster.isProd ? prodRate : nonProdRate);
+                    nodeLines.push({
+                        cluster: cluster.clusterName,
+                        environment: ENV_LABELS[cluster.env] || cluster.env,
+                        type: svc.svcName,
+                        nodes: svc.nodeVal,
+                        licensed,
+                        unitPrice,
+                        amount: licensed ? svc.nodeVal * unitPrice : 0
+                    });
+                });
+            });
+
+            const licensedNonProd = nodeLines.filter(line => line.licensed && line.environment === 'Non Production')
+                .reduce((sum, line) => sum + line.nodes, 0);
+            const licensedProd = nodeLines.filter(line => line.licensed && line.environment === 'Production')
+                .reduce((sum, line) => sum + line.nodes, 0);
+            const nodeNonProdCost = licensedNonProd * nonProdRate;
+            const nodeProdCost = licensedProd * prodRate;
+            const nodeCost = nodeNonProdCost + nodeProdCost;
+
+            const connectorLines = [
+                { item: 'Premium connectors', count: premCount, npRate: premNpRate, pRate: premPRate, npCost: premCount * premNpRate, pCost: premCount * premPRate },
+                { item: 'CP Commercial Connector Pack', count: cpPackCount, npRate: cpNpRate, pRate: cpPRate, npCost: cpPackCount * cpNpRate, pCost: cpPackCount * cpPRate },
+                { item: 'Open source connectors (not licensed)', count: osCount, npRate: 0, pRate: 0, npCost: 0, pCost: 0 }
+            ];
+            const connectorCost = connectorLines.reduce((sum, line) => sum + line.npCost + line.pCost, 0);
+
+            const addonLines = [
+                { item: 'CSFLE add-on', enabled: csfleOn, npRate: encNpRate, pRate: encPRate },
+                { item: 'Full encryption add-on', enabled: fullEncOn, npRate: encNpRate, pRate: encPRate },
+                { item: 'USM (Unified Stream Manager)', enabled: usmOn, npRate: usmNpRate, pRate: usmPRate }
+            ].map(line => ({
+                ...line,
+                npCost: line.enabled ? line.npRate : 0,
+                pCost: line.enabled ? line.pRate : 0
+            }));
+            const addonCost = addonLines.reduce((sum, line) => sum + line.npCost + line.pCost, 0);
+
+            return {
+                clusters,
+                nodeLines,
+                licensedNonProd,
+                licensedProd,
+                nonProdRate,
+                prodRate,
+                nodeNonProdCost,
+                nodeProdCost,
+                nodeCost,
+                connectorLines,
+                connectorCost,
+                addonLines,
+                addonCost,
+                grandTotal: nodeCost + connectorCost + addonCost,
+                customerName: preparedForInput.value?.trim() || '',
+                preparedBy: preparedByInput.value?.trim() || '',
+                notes: document.getElementById('notes')?.value?.trim() || ''
+            };
+        };
+
+        const renderPrintReport = () => {
+            const report = document.getElementById('print-report');
+            if (!report) return;
+            const q = quoteFigures();
+            const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            const nodeRows = q.nodeLines.length
+                ? q.nodeLines.map(line => `
+                    <tr>
+                        <td>${escHtml(line.cluster)}</td>
+                        <td>${escHtml(line.environment)}</td>
+                        <td>${escHtml(line.type)}</td>
+                        <td class="num">${line.nodes}</td>
+                        <td>${line.licensed ? 'Yes' : 'No'}</td>
+                        <td class="num">${money(line.unitPrice)}</td>
+                        <td class="num">${money(line.amount)}</td>
+                    </tr>`).join('')
+                : '<tr><td colspan="7">No enabled nodes.</td></tr>';
+            const connectorRows = q.connectorLines.map(line => `
+                <tr>
+                    <td>${escHtml(line.item)}</td>
+                    <td class="num">${line.count}</td>
+                    <td class="num">${money(line.npRate)}</td>
+                    <td class="num">${money(line.pRate)}</td>
+                    <td class="num">${money(line.npCost)}</td>
+                    <td class="num">${money(line.pCost)}</td>
+                    <td class="num">${money(line.npCost + line.pCost)}</td>
+                </tr>`).join('');
+            const addonRows = q.addonLines.map(line => `
+                <tr>
+                    <td>${escHtml(line.item)}</td>
+                    <td>${line.enabled ? 'Yes' : 'No'}</td>
+                    <td class="num">${money(line.npRate)}</td>
+                    <td class="num">${money(line.pRate)}</td>
+                    <td class="num">${money(line.npCost + line.pCost)}</td>
+                </tr>`).join('');
+            report.innerHTML = `
+                <h1>Confluent Platform — Cost Estimate</h1>
+                <p>Date: ${escHtml(today)}<br>
+                Prepared for: ${escHtml(q.customerName || '—')}<br>
+                Prepared by: ${escHtml(q.preparedBy || '—')}</p>
+                ${q.notes ? `<p><strong>Notes:</strong> ${escHtml(q.notes)}</p>` : ''}
+                <div class="section">
+                    <h2>Node breakdown</h2>
+                    <table>
+                        <thead><tr><th>Cluster</th><th>Environment</th><th>Node type</th><th>Nodes</th><th>Licensed</th><th>Unit price</th><th>Amount</th></tr></thead>
+                        <tbody>${nodeRows}</tbody>
+                    </table>
+                    <p>Licensed nodes: ${q.licensedNonProd} non-production, ${q.licensedProd} production. Dev nodes and controllers are listed and are not licensed.</p>
+                </div>
+                <div class="section">
+                    <h2>Price breakdown</h2>
+                    <table>
+                        <thead><tr><th>Line</th><th>Non Production</th><th>Production</th><th>Amount</th></tr></thead>
+                        <tbody>
+                            <tr><td>Licensed nodes</td><td class="num">${q.licensedNonProd}</td><td class="num">${q.licensedProd}</td><td></td></tr>
+                            <tr><td>Price per node</td><td class="num">${money(q.nonProdRate)}</td><td class="num">${money(q.prodRate)}</td><td></td></tr>
+                            <tr><td>Node cost</td><td class="num">${money(q.nodeNonProdCost)}</td><td class="num">${money(q.nodeProdCost)}</td><td class="num">${money(q.nodeCost)}</td></tr>
+                        </tbody>
+                    </table>
+                    <table>
+                        <thead><tr><th>Connector</th><th>Count</th><th>Non-prod unit price</th><th>Prod unit price</th><th>Non-prod cost</th><th>Prod cost</th><th>Amount</th></tr></thead>
+                        <tbody>${connectorRows}</tbody>
+                    </table>
+                    <table>
+                        <thead><tr><th>Add-on</th><th>Enabled</th><th>Non-prod price</th><th>Prod price</th><th>Amount</th></tr></thead>
+                        <tbody>${addonRows}</tbody>
+                    </table>
+                </div>
+                <div class="section">
+                    <h2>Final bill</h2>
+                    <table>
+                        <tbody>
+                            <tr><td>Node cost</td><td class="num">${money(q.nodeCost)}</td></tr>
+                            <tr><td>Connector cost</td><td class="num">${money(q.connectorCost)}</td></tr>
+                            <tr><td>Add-on cost</td><td class="num">${money(q.addonCost)}</td></tr>
+                            <tr class="grand"><td>Final bill</td><td class="num">${money(q.grandTotal)}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        };
+
         downloadPdfButton.addEventListener('click', () => {
+            renderPrintReport();
             window.print();
         });
 
@@ -1261,6 +1452,127 @@
             }
 
             XLSX.utils.book_append_sheet(wb, wsPricing, 'Pricing');
+
+            /* ── Tab: Bill — node types, price breakdown, final bill ── */
+            const q = quoteFigures();
+            const bill = [];
+            const billRow = () => bill.length + 1;
+            bill.push(['Confluent Platform — Cost Estimate']);
+            bill.push([]);
+            bill.push(['Date:', today, 'Prepared For:', q.customerName]);
+            bill.push(['Prepared By:', q.preparedBy, 'Notes:', q.notes]);
+            bill.push([]);
+            bill.push(['NODE BREAKDOWN']);
+            bill.push(['Cluster', 'Environment', 'Node type', 'Number of nodes', 'Licensed', 'Unit price', 'Amount']);
+            const nodeFirst = billRow();
+            q.nodeLines.forEach(line => {
+                const excelRow = billRow();
+                bill.push([
+                    line.cluster,
+                    line.environment,
+                    line.type,
+                    line.nodes,
+                    line.licensed ? 'Yes' : 'No',
+                    line.unitPrice,
+                    { f: `IF(E${excelRow}="Yes",D${excelRow}*F${excelRow},0)` }
+                ]);
+            });
+            const nodeLast = bill.length;
+            if (q.nodeLines.length) {
+                bill.push(['Total', '', '', { f: `SUM(D${nodeFirst}:D${nodeLast})` }, '', '', { f: `SUM(G${nodeFirst}:G${nodeLast})` }]);
+            } else {
+                bill.push(['No enabled nodes']);
+            }
+            bill.push([]);
+            bill.push(['PRICE BREAKDOWN']);
+            bill.push(['Line', 'Non Production', 'Production', 'Amount']);
+            const licensedRow = billRow();
+            bill.push(['Licensed nodes', q.licensedNonProd, q.licensedProd, '']);
+            const rateRow = billRow();
+            bill.push(['Price per node', q.nonProdRate, q.prodRate, '']);
+            const nodeCostExcel = billRow();
+            bill.push(['Node cost', { f: `B${licensedRow}*B${rateRow}` }, { f: `C${licensedRow}*C${rateRow}` }, { f: `B${nodeCostExcel}+C${nodeCostExcel}` }]);
+            bill.push([]);
+            bill.push(['Connector', 'Count', 'Non-prod unit price', 'Prod unit price', 'Non-prod cost', 'Prod cost', 'Amount']);
+            const connectorFirst = billRow();
+            q.connectorLines.forEach(line => {
+                const excelRow = billRow();
+                bill.push([
+                    line.item,
+                    line.count,
+                    line.npRate,
+                    line.pRate,
+                    { f: `B${excelRow}*C${excelRow}` },
+                    { f: `B${excelRow}*D${excelRow}` },
+                    { f: `E${excelRow}+F${excelRow}` }
+                ]);
+            });
+            const connectorLast = bill.length;
+            const connectorTotalExcel = billRow();
+            bill.push(['Connector cost', '', '', '', { f: `SUM(E${connectorFirst}:E${connectorLast})` }, { f: `SUM(F${connectorFirst}:F${connectorLast})` }, { f: `E${connectorTotalExcel}+F${connectorTotalExcel}` }]);
+            bill.push([]);
+            bill.push(['Add-on', 'Enabled', 'Non-prod price', 'Prod price', 'Amount']);
+            const addonFirst = billRow();
+            q.addonLines.forEach(line => {
+                const excelRow = billRow();
+                bill.push([
+                    line.item,
+                    line.enabled ? 'Yes' : 'No',
+                    line.npRate,
+                    line.pRate,
+                    { f: `IF(B${excelRow}="Yes",C${excelRow}+D${excelRow},0)` }
+                ]);
+            });
+            const addonLast = bill.length;
+            const addonTotalExcel = billRow();
+            bill.push(['Add-on cost', '', '', '', { f: `SUM(E${addonFirst}:E${addonLast})` }]);
+            bill.push([]);
+            bill.push(['FINAL BILL']);
+            const finalNodeExcel = billRow();
+            bill.push(['Node cost', { f: `D${nodeCostExcel}` }]);
+            const finalConnExcel = billRow();
+            bill.push(['Connector cost', { f: `G${connectorTotalExcel}` }]);
+            const finalAddonExcel = billRow();
+            bill.push(['Add-on cost', { f: `E${addonTotalExcel}` }]);
+            const finalBillExcel = billRow();
+            bill.push(['Final bill', { f: `B${finalNodeExcel}+B${finalConnExcel}+B${finalAddonExcel}` }]);
+
+            const wsBill = XLSX.utils.aoa_to_sheet(bill);
+            wsBill['!cols'] = [{ wch: 42 }, { wch: 24 }, { wch: 22 }, { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 16 }];
+            const currencyRows = new Set();
+            bill.forEach((row, idx) => {
+                const label = String(row[0] || '').toLowerCase();
+                if (label.includes('price') || label.includes('cost') || label.includes('bill') || label === 'total') currencyRows.add(idx);
+            });
+            for (let row = 0; row < bill.length; row++) {
+                const label = String(bill[row][0] || '').toLowerCase();
+                const moneyCols = label === 'node cost' && bill[row].length === 4
+                    ? [1, 2, 3]
+                    : (label.includes('connector') && bill[row].length > 4) || label === 'premium connectors' || label.includes('connector pack') || label.includes('open source')
+                        ? [2, 3, 4, 5, 6]
+                        : label.includes('add-on') || label.includes('csfle') || label.includes('encryption') || label.includes('usm')
+                            ? [2, 3, 4]
+                            : (label.includes('cost') || label.includes('bill') || label === 'total')
+                                ? [1, 6]
+                                : [];
+                moneyCols.forEach(c => {
+                    const addr = XLSX.utils.encode_cell({ r: row, c });
+                    if (wsBill[addr] && (wsBill[addr].v !== '' || wsBill[addr].f)) wsBill[addr].z = currencyFmt;
+                });
+            }
+            // Unit price and amount columns on the node breakdown.
+            for (let row = nodeFirst - 1; row < nodeLast; row++) {
+                [5, 6].forEach(c => {
+                    const addr = XLSX.utils.encode_cell({ r: row, c });
+                    if (wsBill[addr]) wsBill[addr].z = currencyFmt;
+                });
+            }
+            XLSX.utils.book_append_sheet(wb, wsBill, 'Bill');
+            const billIndex = wb.SheetNames.indexOf('Bill');
+            if (billIndex > 0) {
+                wb.SheetNames.splice(billIndex, 1);
+                wb.SheetNames.unshift('Bill');
+            }
 
             const fileCustomer = customerName || 'Estimate';
             XLSX.writeFile(wb, `CP-Cost-Estimate-${fileCustomer.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`);
