@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StreamHouse live demo</title>
+  <link rel="stylesheet" href="dashboard/static/styles.css?v=14" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    .site-back { font-size: 13px; color: var(--info); text-decoration: none; white-space: nowrap; }
+    .site-back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo" id="logo"></div>
+      <div>
+        <h1 id="brand-name">Real-Time Demand &amp; Inventory Management</h1>
+        <div class="tagline" id="brand-tagline"></div>
+      </div>
+    </div>
+    <div class="stack">
+      <span class="chip">Apache Kafka</span>
+      <span class="chip">Apache Flink <b id="model-chip">ML_FORECAST</b></span>
+      <span class="chip">Tableflow</span>
+      <span class="chip">Stream Governance</span>
+      <span class="chip ibm">IBM watsonx.ai Granite</span>
+      <a class="site-back" href="../../index.html">← Back to HomePage</a>
+    </div>
+  </header>
+
+  <section class="controls">
+    <label>Product <select id="sku"></select></label>
+    <label>Region <select id="region"></select></label>
+    <label>Channel <select id="channel"></select></label>
+    <div class="spacer"></div>
+    <button id="btn-demo" class="demo-btn" hidden>▶ Black Friday demo</button>
+    <button id="btn-agent" class="agent-btn" title="AI inventory agent: watches every location and moves stock between regions">AI agent: OFF</button>
+    <button id="btn-launch" class="primary">Trigger launch</button>
+    <button id="btn-promo">Start promo</button>
+    <button id="btn-restock">Restock</button>
+    <button id="btn-bad" class="ghost">Send bad record</button>
+  </section>
+
+  <div class="workspace">
+  <div class="col-main">
+  <section class="guide" id="guide">
+    <div class="step"><b>1</b><div><strong>Watch a normal day</strong>White line = units sold. Orange dashed line = what the model predicted.</div></div>
+    <div class="step"><b>2</b><div><strong>Create a demand spike</strong>Click <em>Trigger product drop</em> or <em>Start flash promo</em>. Sales jump within 10 seconds.</div></div>
+    <div class="step"><b>3</b><div><strong>See the system react</strong>The forecast catches up in seconds and low-stock locations appear under <em>Restock needed</em>.</div></div>
+    <div class="step"><b>4</b><div><strong>Act on it</strong>Click <em>Restock</em> on a location. Hover the chart any time to see why demand moved.</div></div>
+    <button class="guide-x" id="guide-x" title="Hide the guide">×</button>
+  </section>
+
+  <section class="story" id="story" hidden>
+    <div class="story-head">
+      <div><span class="live-dot"></span><b id="story-title">Black Friday rush</b> <span class="muted" id="story-sub"></span></div>
+      <button id="btn-demo-stop" class="ghost">Stop demo</button>
+    </div>
+    <div class="story-steps" id="story-steps"></div>
+    <div class="story-map" id="story-map"></div>
+  </section>
+
+  <section class="kpis">
+    <div class="kpi"><div class="label">Sold, last hour</div><div class="value" id="kpi-actual">-</div><div class="sub" id="kpi-actual-sub"></div></div>
+    <div class="kpi"><div class="label">Predicted, next hour</div><div class="value" id="kpi-next">-</div><div class="sub" id="kpi-next-sub"></div></div>
+    <div class="kpi"><div class="label">Predicted, next 6 hours</div><div class="value" id="kpi-horizon">-</div><div class="sub">units</div></div>
+    <div class="kpi"><div class="label">Forecast error (WAPE)</div><div class="value" id="kpi-wape">-</div><div class="sub" id="kpi-coverage"></div></div>
+    <div class="kpi"><div class="label">Locations running low</div><div class="value" id="kpi-risk">-</div><div class="sub" id="kpi-overstock"></div></div>
+    <div class="kpi"><div class="label">Events streamed</div><div class="value" id="kpi-events">-</div><div class="sub" id="kpi-rejected"></div></div>
+  </section>
+
+  <main>
+    <div class="card chart-card">
+      <div class="card-title">
+        <span>Units sold vs forecast <small id="chart-sub"></small><small class="chart-hint">Coloured bars on top show when a promo, product drop or sales event (like Black Friday) was running.</small></span>
+        <span class="legend"><i class="sw actual"></i>Units sold <i class="sw fc"></i>Forecast <label class="toggle" title="The model's low-to-high range (95%). Sales outside it are flagged as unusual; the high end sizes restock orders."><input type="checkbox" id="show-band" /><i class="sw band"></i>Show expected range</label></span>
+      </div>
+      <div id="promo-status" class="promo-status off"></div>
+      <div id="inv-status" class="inv-status"></div>
+      <div class="chart-wrap"><canvas id="chart"></canvas></div>
+      <div id="why" class="why-panel"></div>
+      <div class="promos" id="promos"></div>
+    </div>
+
+    <div class="card agent-card" id="agent-card" hidden>
+      <div class="card-title"><span>AI inventory agent <b id="agent-state" class="agent-state"></b></span><small id="agent-policy"></small></div>
+      <div class="agent-stats" id="agent-stats"></div>
+      <div class="agent-feed" id="agent-feed"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Restock needed <b id="restock-count" class="count"></b></span><small>forecast demand vs stock on hand, per location</small></div>
+      <div id="restock-list" class="restock-grid"><div class="empty">Every location has enough stock for the forecast.</div></div>
+    </div>
+  </main>
+
+  <section class="card">
+    <div class="card-title"><span>Inventory health, every product and location</span><small>forecast vs inventory, temporal join in Flink</small></div>
+    <div class="risk-legend" id="risk-legend"></div>
+    <div class="risk-grid" id="risk-grid"></div>
+  </section>
+  </div>
+
+  <aside class="card recs" id="recs">
+    <div class="recs-head">
+      <div class="card-title"><span>AI Recommendations <b id="recs-waiting" class="count"></b></span></div>
+      <button id="btn-approval" class="approval-btn" title="Required: every move waits for a human. Autonomous: the agent acts on its own.">Human approval: required</button>
+    </div>
+    <div class="recs-filters">
+      <div class="chips" id="recs-status"></div>
+      <div class="chips" id="recs-kind"></div>
+    </div>
+    <div class="recs-list" id="recs-list"></div>
+  </aside>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="hosted-mock.js"></script>
+  <script src="dashboard/static/app.js?v=14"></script>
+</body>
+</html>

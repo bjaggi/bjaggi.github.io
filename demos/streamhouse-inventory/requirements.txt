@@ -1,0 +1,9 @@
+confluent-kafka[avro,schemaregistry,rules]>=2.10
+fastapi>=0.110
+uvicorn>=0.29
+pyyaml>=6.0
+python-dotenv>=1.0
+httpx>=0.27
+pyiceberg[pyarrow]>=0.8
+duckdb>=1.1
+pyarrow>=16

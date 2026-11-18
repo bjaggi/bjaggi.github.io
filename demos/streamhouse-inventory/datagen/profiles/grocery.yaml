@@ -1,0 +1,121 @@
+# Grocery chain with weekly promotions, perishables and weather-driven spikes.
+id: grocery
+
+brand:
+  name: FreshCart Markets
+  vertical: Grocery
+  tagline: Real-time demand sensing for promotions and perishables
+  primary_color: "#16A34A"
+
+period:
+  # Must match the TUMBLE interval in flink/02_demand_windowed.sql.
+  seconds: 10
+  label: hour
+  periods_per_day: 24
+
+# Grocery peaks: morning commute, lunch, after-work.
+daily_curve: [0.1, 0.05, 0.05, 0.05, 0.1, 0.3, 0.6, 0.9, 1.0, 1.0, 1.05, 1.2,
+              1.3, 1.1, 1.0, 1.05, 1.3, 1.6, 1.7, 1.5, 1.1, 0.7, 0.4, 0.2]
+
+regions:
+  - {id: NORTHEAST, name: Northeast, weight: 1.2}
+  - {id: MIDWEST,   name: Midwest,   weight: 1.0}
+  - {id: SOUTH,     name: South,     weight: 1.1}
+
+stores_per_region: 6
+
+channels:
+  ONLINE: {name: Delivery & Pickup, fulfilled_from: Dark store}
+  STORE:  {name: Stores,            fulfilled_from: Store shelf}
+
+conversion:
+  views_per_unit: 1.5
+  cart_adds_per_unit: 1.2
+
+replenishment:
+  lead_time_periods: 6
+
+products:
+  - sku: DAIRY-MILK-2L
+    name: Organic 2% Milk 2L
+    category: Dairy
+    price: 4.99
+    base_demand: {ONLINE: 4, STORE: 10}
+    initial_stock: {ONLINE: 300, STORE: 700}
+    reorder_point: {ONLINE: 90, STORE: 220}
+    reorder_qty: {ONLINE: 250, STORE: 600}
+    promo_elasticity: 1.5
+
+  - sku: PROD-AVOCADO-4
+    name: Hass Avocados 4-Pack
+    category: Produce
+    price: 5.49
+    base_demand: {ONLINE: 3, STORE: 7}
+    initial_stock: {ONLINE: 220, STORE: 480}
+    reorder_point: {ONLINE: 70, STORE: 150}
+    reorder_qty: {ONLINE: 200, STORE: 420}
+    promo_elasticity: 2.8
+
+  - sku: MEAT-CHKN-BRST
+    name: Chicken Breast Family Pack
+    category: Meat
+    price: 11.99
+    base_demand: {ONLINE: 3, STORE: 6}
+    initial_stock: {ONLINE: 200, STORE: 420}
+    reorder_point: {ONLINE: 60, STORE: 130}
+    reorder_qty: {ONLINE: 180, STORE: 360}
+    promo_elasticity: 2.4
+
+  - sku: FRZ-ICECREAM-VAN
+    name: Vanilla Bean Ice Cream 1.5qt
+    category: Frozen
+    price: 6.99
+    base_demand: {ONLINE: 2, STORE: 4}
+    initial_stock: {ONLINE: 150, STORE: 300}
+    reorder_point: {ONLINE: 45, STORE: 90}
+    reorder_qty: {ONLINE: 130, STORE: 260}
+    promo_elasticity: 2.6
+    hero_launch: true
+
+  - sku: BEV-SPARK-12PK
+    name: Sparkling Water 12-Pack
+    category: Beverages
+    price: 7.49
+    base_demand: {ONLINE: 3, STORE: 6}
+    initial_stock: {ONLINE: 260, STORE: 500}
+    reorder_point: {ONLINE: 80, STORE: 160}
+    reorder_qty: {ONLINE: 230, STORE: 440}
+    promo_elasticity: 2.2
+
+  - sku: BAKE-SOURDOUGH
+    name: Artisan Sourdough Loaf
+    category: Bakery
+    price: 5.99
+    base_demand: {ONLINE: 2, STORE: 6}
+    initial_stock: {ONLINE: 140, STORE: 380}
+    reorder_point: {ONLINE: 40, STORE: 120}
+    reorder_qty: {ONLINE: 120, STORE: 330}
+    promo_elasticity: 1.8
+
+launch:
+  label: Demand surge
+  description: Heatwave or viral social post; demand spikes for a few hours then decays.
+  default_multiplier: 6.0
+  decay_periods: 6
+
+peak_event:
+  label: Thanksgiving demo
+  name: "Thanksgiving rush: Northeast"
+  sku: MEAT-CHKN-BRST
+  surge_region: NORTHEAST
+  surplus_region: MIDWEST
+  multiplier: 5.0
+  periods: 36
+  surge_start_stock: {ONLINE: 100, STORE: 160}
+  surplus_stock: {ONLINE: 800, STORE: 1400}
+
+promo:
+  label: Weekly circular promo
+  description: Featured-item markdown in the weekly circular and app.
+  default_discount_pct: 0.30
+  default_periods: 10

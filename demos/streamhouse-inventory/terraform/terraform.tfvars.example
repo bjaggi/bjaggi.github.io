@@ -1,0 +1,12 @@
+confluent_cloud_api_key    = "<cloud-api-key>"
+confluent_cloud_api_secret = "<cloud-api-secret>"
+
+# Re-skin the resource names for a specific customer meeting.
+prefix = "demand-forecast-demo"
+
+cloud  = "AWS"
+region = "us-east-1"
+
+# Set to true if your org is enrolled in the AI_FORECAST Early Access Program
+# (IBM Granite TTM time-series foundation model hosted by Confluent).
+enable_ai_forecast = false

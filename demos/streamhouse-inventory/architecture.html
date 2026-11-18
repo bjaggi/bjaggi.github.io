@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamHouse architecture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #F5F9FF;
+            color: #0A3D62;
+        }
+        .logo-container {
+            padding: 0.75rem 1rem;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        .logo-container img { height: 36px; width: auto; }
+        .text-primary { color: #0A85EA; }
+        .text-dark { color: #0A3D62; }
+        .hover\:text-dark:hover { color: #0A3D62; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { border-bottom: 1px solid #e5e7eb; padding: 0.55rem 0.4rem; text-align: left; vertical-align: top; }
+        th { font-size: 0.75rem; letter-spacing: 0.03em; text-transform: uppercase; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="logo-container flex items-center gap-4">
+        <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
+            <img src="../../assets/image.png" alt="Confluent Logo">
+        </a>
+        <a href="../../index.html" class="text-primary text-sm hover:text-dark">← Back to HomePage</a>
+    </div>
+
+    <div class="container mx-auto px-4 py-10 max-w-5xl">
+        <p class="text-sm font-semibold tracking-wide uppercase text-primary mb-2">StreamHouse Demos</p>
+        <h1 class="text-3xl font-bold text-dark mb-3">Real-time demand and inventory architecture</h1>
+        <p class="text-dark leading-relaxed mb-6">A Streamhouse keeps the dashboard, the inventory agent, and analytics on the same current picture of the business. Connectors bring source systems into Kafka. Flink turns those events into forecasts, stock health, and recommendations. Lightning Tables, the Real-Time Context Engine, and Tableflow serve that state to people and to the lakehouse. A planner’s approval goes back onto Kafka, and sink connectors carry the approved action to the order and warehouse systems.</p>
+
+        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8">
+            <img src="img/architecture.png" alt="Architecture: sources, connectors, Kafka, Flink, Lightning Tables, Context Engine, Tableflow, and actions back to OMS and WMS" class="w-full h-auto">
+        </figure>
+
+        <h2 class="text-xl font-semibold text-dark mb-3">Five platform pillars</h2>
+        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
+            <table>
+                <thead>
+                    <tr><th>Pillar</th><th>Confluent product</th><th>What it does</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Stream</td><td>Kafka on Confluent Cloud</td><td>Durable record of every sale, stock movement, promotion, and supplier order.</td></tr>
+                    <tr><td>Connect</td><td>Managed connectors</td><td>Brings in point of sale, e-commerce, order, warehouse, and ERP data, and writes approved actions back out.</td></tr>
+                    <tr><td>Process</td><td>Confluent Cloud for Apache Flink</td><td>Sales rollups, hourly forecast, forecast-versus-inventory join, and stock-out and overstock detection.</td></tr>
+                    <tr><td>Govern</td><td>Stream Governance and Schema Registry</td><td>Data contracts that reject bad records before they reach the forecast.</td></tr>
+                    <tr><td>Query</td><td>Lightning Tables, Tableflow, Real-Time Context Engine</td><td>Serves live state to the dashboard and the agent, and sends history to the lakehouse.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="text-xl font-semibold text-dark mb-3">No separate serving database</h2>
+        <p class="text-dark leading-relaxed mb-4">A conventional build adds a database or cache that someone has to scale and keep in sync with Kafka. Lightning Tables materializes the topics directly, so the dashboard and agents query a managed table.</p>
+        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8">
+            <img src="img/lightning-tables.png" alt="Without Lightning Tables there is an extra serving database. With Lightning Tables, Kafka topics and Flink jobs feed a managed table." class="w-full h-auto">
+        </figure>
+
+        <h2 class="text-xl font-semibold text-dark mb-3">Topics</h2>
+        <p class="text-dark leading-relaxed mb-4">The design uses five source topics, seven derived topics, and a dead-letter topic. Events for one product and location stay on the same key, so they remain ordered.</p>
+        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
+            <table>
+                <thead>
+                    <tr><th>Topic</th><th>Written by</th><th>Read by</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>sales.pos-events</td><td>Store point of sale</td><td>Flink rollups, Tableflow</td></tr>
+                    <tr><td>sales.ecom-events</td><td>Web and app orders</td><td>Flink rollups, Tableflow</td></tr>
+                    <tr><td>inventory.movements</td><td>Warehouse and order systems</td><td>Flink inventory position</td></tr>
+                    <tr><td>supplier.orders</td><td>ERP</td><td>Flink restock logic</td></tr>
+                    <tr><td>merch.promo-events</td><td>Planning tools</td><td>Flink forecast features</td></tr>
+                    <tr><td>demand.sales-rollup</td><td>Flink</td><td>Forecast, Lightning Tables</td></tr>
+                    <tr><td>demand.forecast</td><td>Flink</td><td>Health join, Lightning Tables</td></tr>
+                    <tr><td>inventory.position</td><td>Flink</td><td>Health join, Lightning Tables</td></tr>
+                    <tr><td>inventory.health</td><td>Flink</td><td>Lightning Tables, agent</td></tr>
+                    <tr><td>ai.recommendations</td><td>Streaming agent</td><td>Lightning Tables, approval screen</td></tr>
+                    <tr><td>ai.approvals and ai.actions</td><td>Approval screen, then Flink</td><td>Order and warehouse sink connectors</td></tr>
+                    <tr><td>dlq.contract-rejects</td><td>Schema Registry rules</td><td>Rejection counter on the dashboard</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="text-xl font-semibold text-dark mb-3">From a sales spike to an approved move</h2>
+        <p class="text-dark leading-relaxed mb-4">The agent proposes a stock move or a markdown. A planner approves it on the dashboard. If no region has spare stock, the agent escalates instead of inventing a transfer. The approval is itself an event on a topic.</p>
+        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8">
+            <img src="img/approval-flow.png" alt="Flow from a sales spike through a Flink join and an agent proposal to a planner approval and a warehouse transfer." class="w-full h-auto">
+        </figure>
+
+        <p class="text-dark">The hosted walkthrough uses the same story without a cluster. <a class="text-primary hover:text-dark font-semibold" href="demo.html">Open the live demo</a></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "InventoryUpdate",
+  "namespace": "io.confluent.demo.demand",
+  "doc": "Inventory position snapshot per SKU, region and channel (ONLINE = distribution center, STORE = store stock in the region).",
+  "fields": [
+    {"name": "sku", "type": "string"},
+    {"name": "region", "type": "string"},
+    {"name": "channel", "type": "string", "doc": "ONLINE or STORE"},
+    {"name": "on_hand", "type": "int"},
+    {"name": "on_order", "type": "int", "default": 0},
+    {"name": "reason", "type": "string", "doc": "SNAPSHOT, RESTOCK, ADJUSTMENT, TRANSFER_OUT, TRANSFER_IN_TRANSIT or TRANSFER_IN"},
+    {"name": "event_time", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}

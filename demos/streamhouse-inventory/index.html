@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamHouse for Inventory Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #F5F9FF;
+            color: #0A3D62;
+        }
+        .logo-container {
+            padding: 0.75rem 1rem;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        .logo-container img { height: 36px; width: auto; }
+        .text-primary { color: #0A85EA; }
+        .text-dark { color: #0A3D62; }
+        .hover\:text-dark:hover { color: #0A3D62; }
+        pre {
+            background: #0A3D62;
+            color: #F5F9FF;
+            border-radius: 0.5rem;
+            padding: 0.9rem 1rem;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-container flex items-center gap-4">
+        <a href="https://www.confluent.io" target="_blank" rel="noopener noreferrer">
+            <img src="../../assets/image.png" alt="Confluent Logo">
+        </a>
+        <a href="../../index.html" class="text-primary text-sm hover:text-dark">← Back to HomePage</a>
+    </div>
+
+    <div class="container mx-auto px-4 py-10 max-w-3xl">
+        <p class="text-sm font-semibold tracking-wide uppercase text-primary mb-2">Demos</p>
+        <h1 class="text-3xl font-bold text-dark mb-3">StreamHouse for Inventory Management</h1>
+        <p class="text-dark leading-relaxed mb-4">Retail events stream into Kafka. Flink SQL forecasts demand by product, region, and channel, then compares that forecast with inventory to flag stockout and overstock risk. The source for this demo lives in this folder.</p>
+        <p class="text-dark leading-relaxed mb-4">GitHub Pages serves the files. The live dashboard needs the local Python app, because it reads a stream from the API.</p>
+        <h2 class="text-lg font-semibold text-dark mb-2">Run it locally</h2>
+        <pre>cd demos/streamhouse-inventory
+make dashboard-offline</pre>
+        <p class="text-sm text-gray-600 mt-3">That opens the dashboard at <span class="font-medium">http://localhost:8000</span> without Confluent Cloud. The full pipeline is in the <a class="text-primary hover:text-dark underline" href="README.md">README</a>.</p>
+    </div>
+</body>
+</html>

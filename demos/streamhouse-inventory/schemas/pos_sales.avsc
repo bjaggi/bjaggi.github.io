@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "PosSale",
+  "namespace": "io.confluent.demo.demand",
+  "doc": "Point-of-sale line item from a physical store.",
+  "fields": [
+    {"name": "txn_id", "type": "string"},
+    {"name": "store_id", "type": "string"},
+    {"name": "loyalty_id", "type": ["null", "string"], "default": null, "confluent:tags": ["PII"]},
+    {"name": "sku", "type": "string"},
+    {"name": "region", "type": "string"},
+    {"name": "units", "type": "int"},
+    {"name": "unit_price", "type": "double"},
+    {"name": "discount_pct", "type": "double", "default": 0.0},
+    {"name": "promo_id", "type": ["null", "string"], "default": null},
+    {"name": "event_time", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}

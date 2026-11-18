@@ -1,0 +1,129 @@
+# Footwear / apparel brand with limited-edition product drops.
+# Re-skin quickly with BRAND_NAME / BRAND_COLOR env vars, or copy this file.
+id: apparel_drops
+
+brand:
+  name: Stride Athletics
+  vertical: Footwear & Apparel
+  tagline: Real-time demand sensing for product drops and promotions
+  primary_color: "#111111"
+  accent_color: "#FA5400"
+
+period:
+  # Must match the TUMBLE interval in flink/02_demand_windowed.sql.
+  seconds: 10
+  # Each period represents one simulated hour, so one simulated day = 4 real minutes.
+  label: hour
+  periods_per_day: 24
+
+# Multiplier applied to base demand for each simulated hour of the day (0..23).
+daily_curve: [0.25, 0.15, 0.1, 0.1, 0.15, 0.3, 0.5, 0.7, 0.9, 1.0, 1.05, 1.1,
+              1.2, 1.15, 1.05, 1.0, 1.1, 1.3, 1.5, 1.6, 1.5, 1.2, 0.8, 0.45]
+
+regions:
+  - {id: NA-EAST, name: North America East, weight: 1.2}
+  - {id: NA-WEST, name: North America West, weight: 1.0}
+  - {id: EMEA,    name: Europe,             weight: 0.9}
+
+stores_per_region: 4
+
+channels:
+  ONLINE: {name: Web & App, fulfilled_from: Distribution center}
+  STORE:  {name: Stores,    fulfilled_from: Store stock}
+
+conversion:
+  views_per_unit: 4.0
+  cart_adds_per_unit: 1.6
+
+replenishment:
+  # Batch replenishment: orders placed when stock drops below the reorder
+  # point arrive this many periods later.
+  lead_time_periods: 8
+
+products:
+  - sku: RUN-AIRSTRIDE-01
+    name: AirStride Runner
+    category: Running
+    price: 140.0
+    base_demand: {ONLINE: 5, STORE: 3}
+    initial_stock: {ONLINE: 400, STORE: 220}
+    reorder_point: {ONLINE: 120, STORE: 70}
+    reorder_qty: {ONLINE: 360, STORE: 200}
+    promo_elasticity: 2.2
+
+  - sku: LIFE-RETRO-HI
+    name: Retro Court High "Volt"
+    category: Lifestyle
+    price: 180.0
+    base_demand: {ONLINE: 3, STORE: 2}
+    # Hyped and stocked lean: a 25% flash promo roughly doubles demand and can sell it out.
+    initial_stock: {ONLINE: 130, STORE: 65}
+    reorder_point: {ONLINE: 40, STORE: 20}
+    reorder_qty: {ONLINE: 130, STORE: 65}
+    promo_elasticity: 4.0
+    hero_launch: true
+
+  - sku: TRAIN-FLEX-TEE
+    name: FlexDry Training Tee
+    category: Apparel
+    price: 35.0
+    base_demand: {ONLINE: 8, STORE: 6}
+    initial_stock: {ONLINE: 700, STORE: 450}
+    reorder_point: {ONLINE: 200, STORE: 140}
+    reorder_qty: {ONLINE: 600, STORE: 400}
+    promo_elasticity: 3.0
+
+  - sku: BBALL-ELEVATE-7
+    name: Elevate 7 Basketball Shoe
+    category: Basketball
+    price: 160.0
+    base_demand: {ONLINE: 4, STORE: 2}
+    initial_stock: {ONLINE: 300, STORE: 140}
+    reorder_point: {ONLINE: 90, STORE: 45}
+    reorder_qty: {ONLINE: 260, STORE: 120}
+    promo_elasticity: 2.0
+
+  - sku: OUT-TRAIL-JKT
+    name: Trailhead Shell Jacket
+    category: Outdoor
+    price: 120.0
+    base_demand: {ONLINE: 3, STORE: 2}
+    initial_stock: {ONLINE: 260, STORE: 160}
+    reorder_point: {ONLINE: 70, STORE: 45}
+    reorder_qty: {ONLINE: 220, STORE: 140}
+    promo_elasticity: 2.5
+
+  - sku: ACC-PRO-SOCK-3P
+    name: Pro Cushion Socks 3-Pack
+    category: Accessories
+    price: 18.0
+    base_demand: {ONLINE: 9, STORE: 7}
+    initial_stock: {ONLINE: 800, STORE: 500}
+    reorder_point: {ONLINE: 220, STORE: 160}
+    reorder_qty: {ONLINE: 700, STORE: 450}
+    promo_elasticity: 2.8
+
+launch:
+  label: Product drop
+  description: Limited-edition release with social hype; demand spikes then decays.
+  default_multiplier: 9.0
+  decay_periods: 5
+
+peak_event:
+  # The "Black Friday demo" button: one region surges while another sits on spare stock,
+  # and the AI inventory agent rebalances between them.
+  label: Black Friday demo
+  name: "Black Friday rush: North America East"
+  sku: LIFE-RETRO-HI
+  surge_region: NA-EAST
+  surplus_region: NA-WEST
+  multiplier: 5.0
+  periods: 36
+  surge_start_stock: {ONLINE: 110, STORE: 70}
+  surplus_stock: {ONLINE: 900, STORE: 500}
+
+promo:
+  label: Flash promo
+  description: Time-boxed markdown across all channels.
+  default_discount_pct: 0.25
+  default_periods: 12

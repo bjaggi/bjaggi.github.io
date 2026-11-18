@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "CartEvent",
+  "namespace": "io.confluent.demo.demand",
+  "doc": "Add-to-cart and remove-from-cart events from web and mobile app.",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "cart_id", "type": "string"},
+    {"name": "customer_id", "type": "string", "confluent:tags": ["PII"]},
+    {"name": "sku", "type": "string"},
+    {"name": "region", "type": "string"},
+    {"name": "action", "type": "string", "doc": "ADD or REMOVE"},
+    {"name": "units", "type": "int"},
+    {"name": "event_time", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}

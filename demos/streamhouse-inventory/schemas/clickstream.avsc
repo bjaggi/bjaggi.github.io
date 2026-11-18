@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "ClickstreamEvent",
+  "namespace": "io.confluent.demo.demand",
+  "doc": "Product page interactions from web and mobile app.",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "session_id", "type": "string"},
+    {"name": "customer_id", "type": "string", "confluent:tags": ["PII"]},
+    {"name": "sku", "type": "string"},
+    {"name": "region", "type": "string"},
+    {"name": "device", "type": "string", "doc": "WEB or APP"},
+    {"name": "action", "type": "string", "doc": "VIEW, SEARCH or WISHLIST"},
+    {"name": "event_time", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}

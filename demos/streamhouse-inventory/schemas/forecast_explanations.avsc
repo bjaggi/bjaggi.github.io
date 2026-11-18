@@ -1,0 +1,20 @@
+{
+  "type": "record",
+  "name": "ForecastExplanation",
+  "namespace": "io.confluent.demo.demand",
+  "doc": "Natural-language explanation of a demand anomaly / forecast shift for merchandisers.",
+  "fields": [
+    {"name": "explanation_id", "type": "string"},
+    {"name": "sku", "type": "string"},
+    {"name": "region", "type": "string"},
+    {"name": "channel", "type": "string"},
+    {"name": "direction", "type": "string", "doc": "SPIKE or DROP"},
+    {"name": "actual_units", "type": "double"},
+    {"name": "expected_units", "type": ["null", "double"], "default": null},
+    {"name": "headline", "type": "string"},
+    {"name": "explanation", "type": "string"},
+    {"name": "recommended_action", "type": "string"},
+    {"name": "model", "type": "string"},
+    {"name": "event_time", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}
