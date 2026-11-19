@@ -95,8 +95,8 @@ async function init() {
   const b = profile.brand;
   if (b.primary_color) document.documentElement.style.setProperty("--brand", b.primary_color);
   if (b.accent_color) document.documentElement.style.setProperty("--accent", b.accent_color);
-  document.title = `${b.name} | Real-Time Demand & Inventory Management`;
-  $("brand-name").textContent = `${b.name} | Real-Time Demand & Inventory Management`;
+  document.title = "Power AI Agents with StreamHouse to manage Inventory & demand";
+  $("brand-name").textContent = "Power AI Agents with StreamHouse to manage Inventory & demand";
   if (localStorage.getItem("hideGuide") === "1") $("guide").hidden = true;
   $("guide-x").onclick = () => { $("guide").hidden = true; localStorage.setItem("hideGuide", "1"); };
   $("brand-tagline").textContent = `${b.vertical || ""} · ${b.tagline || ""} · 1 period = ${profile.period.seconds}s = 1 simulated ${profile.period.label}`;

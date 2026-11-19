@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StreamHouse architecture</title>
+    <title>Power AI Agents with StreamHouse to manage Inventory &amp; demand</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -25,6 +25,16 @@
         th, td { border-bottom: 1px solid #e5e7eb; padding: 0.55rem 0.4rem; text-align: left; vertical-align: top; }
         th { font-size: 0.75rem; letter-spacing: 0.03em; text-transform: uppercase; color: #6b7280; }
         h2[id], h3[id] { scroll-margin-top: 1rem; }
+        pre.sql {
+            background: #0A3D62;
+            color: #F5F9FF;
+            border-radius: 0.5rem;
+            padding: 1rem 1.1rem;
+            overflow-x: auto;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            white-space: pre;
+        }
     </style>
 </head>
 <body>
@@ -37,7 +47,7 @@
 
     <div class="container mx-auto px-4 py-10 max-w-5xl">
         <p class="text-sm font-semibold tracking-wide uppercase text-primary mb-2">StreamHouse Demos</p>
-        <h1 class="text-3xl font-bold text-dark mb-3">Real-time demand and inventory architecture</h1>
+        <h1 class="text-3xl font-bold text-dark mb-3">Power AI Agents with StreamHouse to manage Inventory &amp; demand</h1>
         <nav aria-label="On this page" class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-6">
             <p class="text-sm font-semibold tracking-wide uppercase text-primary mb-2">On this page</p>
             <ol class="list-decimal pl-5 space-y-1 text-dark">
@@ -52,6 +62,7 @@
                         <li><a class="text-primary hover:text-dark" href="#agent-tools">Tools the agent can call</a></li>
                         <li><a class="text-primary hover:text-dark" href="#one-health-event">One health event, one recommendation</a></li>
                         <li><a class="text-primary hover:text-dark" href="#holiday-example">A holiday rush, as the agent sees it</a></li>
+                        <li><a class="text-primary hover:text-dark" href="#sample-code">Sample code</a></li>
                     </ol>
                 </li>
                 <li><a class="text-primary hover:text-dark" href="#approval-flow">From a sales spike to an approved move</a></li>
@@ -133,7 +144,45 @@
 
         <h3 id="streaming-agents" class="text-lg font-semibold text-dark mb-2">Streaming Agents on Confluent Intelligence</h3>
         <p class="text-dark leading-relaxed mb-4">Confluent Intelligence is the managed real-time AI layer on Kafka and Flink. A Streaming Agent is an event-driven agent that runs as a Flink job on Confluent Cloud, on the same stream as the forecast and the stock position. It does not poll a database, and it does not wait for a nightly batch.</p>
-        <p class="text-dark leading-relaxed mb-6">You define it with a model, a prompt, and tools, in Flink SQL or in the Agent Management Console. A continuous Flink statement then calls that agent, with <span class="font-medium">AI_RUN_AGENT</span>, for each inventory health row that needs a decision. The runtime runs the reason-and-tool loop and returns one result. The statement writes that result to <span class="font-medium">ai.recommendations</span>.</p>
+        <p class="text-dark leading-relaxed mb-4">You define it with a model, a prompt, and tools, in Flink SQL or in the Agent Management Console. A continuous Flink statement then calls that agent, with <span class="font-medium">AI_RUN_AGENT</span>, for each inventory health row that needs a decision. The runtime runs the reason-and-tool loop and returns one result. The statement writes that result to <span class="font-medium">ai.recommendations</span>.</p>
+        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-6 overflow-x-auto">
+            <svg viewBox="0 0 980 250" role="img" aria-labelledby="agent-flow-title agent-flow-desc" class="w-full h-auto" style="min-width: 760px">
+                <title id="agent-flow-title">The agent reads one topic, decides, and writes the decision to a different topic</title>
+                <desc id="agent-flow-desc">A health event on inventory.health is read by a Flink Streaming Agent. The agent chooses a transfer, a markdown, or an escalation, and writes that decision as a new event on ai.recommendations.</desc>
+                <defs>
+                    <marker id="agent-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#0A85EA"></path>
+                    </marker>
+                </defs>
+                <rect x="16" y="36" width="270" height="168" rx="14" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="151" y="66" text-anchor="middle" fill="#0A85EA" font-size="12" font-weight="700" letter-spacing="0.08em">KAFKA TOPIC</text>
+                <text x="151" y="98" text-anchor="middle" fill="#0A3D62" font-size="18" font-weight="700">inventory.health</text>
+                <text x="151" y="128" text-anchor="middle" fill="#0A3D62" font-size="14">One row per product,</text>
+                <text x="151" y="148" text-anchor="middle" fill="#0A3D62" font-size="14">region, and channel</text>
+                <text x="151" y="176" text-anchor="middle" fill="#6b7280" font-size="13">Cover, risk, forecast, on hand</text>
+
+                <line x1="286" y1="120" x2="348" y2="120" stroke="#0A85EA" stroke-width="2" marker-end="url(#agent-arrow)"></line>
+                <text x="317" y="108" text-anchor="middle" fill="#0A85EA" font-size="13" font-weight="700">reads</text>
+
+                <rect x="356" y="36" width="268" height="168" rx="14" fill="#0A3D62"></rect>
+                <text x="490" y="66" text-anchor="middle" fill="#8ec8ff" font-size="12" font-weight="700" letter-spacing="0.08em">FLINK STREAMING AGENT</text>
+                <text x="490" y="100" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="700">Makes one decision</text>
+                <text x="490" y="128" text-anchor="middle" fill="#d6e8ff" font-size="14">Calls tools for spare stock</text>
+                <text x="490" y="148" text-anchor="middle" fill="#d6e8ff" font-size="14">and supplier timing</text>
+                <text x="490" y="176" text-anchor="middle" fill="#ffffff" font-size="13">Transfer, markdown, or escalate</text>
+
+                <line x1="624" y1="120" x2="686" y2="120" stroke="#0A85EA" stroke-width="2" marker-end="url(#agent-arrow)"></line>
+                <text x="655" y="108" text-anchor="middle" fill="#0A85EA" font-size="13" font-weight="700">writes</text>
+
+                <rect x="694" y="36" width="270" height="168" rx="14" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="829" y="66" text-anchor="middle" fill="#0A85EA" font-size="12" font-weight="700" letter-spacing="0.08em">KAFKA TOPIC</text>
+                <text x="829" y="98" text-anchor="middle" fill="#0A3D62" font-size="18" font-weight="700">ai.recommendations</text>
+                <text x="829" y="128" text-anchor="middle" fill="#0A3D62" font-size="14">One decision event</text>
+                <text x="829" y="148" text-anchor="middle" fill="#0A3D62" font-size="14">for that location</text>
+                <text x="829" y="176" text-anchor="middle" fill="#6b7280" font-size="13">Action, units, from, to, why</text>
+            </svg>
+            <figcaption class="text-sm text-gray-600 mt-3">The agent never writes its decision back onto the topic it read. <span class="font-medium text-dark">inventory.health</span> stays the measured risk. <span class="font-medium text-dark">ai.recommendations</span> is the decision.</figcaption>
+        </figure>
 
         <h3 id="before-the-agent" class="text-lg font-semibold text-dark mb-2">What Flink calculates first</h3>
         <p class="text-dark leading-relaxed mb-4">The forecast is ordinary Flink SQL, not the model. Sales and promo events become an hourly forecast. Inventory movements and supplier orders become on-hand and on-order. A join of those two writes <span class="font-medium">inventory.health</span>: one row per product, region, and channel, with cover, risk, and the reason.</p>
@@ -174,7 +223,46 @@
         <p class="text-dark leading-relaxed mb-4">North America East stores start selling a hero shoe much faster than the last forecast. Cover falls under the trigger. Supplier timing says a new order arrives after the store would stock out.</p>
         <p class="text-dark leading-relaxed mb-4">Find spare stock returns North America West. After West keeps enough for its own forecast, units are spare. The agent writes one transfer recommendation, West to East, with both reasons on the event. The dashboard shows it. The planner approves. The approval event becomes a warehouse transfer.</p>
         <p class="text-dark leading-relaxed mb-4">If West were also short, the agent would escalate and ask the planner to expedite the supplier. It would not invent a transfer. If East instead held weeks of cover and no region was short, the agent would suggest a markdown.</p>
-        <p class="text-dark leading-relaxed mb-8">Use Streaming Agents when the agent should live next to the data and every decision should be an event on the stream. Host the agent yourself when it already runs in another application and only needs the stream as its input and its record. <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/streaming-agents/overview.html" target="_blank" rel="noopener noreferrer">Streaming Agents documentation</a></p>
+
+        <h3 id="sample-code" class="text-lg font-semibold text-dark mb-2">Sample code</h3>
+        <p class="text-dark leading-relaxed mb-4">The demo pipeline calculates <span class="font-medium">stockout_risk</span>. It does not yet run an agent. The statement below is the missing piece. It reads that table, which is the <span class="font-medium">inventory.health</span> topic, asks the Streaming Agent for one decision, and inserts the result into a different table, <span class="font-medium">ai_recommendations</span>. That table is the <span class="font-medium">ai.recommendations</span> topic. The same file is in the repo at <a class="text-primary hover:text-dark font-semibold" href="flink/06_inventory_agent.sql">flink/06_inventory_agent.sql</a>. It is a sample, so the demo Terraform does not deploy it.</p>
+        <pre class="sql mb-4">CREATE AGENT `inventory_agent`
+USING MODEL `inventory_llm`
+USING PROMPT 'You are the inventory agent for one product, region, and channel. Read the health row in the message. Call find_spare_stock and supplier_timing before you decide. Return one line only: TRANSFER from-region to-region units, or MARKDOWN region discount, or ESCALATE. Use TRANSFER when another region can spare units after keeping its own cover. The unit count is the smaller of what this location needs and what the donor can spare. Use ESCALATE when no region can spare stock and a supplier order would arrive after the stock-out. Use MARKDOWN when this location is overstocked and no other region is short. Do not invent a transfer. Do not move stock.'
+USING TOOLS `find_spare_stock`, `supplier_timing`
+WITH (
+  'max_iterations' = '5'
+);
+
+-- Read stockout_risk. Write the decision to a different table.
+INSERT INTO `ai_recommendations`
+SELECT
+  h.sku,
+  h.region,
+  h.channel,
+  h.window_time,
+  agent.response AS decision
+FROM `stockout_risk` AS h,
+LATERAL TABLE(
+  AI_RUN_AGENT(
+    'inventory_agent',
+    CONCAT(
+      'sku=', h.sku,
+      ', region=', h.region,
+      ', channel=', h.channel,
+      ', on_hand=', CAST(h.on_hand AS STRING),
+      ', on_order=', CAST(h.on_order AS STRING),
+      ', forecast_next=', CAST(h.forecast_next AS STRING),
+      ', periods_of_cover=', CAST(h.periods_of_cover AS STRING),
+      ', risk=', h.risk_level,
+      ', promo_active=', CAST(h.promo_active AS STRING)
+    ),
+    CONCAT(h.sku, '|', h.region, '|', h.channel)
+  )
+) AS agent
+WHERE h.risk_level IN ('OUT_OF_STOCK', 'HIGH', 'MEDIUM', 'OVERSTOCK');</pre>
+        <p class="text-dark leading-relaxed mb-4">Replace the model connection with one in your environment, and register the two lookup functions before creating the tools. Healthy rows are filtered out, so the model is not called when nothing needs a decision. <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/streaming-agents/create-and-run-streaming-agents.html" target="_blank" rel="noopener noreferrer">Create and run Streaming Agents</a></p>
+        <p class="text-dark leading-relaxed mb-8">Use Streaming Agents when the agent should live next to the data and every decision should be an event on the stream. Host the agent yourself when it already runs in another application and only needs the stream as its input and its record.</p>
 
         <h2 id="approval-flow" class="text-xl font-semibold text-dark mb-3">From a sales spike to an approved move</h2>
         <p class="text-dark leading-relaxed mb-4">The agent proposes a stock move or a markdown. A planner approves it on the dashboard. If no region has spare stock, the agent escalates instead of inventing a transfer. The approval is itself an event on a topic.</p>
