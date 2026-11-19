@@ -182,6 +182,17 @@
     .agent-card .card-title small { max-width: none; text-align: left; }
     .agent-feed { grid-template-columns: minmax(0, 1fr); }
     .restock-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+    .restock .top b { min-width: 0; }
+    .restock .badge, .restock button { flex: none; white-space: nowrap; }
+    .restock .act { align-items: flex-start; }
+    .restock .act span { min-width: 0; }
+    .risk-legend { gap: 8px; }
+    .risk-legend span {
+      background: var(--panel-2);
+      border-radius: 8px;
+      padding: 6px 8px;
+      line-height: 1.35;
+    }
     @media (max-width: 1180px) {
       .workspace { grid-template-columns: minmax(0, 1fr); }
       .recs { position: static; max-height: none; }
