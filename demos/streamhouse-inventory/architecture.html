@@ -51,7 +51,12 @@
         <nav aria-label="On this page" class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-6">
             <p class="text-sm font-semibold tracking-wide uppercase text-primary mb-2">On this page</p>
             <ol class="list-decimal pl-5 space-y-1 text-dark">
-                <li><a class="text-primary hover:text-dark" href="#pillars">Five platform pillars</a></li>
+                <li>
+                    <a class="text-primary hover:text-dark" href="#pillars">Five platform pillars</a>
+                    <ol class="list-decimal pl-5 mt-1">
+                        <li><a class="text-primary hover:text-dark" href="#forecast-next">How forecast_next is calculated</a></li>
+                    </ol>
+                </li>
                 <li><a class="text-primary hover:text-dark" href="#serving-database">No separate serving database</a></li>
                 <li><a class="text-primary hover:text-dark" href="#topics">Topics</a></li>
                 <li><a class="text-primary hover:text-dark" href="#inventory-health">What inventory.health carries</a></li>
@@ -171,12 +176,32 @@
                 <tbody>
                     <tr><td>Stream</td><td>Kafka on Confluent Cloud</td><td>Durable record of every sale, stock movement, promotion, and supplier order.</td></tr>
                     <tr><td>Connect</td><td>Managed connectors</td><td>Brings in point of sale, e-commerce, order, warehouse, and ERP data, and writes approved actions back out.</td></tr>
-                    <tr><td>Process</td><td>Confluent Cloud for Apache Flink</td><td>Sales rollups, hourly forecast, forecast-versus-inventory join, and stock-out and overstock detection.</td></tr>
+                    <tr><td>Process</td><td>Confluent Cloud for Apache Flink</td><td>Sales rollups, an hourly <span class="font-medium">forecast_next</span> from <span class="font-medium">ML_FORECAST</span>, the forecast-versus-inventory join, and stock-out and overstock detection.</td></tr>
                     <tr><td>Govern</td><td>Stream Governance and Schema Registry</td><td>Data contracts that reject bad records before they reach the forecast.</td></tr>
                     <tr><td>Query</td><td>Lightning Tables, with the Real-Time Context Engine on top. Tableflow for history.</td><td>Lightning Tables are the backend. The Context Engine serves that live state to the dashboard and the agent. Tableflow sends history to the lakehouse.</td></tr>
                 </tbody>
             </table>
         </div>
+
+        <h3 id="forecast-next" class="text-lg font-semibold text-dark mb-2">How forecast_next is calculated</h3>
+        <p class="text-dark leading-relaxed mb-4">The stock-health statement does not calculate <span class="font-medium">forecast_next</span>. It reads that column from <span class="font-medium">demand_forecast</span>. Each row of <span class="font-medium">demand_windowed</span> is one simulated hour of sales for a product, region, and channel. <span class="font-medium">ML_FORECAST</span> fits an ARIMA model to that history and predicts the next 6 hours. <span class="font-medium">forecast_next</span> is the first of those hours, and it is not allowed to go below zero. The model waits until it has 16 hours of history, so the column is null until then and the health query marks the row <span class="font-medium">WARMING_UP</span>.</p>
+        <pre class="sql mb-4">GREATEST(fc[1].forecast_value, 0.0) AS forecast_next
+...
+ML_FORECAST(
+  units_sold,
+  CAST(window_time AS TIMESTAMP(3)),
+  JSON_OBJECT(
+    'horizon'         VALUE 6,
+    'minTrainingSize' VALUE 16,
+    'maxTrainingSize' VALUE 256,
+    'enableStl'       VALUE false
+  )
+) OVER (
+  PARTITION BY sku, region, channel
+  ORDER BY window_time
+  RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+) AS fc</pre>
+        <p class="text-dark leading-relaxed mb-8">The full statement is <a class="text-primary hover:text-dark font-semibold" href="flink/03_demand_forecast.sql">flink/03_demand_forecast.sql</a>. The health join that uses the column is <a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a>.</p>
 
         <h2 id="serving-database" class="text-xl font-semibold text-dark mb-3">No separate serving database</h2>
         <p class="text-dark leading-relaxed mb-4">A conventional build adds a database or cache that someone has to scale and keep in sync with Kafka. Lightning Tables materialize the topics directly. The Real-Time Context Engine uses those tables as its backend, so the dashboard and the agents query the Context Engine rather than a database of their own.</p>
