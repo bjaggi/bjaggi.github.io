@@ -78,7 +78,7 @@
         <p class="text-dark leading-relaxed mb-6">A Streamhouse keeps the dashboard, the inventory agent, and analytics on one current picture of that business. Connectors bring point-of-sale, commerce, warehouse, and planning systems into Kafka as they happen. Flink turns that stream into a forecast, a stock-health reading, and a recommendation, and writes that state into Lightning Tables. The Real-Time Context Engine sits on those tables and serves them to the dashboard and to the agent. Tableflow sends the history to the lakehouse. When a planner approves a move, that approval returns to Kafka, and sink connectors carry it to the order and warehouse systems. The agent that proposed the move can run as a Streaming Agent on Confluent Intelligence, or as an application you host. Either way, the decision is written as its own event.</p>
 
         <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
-            <svg viewBox="0 0 980 640" role="img" aria-labelledby="arch-title arch-desc" class="w-full h-auto" style="min-width: 720px">
+            <svg viewBox="0 0 980 700" role="img" aria-labelledby="arch-title arch-desc" class="w-full h-auto" style="min-width: 720px">
                 <title id="arch-title">Reference architecture: the Real-Time Context Engine sits on Lightning Tables</title>
                 <desc id="arch-desc">Sources flow through connectors into Kafka. Flink writes derived topics. Lightning Tables hold the live state. The Real-Time Context Engine sits on those tables and serves the dashboard and AI assistants. Tableflow sends history to the lakehouse.</desc>
                 <defs>
@@ -120,40 +120,46 @@
                 <line x1="620" y1="268" x2="620" y2="300" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
 
                 <text x="16" y="328" fill="#6b7280" font-size="12" font-weight="700">QUERY</text>
-                <rect x="110" y="304" width="360" height="132" rx="14" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
-                <rect x="126" y="318" width="328" height="52" rx="10" fill="#0A3D62"></rect>
-                <text x="290" y="340" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">Real-Time Context Engine</text>
-                <text x="290" y="358" text-anchor="middle" fill="#d6e8ff" font-size="12">Serves the dashboard and the agents</text>
-                <rect x="126" y="378" width="328" height="44" rx="10" fill="#fff" stroke="#0A85EA" stroke-width="1.5"></rect>
-                <text x="290" y="396" text-anchor="middle" fill="#0A3D62" font-size="14" font-weight="700">Lightning Tables</text>
-                <text x="290" y="412" text-anchor="middle" fill="#6b7280" font-size="12">Backend of the Context Engine</text>
+                <rect x="110" y="304" width="360" height="176" rx="14" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <rect x="126" y="316" width="328" height="52" rx="10" fill="#0A3D62"></rect>
+                <text x="290" y="338" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">Real-Time Context Engine</text>
+                <text x="290" y="356" text-anchor="middle" fill="#d6e8ff" font-size="12">Live business context over MCP</text>
+                <rect x="126" y="376" width="328" height="88" rx="10" fill="#fff" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="290" y="398" text-anchor="middle" fill="#0A3D62" font-size="14" font-weight="700">Lightning Tables</text>
+                <text x="290" y="416" text-anchor="middle" fill="#6b7280" font-size="11">Low-latency, high-throughput queries</text>
+                <text x="290" y="432" text-anchor="middle" fill="#6b7280" font-size="11">(MCP, SQL, API). No separate database.</text>
+                <text x="290" y="450" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700">Backend of the Context Engine</text>
 
-                <rect x="500" y="304" width="278" height="132" rx="14" fill="#fff" stroke="#D1D5DB"></rect>
-                <text x="639" y="352" text-anchor="middle" fill="#0A3D62" font-size="14" font-weight="700">Tableflow</text>
-                <text x="639" y="374" text-anchor="middle" fill="#6b7280" font-size="12">History to Iceberg</text>
-                <text x="639" y="396" text-anchor="middle" fill="#6b7280" font-size="12">Lakehouse and BI</text>
+                <rect x="500" y="304" width="250" height="176" rx="14" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="625" y="368" text-anchor="middle" fill="#0A3D62" font-size="14" font-weight="700">Tableflow</text>
+                <text x="625" y="390" text-anchor="middle" fill="#6b7280" font-size="11">Kafka streams become Iceberg</text>
+                <text x="625" y="406" text-anchor="middle" fill="#6b7280" font-size="11">or Delta tables.</text>
+                <text x="625" y="424" text-anchor="middle" fill="#6b7280" font-size="11">Query from DWH/LH.</text>
+                <line x1="750" y1="392" x2="800" y2="392" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+                <text x="812" y="388" fill="#0A3D62" font-size="13" font-weight="700">Lakehouses</text>
 
-                <line x1="290" y1="436" x2="290" y2="468" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+                <line x1="290" y1="480" x2="290" y2="512" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
 
-                <text x="16" y="496" fill="#6b7280" font-size="12" font-weight="700">CONSUMERS</text>
-                <rect x="110" y="472" width="168" height="48" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
-                <text x="194" y="500" text-anchor="middle" fill="#0A3D62" font-size="13" font-weight="700">Dashboard</text>
-                <rect x="294" y="472" width="176" height="48" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
-                <text x="382" y="500" text-anchor="middle" fill="#0A3D62" font-size="13" font-weight="700">AI assistants</text>
+                <text x="16" y="540" fill="#6b7280" font-size="12" font-weight="700">CONSUMERS</text>
+                <rect x="110" y="516" width="230" height="48" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="225" y="538" text-anchor="middle" fill="#0A3D62" font-size="12" font-weight="700">Applications, dashboards,</text>
+                <text x="225" y="554" text-anchor="middle" fill="#0A3D62" font-size="12" font-weight="700">analytics</text>
+                <rect x="356" y="516" width="150" height="48" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="431" y="544" text-anchor="middle" fill="#0A3D62" font-size="13" font-weight="700">AI agents</text>
 
-                <line x1="194" y1="520" x2="194" y2="548" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+                <line x1="225" y1="564" x2="225" y2="592" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
 
-                <text x="16" y="576" fill="#6b7280" font-size="12" font-weight="700">ACTIONS</text>
-                <rect x="110" y="552" width="180" height="44" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
-                <text x="200" y="578" text-anchor="middle" fill="#0A3D62" font-size="13">Approvals topic</text>
-                <line x1="290" y1="574" x2="318" y2="574" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
-                <rect x="326" y="552" width="180" height="44" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
-                <text x="416" y="578" text-anchor="middle" fill="#0A3D62" font-size="13">Sink connectors</text>
-                <line x1="506" y1="574" x2="534" y2="574" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
-                <rect x="542" y="552" width="180" height="44" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
-                <text x="632" y="578" text-anchor="middle" fill="#0A3D62" font-size="13">OMS and WMS</text>
+                <text x="16" y="620" fill="#6b7280" font-size="12" font-weight="700">ACTIONS</text>
+                <rect x="110" y="596" width="180" height="44" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="200" y="622" text-anchor="middle" fill="#0A3D62" font-size="13">Approvals topic</text>
+                <line x1="290" y1="618" x2="318" y2="618" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+                <rect x="326" y="596" width="180" height="44" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="416" y="622" text-anchor="middle" fill="#0A3D62" font-size="13">Sink connectors</text>
+                <line x1="506" y1="618" x2="534" y2="618" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+                <rect x="542" y="596" width="180" height="44" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="632" y="622" text-anchor="middle" fill="#0A3D62" font-size="13">OMS and WMS</text>
             </svg>
-            <figcaption class="text-sm text-gray-600 mt-3">Lightning Tables hold the live state. The Real-Time Context Engine sits on top of them and is what the dashboard and the agents query. Tableflow is the separate path for history.</figcaption>
+            <figcaption class="text-sm text-gray-600 mt-3">Lightning Tables answer low-latency queries over MCP, SQL, or an API, with no separate database. The Real-Time Context Engine sits on them and serves AI agents live business context over MCP. Tableflow turns the streams into Iceberg or Delta tables for the lakehouse.</figcaption>
         </figure>
 
         <h2 id="pillars" class="text-xl font-semibold text-dark mb-3">Five platform pillars</h2>
