@@ -54,7 +54,6 @@
                 <li><a class="text-primary hover:text-dark" href="#problem">The problem</a></li>
                 <li><a class="text-primary hover:text-dark" href="#solution-overview">Solution overview</a></li>
                 <li><a class="text-primary hover:text-dark" href="#pillars">Five platform pillars</a></li>
-                <li><a class="text-primary hover:text-dark" href="#serving-database">No separate serving database</a></li>
                 <li><a class="text-primary hover:text-dark" href="#topics">Topics</a></li>
                 <li><a class="text-primary hover:text-dark" href="#flink-processing">Flink processing</a></li>
                 <li>
@@ -181,7 +180,66 @@
             </svg>
             <figcaption class="text-sm text-gray-600 mt-3">Sources (store POS, e-commerce, order and warehouse systems, ERP, promotions) flow through connectors into Kafka topics on Confluent Cloud. Flink reads those topics and writes new ones. Lightning Tables hold the live state. The Real-Time Context Engine sits on those tables and serves dashboards and AI agents. Tableflow sends history to the lakehouse. Approved actions go out through sink connectors to the order and warehouse systems.</figcaption>
         </figure>
-        <p class="text-dark leading-relaxed mb-8">The next sections name the platform pieces and the topics. <a class="text-primary hover:text-dark font-semibold" href="#flink-processing">Flink processing</a> is the calculation in the middle of this picture. The agent and the approval gate come after that.</p>
+        <p class="text-dark leading-relaxed mb-4">The same path, with the Kafka topic on each step. Flink table names stay in the boxes. The topic name is the stream those tables read or write.</p>
+        <figure id="overview-topics-figure" class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4 overflow-x-auto">
+            <svg viewBox="0 0 980 600" role="img" aria-labelledby="overview-flow-title overview-flow-desc" class="w-full h-auto" style="min-width: 760px">
+                <title id="overview-flow-title">Kafka topics through the forecast and the stock-health join</title>
+                <desc id="overview-flow-desc">sales.pos-events and sales.ecom-events become demand.sales-rollup, then demand.forecast. inventory.movements and supplier.orders become inventory.position. Those two topics join into inventory.health.</desc>
+                <defs>
+                    <marker id="overview-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#0A85EA"></path>
+                    </marker>
+                </defs>
+
+                <text x="36" y="22" fill="#6b7280" font-size="12" font-weight="700" letter-spacing="0.06em">SALES</text>
+                <rect x="36" y="32" width="360" height="86" rx="12" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="216" y="58" text-anchor="middle" fill="#0A3D62" font-size="15" font-weight="700">Store POS and web sales</text>
+                <text x="216" y="80" text-anchor="middle" fill="#0A85EA" font-size="13" font-style="italic">Topic: sales.pos-events</text>
+                <text x="216" y="98" text-anchor="middle" fill="#0A85EA" font-size="13" font-style="italic">Topic: sales.ecom-events</text>
+
+                <text x="584" y="22" fill="#6b7280" font-size="12" font-weight="700" letter-spacing="0.06em">STOCK</text>
+                <rect x="584" y="32" width="360" height="86" rx="12" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="764" y="58" text-anchor="middle" fill="#0A3D62" font-size="15" font-weight="700">Movements and supplier orders</text>
+                <text x="764" y="80" text-anchor="middle" fill="#0A85EA" font-size="13" font-style="italic">Topic: inventory.movements</text>
+                <text x="764" y="98" text-anchor="middle" fill="#0A85EA" font-size="13" font-style="italic">Topic: supplier.orders</text>
+
+                <line x1="216" y1="118" x2="216" y2="154" stroke="#0A85EA" stroke-width="2" marker-end="url(#overview-arrow)"></line>
+                <line x1="764" y1="118" x2="764" y2="214" stroke="#0A85EA" stroke-width="2" marker-end="url(#overview-arrow)"></line>
+
+                <rect x="36" y="158" width="360" height="100" rx="12" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="216" y="182" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700" letter-spacing="0.06em">FLINK TABLE</text>
+                <text x="216" y="206" text-anchor="middle" fill="#0A3D62" font-size="16" font-weight="700">demand_windowed</text>
+                <text x="216" y="228" text-anchor="middle" fill="#0A85EA" font-size="13" font-style="italic">Topic: demand.sales-rollup</text>
+                <text x="216" y="246" text-anchor="middle" fill="#6b7280" font-size="12">One simulated hour of sales</text>
+
+                <line x1="216" y1="258" x2="216" y2="294" stroke="#0A85EA" stroke-width="2" marker-end="url(#overview-arrow)"></line>
+                <text x="228" y="282" fill="#0A85EA" font-size="12" font-weight="700">each closed hour</text>
+
+                <rect x="36" y="298" width="360" height="112" rx="12" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="216" y="322" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700" letter-spacing="0.06em">FLINK TABLE</text>
+                <text x="216" y="346" text-anchor="middle" fill="#0A3D62" font-size="16" font-weight="700">demand_forecast</text>
+                <text x="216" y="368" text-anchor="middle" fill="#0A85EA" font-size="13" font-style="italic">Topic: demand.forecast</text>
+                <text x="216" y="388" text-anchor="middle" fill="#6b7280" font-size="12">forecast_next is the first hour</text>
+
+                <rect x="584" y="218" width="360" height="112" rx="12" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="764" y="242" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700" letter-spacing="0.06em">FLINK TABLE</text>
+                <text x="764" y="266" text-anchor="middle" fill="#0A3D62" font-size="16" font-weight="700">inventory_latest</text>
+                <text x="764" y="288" text-anchor="middle" fill="#0A85EA" font-size="13" font-style="italic">Topic: inventory.position</text>
+                <text x="764" y="308" text-anchor="middle" fill="#6b7280" font-size="12">Latest on_hand and on_order</text>
+
+                <line x1="216" y1="410" x2="216" y2="520" stroke="#0A85EA" stroke-width="2"></line>
+                <line x1="216" y1="520" x2="256" y2="520" stroke="#0A85EA" stroke-width="2" marker-end="url(#overview-arrow)"></line>
+                <line x1="764" y1="330" x2="764" y2="520" stroke="#0A85EA" stroke-width="2"></line>
+                <line x1="764" y1="520" x2="724" y2="520" stroke="#0A85EA" stroke-width="2" marker-end="url(#overview-arrow)"></line>
+
+                <rect x="264" y="468" width="452" height="104" rx="14" fill="#0A3D62"></rect>
+                <text x="490" y="494" text-anchor="middle" fill="#8ec8ff" font-size="11" font-weight="700" letter-spacing="0.05em">FLINK TABLE</text>
+                <text x="490" y="522" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">stockout_risk</text>
+                <text x="490" y="546" text-anchor="middle" fill="#8ec8ff" font-size="14" font-style="italic">Topic: inventory.health</text>
+            </svg>
+            <figcaption class="text-sm text-gray-600 mt-3">Blue names are the Kafka topics. <span class="font-medium text-dark">sales.pos-events</span> and <span class="font-medium text-dark">sales.ecom-events</span> become <span class="font-medium text-dark">demand.sales-rollup</span>, then <span class="font-medium text-dark">demand.forecast</span>. <span class="font-medium text-dark">inventory.movements</span> and <span class="font-medium text-dark">supplier.orders</span> become <span class="font-medium text-dark">inventory.position</span>. The join writes <span class="font-medium text-dark">inventory.health</span>.</figcaption>
+        </figure>
+        <p class="text-dark leading-relaxed mb-8"><a class="text-primary hover:text-dark font-semibold" href="#flink-processing">Flink processing</a> explains how those jobs run. The agent and the approval gate come after that.</p>
 
         <h2 id="pillars" class="text-xl font-semibold text-dark mb-3">Five platform pillars</h2>
         <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
@@ -198,13 +256,6 @@
                 </tbody>
             </table>
         </div>
-
-        <h2 id="serving-database" class="text-xl font-semibold text-dark mb-3">No separate serving database</h2>
-        <p class="text-dark leading-relaxed mb-4">In a typical build, you add a database or cache next to Kafka so apps can query the data. Someone then has to scale it and keep it in sync with Kafka.</p>
-        <p class="text-dark leading-relaxed mb-4">Here, <span class="font-medium">Lightning Tables read the Kafka topics directly</span>. The Real-Time Context Engine uses those tables as its backend. So the dashboard and the agents ask the Context Engine, and there is no extra database to run.</p>
-        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8">
-            <img src="img/lightning-tables.png" alt="Without Lightning Tables there is an extra serving database. With Lightning Tables, Kafka topics and Flink jobs feed a managed table." class="w-full h-auto">
-        </figure>
 
         <h2 id="topics" class="text-xl font-semibold text-dark mb-3">Topics</h2>
         <p class="text-dark leading-relaxed mb-4">A topic is a named stream of events in Kafka. This design uses five source topics, seven derived topics (written by Flink or the agent), and one dead-letter topic (a holding place for rejected records).</p>
