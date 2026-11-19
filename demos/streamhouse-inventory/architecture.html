@@ -66,7 +66,12 @@
                         <li><a class="text-primary hover:text-dark" href="#sample-code">Sample code</a></li>
                     </ol>
                 </li>
-                <li><a class="text-primary hover:text-dark" href="#approval-flow">From a sales spike to an approved move</a></li>
+                <li>
+                    <a class="text-primary hover:text-dark" href="#approval-flow">From a sales spike to an approved move</a>
+                    <ol class="list-decimal pl-5 mt-1">
+                        <li><a class="text-primary hover:text-dark" href="#human-approval">When a person must approve each decision</a></li>
+                    </ol>
+                </li>
             </ol>
         </nav>
         <p class="text-dark leading-relaxed mb-4">Peak season is uneven. Demand differs by region, channel, and product, and inventory has to be managed across all three at once. A promotion tells you that interest rose. It does not tell you which location will run out this afternoon, or which one is holding stock it will not sell. A shopper who finds an empty shelf, or an online order that waits on stock sitting somewhere else, is a sale the business already had.</p>
@@ -295,6 +300,101 @@ WHERE h.risk_level IN ('OUT_OF_STOCK', 'HIGH', 'MEDIUM', 'OVERSTOCK');</pre>
         <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8">
             <img src="img/approval-flow.png" alt="Flow from a sales spike through a Flink join and an agent proposal to a planner approval and a warehouse transfer." class="w-full h-auto">
         </figure>
+
+        <h3 id="human-approval" class="text-lg font-semibold text-dark mb-2">When a person must approve each decision</h3>
+        <p class="text-dark leading-relaxed mb-4">Requiring approval does not change what the agent reads or what it recommends. It still reads <span class="font-medium">inventory.health</span> and still writes one decision to <span class="font-medium">ai.recommendations</span>. That write does not move stock. The recommendation waits.</p>
+        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4 overflow-x-auto">
+            <svg viewBox="0 0 980 430" role="img" aria-labelledby="approval-gate-title approval-gate-desc" class="w-full h-auto" style="min-width: 760px">
+                <title id="approval-gate-title">A person approves each agent decision before stock moves</title>
+                <desc id="approval-gate-desc">The agent reads inventory.health and writes a waiting recommendation to ai.recommendations. A planner approves, changes the units, or rejects. That choice is written to ai.approvals. Only an approval becomes ai.actions and is sent to the warehouse. A rejection sends nothing.</desc>
+                <defs>
+                    <marker id="approval-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#0A85EA"></path>
+                    </marker>
+                    <marker id="approval-arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#9CA3AF"></path>
+                    </marker>
+                </defs>
+
+                <rect x="16" y="28" width="200" height="118" rx="14" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="116" y="54" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700" letter-spacing="0.06em">KAFKA TOPIC</text>
+                <text x="116" y="80" text-anchor="middle" fill="#0A3D62" font-size="15" font-weight="700">inventory.health</text>
+                <text x="116" y="104" text-anchor="middle" fill="#0A3D62" font-size="13">Risk, cover, forecast</text>
+                <text x="116" y="124" text-anchor="middle" fill="#6b7280" font-size="12">Read by the agent</text>
+
+                <line x1="216" y1="87" x2="262" y2="87" stroke="#0A85EA" stroke-width="2" marker-end="url(#approval-arrow)"></line>
+                <text x="239" y="76" text-anchor="middle" fill="#0A85EA" font-size="12" font-weight="700">reads</text>
+
+                <rect x="270" y="28" width="200" height="118" rx="14" fill="#0A3D62"></rect>
+                <text x="370" y="54" text-anchor="middle" fill="#8ec8ff" font-size="11" font-weight="700" letter-spacing="0.06em">STREAMING AGENT</text>
+                <text x="370" y="80" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="700">One decision</text>
+                <text x="370" y="104" text-anchor="middle" fill="#d6e8ff" font-size="13">Transfer, markdown,</text>
+                <text x="370" y="122" text-anchor="middle" fill="#d6e8ff" font-size="13">or escalate</text>
+
+                <line x1="470" y1="87" x2="516" y2="87" stroke="#0A85EA" stroke-width="2" marker-end="url(#approval-arrow)"></line>
+                <text x="493" y="76" text-anchor="middle" fill="#0A85EA" font-size="12" font-weight="700">writes</text>
+
+                <rect x="524" y="28" width="210" height="118" rx="14" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="629" y="54" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700" letter-spacing="0.06em">KAFKA TOPIC</text>
+                <text x="629" y="80" text-anchor="middle" fill="#0A3D62" font-size="15" font-weight="700">ai.recommendations</text>
+                <text x="629" y="104" text-anchor="middle" fill="#0A3D62" font-size="13">Waiting on a person</text>
+                <text x="629" y="124" text-anchor="middle" fill="#6b7280" font-size="12">Stock does not move</text>
+
+                <line x1="734" y1="87" x2="780" y2="87" stroke="#0A85EA" stroke-width="2" marker-end="url(#approval-arrow)"></line>
+                <text x="757" y="76" text-anchor="middle" fill="#0A85EA" font-size="12" font-weight="700">shows</text>
+
+                <rect x="788" y="28" width="176" height="118" rx="14" fill="#E7F3FE" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="876" y="54" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700" letter-spacing="0.06em">PLANNER</text>
+                <text x="876" y="80" text-anchor="middle" fill="#0A3D62" font-size="14" font-weight="700">Approve, change</text>
+                <text x="876" y="100" text-anchor="middle" fill="#0A3D62" font-size="14" font-weight="700">units, or reject</text>
+                <text x="876" y="124" text-anchor="middle" fill="#6b7280" font-size="12">On the dashboard</text>
+
+                <line x1="876" y1="146" x2="876" y2="188" stroke="#0A85EA" stroke-width="2" marker-end="url(#approval-arrow)"></line>
+                <text x="848" y="174" text-anchor="end" fill="#0A85EA" font-size="12" font-weight="700">writes</text>
+
+                <rect x="748" y="196" width="216" height="100" rx="14" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="856" y="222" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700" letter-spacing="0.06em">KAFKA TOPIC</text>
+                <text x="856" y="248" text-anchor="middle" fill="#0A3D62" font-size="16" font-weight="700">ai.approvals</text>
+                <text x="856" y="272" text-anchor="middle" fill="#6b7280" font-size="12">Person, choice, units</text>
+
+                <line x1="748" y1="246" x2="692" y2="246" stroke="#0A85EA" stroke-width="2" marker-end="url(#approval-arrow)"></line>
+                <text x="720" y="234" text-anchor="middle" fill="#0A85EA" font-size="12" font-weight="700">approved</text>
+
+                <rect x="470" y="196" width="214" height="100" rx="14" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="577" y="222" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700" letter-spacing="0.06em">KAFKA TOPIC</text>
+                <text x="577" y="248" text-anchor="middle" fill="#0A3D62" font-size="16" font-weight="700">ai.actions</text>
+                <text x="577" y="272" text-anchor="middle" fill="#6b7280" font-size="12">Written only after approval</text>
+
+                <line x1="470" y1="246" x2="414" y2="246" stroke="#0A85EA" stroke-width="2" marker-end="url(#approval-arrow)"></line>
+                <text x="442" y="234" text-anchor="middle" fill="#0A85EA" font-size="12" font-weight="700">sends</text>
+
+                <rect x="196" y="196" width="210" height="100" rx="14" fill="#0A3D62"></rect>
+                <text x="301" y="230" text-anchor="middle" fill="#8ec8ff" font-size="11" font-weight="700" letter-spacing="0.06em">SINK CONNECTORS</text>
+                <text x="301" y="256" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="700">Warehouse and orders</text>
+                <text x="301" y="278" text-anchor="middle" fill="#d6e8ff" font-size="12">Stock moves here</text>
+
+                <line x1="856" y1="296" x2="856" y2="332" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#approval-arrow-muted)"></line>
+                <text x="848" y="320" text-anchor="end" fill="#6b7280" font-size="12" font-weight="700">rejected</text>
+
+                <rect x="748" y="340" width="216" height="72" rx="14" fill="#F6F7F8" stroke="#D1D5DB" stroke-width="1.5"></rect>
+                <text x="856" y="368" text-anchor="middle" fill="#374151" font-size="14" font-weight="700">No action is sent</text>
+                <text x="856" y="390" text-anchor="middle" fill="#6b7280" font-size="12">Stock stays where it is</text>
+            </svg>
+            <figcaption class="text-sm text-gray-600 mt-3">The recommendation waits on <span class="font-medium text-dark">ai.recommendations</span>. Only an approval on <span class="font-medium text-dark">ai.approvals</span> produces <span class="font-medium text-dark">ai.actions</span>. A later health event can withdraw the recommendation before the planner answers.</figcaption>
+        </figure>
+        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4">
+            <img src="img/human-acts-on-recommendation.jpg" alt="A planner reviews an AI recommendation to move 116 units from West to East and can approve it, change the units, or reject it." class="w-full h-auto rounded-lg">
+            <figcaption class="text-sm text-gray-600 mt-3">A person acts on each recommendation. Approve sends the move on. Change units keeps the same move with a smaller quantity. Reject sends nothing.</figcaption>
+        </figure>
+        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4">
+            <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed">
+                <li>Lightning Tables show the waiting recommendation on the dashboard: what the agent noticed, what it found, the action, and the units.</li>
+                <li>A planner approves it, lowers the unit count to what the donor can spare, or rejects it. Each of those choices is an event on <span class="font-medium">ai.approvals</span>, with the recommendation, the person, and the choice.</li>
+                <li>A Flink job reads an approval and only then writes <span class="font-medium">ai.actions</span>. Sink connectors carry an approved transfer or markdown to the warehouse and the order system. A rejection writes no action.</li>
+                <li>If a later health event shows the location is safe again before anyone answers, a Flink rule withdraws the open recommendation. The planner is not asked to approve a move the stock no longer needs.</li>
+            </ol>
+        </div>
+        <p class="text-dark leading-relaxed mb-8">Nothing reaches the warehouse while a recommendation is waiting. The same topics are used when the team lets the agent act on its own. The difference is that the action event is written without an approval event in front of it. For this design, a person approves each move, because sending units in a peak season takes them from a region that may need them.</p>
 
         <p class="text-dark">The hosted walkthrough uses the same story without a cluster. <a class="text-primary hover:text-dark font-semibold" href="demo.html">Open the live demo</a></p>
     </div>
