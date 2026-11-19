@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Power AI Agents with StreamHouse to manage Inventory &amp; demand</title>
+  <title>Powering AI Agents with StreamHouse to manage Inventory &amp; demand in real time</title>
   <link rel="stylesheet" href="dashboard/static/styles.css?v=14" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <style>
     html, body { background: #f3f4f6; }
     body {
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 20px 20px 40px;
+      max-width: none;
+      margin: 0;
+      padding: 12px 16px 28px;
     }
     header, .brand, .brand > div, .stack, .controls, .workspace, .col-main, .card, .story {
       min-width: 0;
@@ -122,6 +122,54 @@
       line-height: 1.45;
       color: var(--text-2);
     }
+    .trend {
+      margin: 0 0 18px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: #fff;
+      border: 1px solid var(--border);
+    }
+    .trend summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      list-style: none;
+      cursor: pointer;
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -.01em;
+      text-transform: uppercase;
+    }
+    .trend summary::-webkit-details-marker { display: none; }
+    .trend summary::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--text);
+      border-bottom: 2px solid var(--text);
+      transform: rotate(45deg);
+      margin-top: -4px;
+      flex: none;
+    }
+    .trend[open] summary::after {
+      transform: rotate(-135deg);
+      margin-top: 4px;
+    }
+    .trend summary small {
+      display: block;
+      margin-top: 3px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--muted);
+    }
+    .trend .kpis { margin: 14px 0 12px; }
+    .trend:not([open]) .trend-body { display: none; }
+    .what:not([open]) > :not(summary) { display: none; }
 
     .controls {
       display: flex;
@@ -160,7 +208,70 @@
     #story-sub { display: block; margin-left: 17px; }
     .story-steps, .agent-stats { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
     .story-map { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-    .workspace { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); }
+    .workspace { grid-template-columns: minmax(0, 1fr) minmax(400px, 34vw); align-items: start; }
+    .side-panel {
+      position: sticky;
+      top: 12px;
+      max-height: calc(100vh - 24px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+    .side-panel .agent-card { margin: 0; }
+    .side-panel .agent-card .card-title { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .side-panel .agent-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .side-panel .agent-feed { max-height: 160px; grid-template-columns: minmax(0, 1fr); }
+    .side-panel .recs {
+      position: static;
+      flex: 1;
+      min-height: 420px;
+      max-height: none;
+      margin: 0;
+    }
+    .approval-mode {
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      margin: 12px 0 4px;
+      padding: 8px;
+      display: grid;
+      gap: 8px;
+    }
+    .approval-mode legend {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 6px;
+    }
+    .approval-choice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    .approval-choice input { margin-top: 3px; accent-color: #0A3D62; }
+    .approval-choice b { display: block; font-size: 14px; }
+    .approval-choice small { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; font-weight: 400; }
+    .approval-mode.is-required { border-color: #c75300; background: #fff8f1; }
+    .approval-mode.is-required .approval-choice:has(input[value="required"]:checked) {
+      background: #fff;
+      border-color: #c75300;
+    }
+    .approval-mode.is-required .approval-choice:has(input[value="required"]:checked) b { color: #9a3412; }
+    .approval-mode:not(.is-required) .approval-choice:has(input[value="auto"]:checked) {
+      background: #0A3D62;
+      border-color: #0A3D62;
+      color: #fff;
+    }
+    .approval-mode:not(.is-required) .approval-choice:has(input[value="auto"]:checked) small { color: #d6e8ff; }
+    .approval-mode:not(.is-required) .approval-choice input { accent-color: #fff; }
     .card-title { flex-wrap: wrap; align-items: flex-start; }
     .card-title small { line-height: 1.4; }
     .chart-card .card-title { flex-direction: column; align-items: stretch; gap: 8px; }
@@ -193,9 +304,9 @@
       padding: 6px 8px;
       line-height: 1.35;
     }
-    @media (max-width: 1180px) {
+    @media (max-width: 980px) {
       .workspace { grid-template-columns: minmax(0, 1fr); }
-      .recs { position: static; max-height: none; }
+      .side-panel, .recs { position: static; max-height: none; }
     }
     @media (max-width: 720px) {
       body { padding: 12px 12px 28px; }
@@ -210,7 +321,7 @@
       <div class="brand">
         <div class="logo" id="logo"></div>
         <div>
-          <h1 id="brand-name">Power AI Agents with StreamHouse to manage Inventory &amp; demand</h1>
+          <h1 id="brand-name">Powering AI Agents with StreamHouse to manage Inventory &amp; demand in real time</h1>
           <div class="tagline" id="brand-tagline"></div>
         </div>
       </div>
@@ -225,7 +336,7 @@
     </div>
   </header>
 
-  <details class="what" id="what" open>
+  <details class="what" id="what">
     <summary id="what-heading">What this tool does</summary>
     <p class="what-lead">This page is a live view of a store during a busy holiday season. Sales, promotions, and stock levels update as they happen, across all product lines, all regions, and all channels (stores or online).</p>
     <div class="what-grid">
@@ -270,25 +381,17 @@
     <button class="guide-x" id="guide-x" title="Hide the guide">×</button>
   </section>
 
-  <section class="story" id="story" hidden>
-    <div class="story-head">
-      <div><span class="live-dot"></span><b id="story-title">Black Friday rush</b> <span class="muted" id="story-sub"></span></div>
-      <button id="btn-demo-stop" class="ghost">Stop demo</button>
-    </div>
-    <div class="story-steps" id="story-steps"></div>
-    <div class="story-map" id="story-map"></div>
-  </section>
-
-  <section class="kpis">
-    <div class="kpi"><div class="label">Sold, last hour</div><div class="value" id="kpi-actual">-</div><div class="sub" id="kpi-actual-sub"></div></div>
-    <div class="kpi"><div class="label">Predicted, next hour</div><div class="value" id="kpi-next">-</div><div class="sub" id="kpi-next-sub"></div></div>
-    <div class="kpi"><div class="label">Predicted, next 6 hours</div><div class="value" id="kpi-horizon">-</div><div class="sub">units</div></div>
-    <div class="kpi"><div class="label">Forecast error (WAPE)</div><div class="value" id="kpi-wape">-</div><div class="sub" id="kpi-coverage"></div></div>
-    <div class="kpi"><div class="label">Locations running low</div><div class="value" id="kpi-risk">-</div><div class="sub" id="kpi-overstock"></div></div>
-    <div class="kpi"><div class="label">Events streamed</div><div class="value" id="kpi-events">-</div><div class="sub" id="kpi-rejected"></div></div>
-  </section>
-
-  <main>
+  <details class="trend" id="trend">
+    <summary><span>Trend and forecast<small>Units sold, the forecast, the sales event, and why demand moved</small></span></summary>
+    <div class="trend-body">
+    <section class="kpis">
+      <div class="kpi"><div class="label">Sold, last hour</div><div class="value" id="kpi-actual">-</div><div class="sub" id="kpi-actual-sub"></div></div>
+      <div class="kpi"><div class="label">Predicted, next hour</div><div class="value" id="kpi-next">-</div><div class="sub" id="kpi-next-sub"></div></div>
+      <div class="kpi"><div class="label">Predicted, next 6 hours</div><div class="value" id="kpi-horizon">-</div><div class="sub">units</div></div>
+      <div class="kpi"><div class="label">Forecast error (WAPE)</div><div class="value" id="kpi-wape">-</div><div class="sub" id="kpi-coverage"></div></div>
+      <div class="kpi"><div class="label">Locations running low</div><div class="value" id="kpi-risk">-</div><div class="sub" id="kpi-overstock"></div></div>
+      <div class="kpi"><div class="label">Events streamed</div><div class="value" id="kpi-events">-</div><div class="sub" id="kpi-rejected"></div></div>
+    </section>
     <div class="card chart-card">
       <div class="card-title">
         <span>Units sold vs forecast <small id="chart-sub"></small><small class="chart-hint">Coloured bars on top show when a promo, product drop or sales event (like Black Friday) was running.</small></span>
@@ -300,12 +403,10 @@
       <div id="why" class="why-panel"></div>
       <div class="promos" id="promos"></div>
     </div>
-
-    <div class="card agent-card" id="agent-card" hidden>
-      <div class="card-title"><span>AI inventory agent <b id="agent-state" class="agent-state"></b></span><small id="agent-policy"></small></div>
-      <div class="agent-stats" id="agent-stats"></div>
-      <div class="agent-feed" id="agent-feed"></div>
     </div>
+  </details>
+
+  <main>
     <div class="card">
       <div class="card-title"><span>Restock needed <b id="restock-count" class="count"></b></span><small>forecast demand vs stock on hand, per location</small></div>
       <div id="restock-list" class="restock-grid"><div class="empty">Every location has enough stock for the forecast.</div></div>
@@ -319,21 +420,45 @@
   </section>
   </div>
 
-  <aside class="card recs" id="recs">
+  <aside class="side-panel">
+    <div class="card agent-card" id="agent-card" hidden>
+      <div class="card-title"><span>AI inventory agent <b id="agent-state" class="agent-state"></b></span><small id="agent-policy"></small></div>
+      <div class="agent-stats" id="agent-stats"></div>
+      <div class="agent-feed" id="agent-feed"></div>
+    </div>
+    <div class="card recs" id="recs">
     <div class="recs-head">
       <div class="card-title"><span>AI Recommendations <b id="recs-waiting" class="count"></b></span></div>
-      <button id="btn-approval" class="approval-btn" title="Required: every move waits for a human. Autonomous: the agent acts on its own.">Human approval: required</button>
     </div>
+    <fieldset class="approval-mode is-required" id="approval-mode">
+      <legend>Who acts on a recommendation</legend>
+      <label class="approval-choice">
+        <input type="radio" name="approval-mode" value="required" checked>
+        <span><b>A person must approve</b><small>Every move waits. Nothing is sent until you approve it.</small></span>
+      </label>
+      <label class="approval-choice">
+        <input type="radio" name="approval-mode" value="auto">
+        <span><b>The agent acts on its own</b><small>Waiting recommendations are approved immediately.</small></span>
+      </label>
+    </fieldset>
     <div class="recs-filters">
       <div class="chips" id="recs-status"></div>
       <div class="chips" id="recs-kind"></div>
     </div>
     <div class="recs-list" id="recs-list"></div>
+    </div>
   </aside>
   </div>
 
   <div id="toast" class="toast"></div>
   <script src="hosted-mock.js"></script>
-  <script src="dashboard/static/app.js?v=15"></script>
+  <script src="dashboard/static/app.js?v=18"></script>
+  <script>
+    document.getElementById("trend").addEventListener("toggle", (event) => {
+      if (!event.target.open || !window.Chart) return;
+      const chart = Chart.getChart("chart");
+      if (chart) requestAnimationFrame(() => chart.resize());
+    });
+  </script>
 </body>
 </html>

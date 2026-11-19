@@ -95,8 +95,8 @@ async function init() {
   const b = profile.brand;
   if (b.primary_color) document.documentElement.style.setProperty("--brand", b.primary_color);
   if (b.accent_color) document.documentElement.style.setProperty("--accent", b.accent_color);
-  document.title = "Power AI Agents with StreamHouse to manage Inventory & demand";
-  $("brand-name").textContent = "Power AI Agents with StreamHouse to manage Inventory & demand";
+  document.title = "Powering AI Agents with StreamHouse to manage Inventory & demand in real time";
+  $("brand-name").textContent = "Powering AI Agents with StreamHouse to manage Inventory & demand in real time";
   if (localStorage.getItem("hideGuide") === "1") $("guide").hidden = true;
   $("guide-x").onclick = () => { $("guide").hidden = true; localStorage.setItem("hideGuide", "1"); };
   $("brand-tagline").textContent = `${b.vertical || ""} · ${b.tagline || ""} · 1 period = ${profile.period.seconds}s = 1 simulated ${profile.period.label}`;
@@ -558,10 +558,23 @@ function transferValueText(r, units) {
   return `${money(u * r.price)} of stock · up to ${r.max_units} spare · lifts ${regionName(r.to_region)} to ~${fmt((r.dest_on_hand + u) / r.rate, 0)} ${profile.period.label}s of cover`;
 }
 
+function syncApprovalMode(required) {
+  const mode = $("approval-mode");
+  if (mode) {
+    mode.classList.toggle("is-required", required);
+    const choice = mode.querySelector(`input[value="${required ? "required" : "auto"}"]`);
+    if (choice) choice.checked = true;
+    return;
+  }
+  const btn = $("btn-approval");
+  if (!btn) return;
+  btn.textContent = `Human approval: ${required ? "required" : "off (autonomous)"}`;
+  btn.classList.toggle("on", required);
+}
+
 function renderRecs(a) {
   lastAgent = a;
-  $("btn-approval").textContent = `Human approval: ${a.require_approval ? "required" : "off (autonomous)"}`;
-  $("btn-approval").classList.toggle("on", a.require_approval);
+  syncApprovalMode(!!a.require_approval);
   const recs = a.recommendations || [];
   const waiting = recs.filter((r) => r.status === "PENDING");
   $("recs-waiting").textContent = waiting.length ? `${waiting.length} waiting` : "";
@@ -675,9 +688,10 @@ function renderStory(s) {
     ? `■ Stop ${peakName}${peakRow && timeLeft(peakRow, true) ? ` · ${timeLeft(peakRow, true)}` : ""}`
     : `▶ ${profile.peak_event?.label || "Peak season demo"}`;
   $("btn-demo").title = sc ? `Ends on its own ${peakRow?.planned_end ? "at " + timeLabel(peakRow.planned_end) : "soon"}. Click to stop it now.` : "";
-  story.hidden = !sc;
+  if (story) story.hidden = !sc;
   if (!sc) { if (localStorage.getItem("hideGuide") !== "1") $("guide").hidden = false; return; }
   $("guide").hidden = true;
+  if (!story) return;
   const P = profile.period.label, name = productName(sc.sku);
   const surge = regionStock(s.risk, sc.sku, sc.surge_region), spare = regionStock(s.risk, sc.sku, sc.surplus_region);
   const moves = s.agent.decisions.filter((d) => d.action === "TRANSFER" && d.sku === sc.sku && d.t >= sc.started_t);
@@ -862,12 +876,26 @@ function wireButtons() {
       : `${r.scenario.name} started with the AI agent OFF. Watch ${regionName(pe.surge_region)} run out while ${regionName(pe.surplus_region)} sits on spare stock.`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
-  $("btn-approval").onclick = (e) => run(e.target, async () => {
-    const on = !e.target.classList.contains("on");
-    await api(`/api/agent/approval/${on ? "on" : "off"}`);
-    toast(on ? "Human approval required: the agent will ask before moving any stock."
-      : "Autonomous mode: the agent acts on its own (anything waiting was auto-approved).");
-  });
+  const approvalMode = $("approval-mode");
+  if (approvalMode) {
+    approvalMode.addEventListener("change", (e) => {
+      const input = e.target;
+      if (!input.matches('input[name="approval-mode"]')) return;
+      const on = input.value === "required";
+      run(input, async () => {
+        await api(`/api/agent/approval/${on ? "on" : "off"}`);
+        toast(on ? "Human approval required: the agent will ask before moving any stock."
+          : "Autonomous mode: the agent acts on its own (anything waiting was auto-approved).");
+      });
+    });
+  } else if ($("btn-approval")) {
+    $("btn-approval").onclick = (e) => run(e.target, async () => {
+      const on = !e.target.classList.contains("on");
+      await api(`/api/agent/approval/${on ? "on" : "off"}`);
+      toast(on ? "Human approval required: the agent will ask before moving any stock."
+        : "Autonomous mode: the agent acts on its own (anything waiting was auto-approved).");
+    });
+  }
   const onFilter = (e) => {
     const b = e.target.closest("button[data-group]");
     if (!b) return;
@@ -890,7 +918,8 @@ function wireButtons() {
   $("recs-list").addEventListener("toggle", (e) => {
     if (e.target.matches("details[data-id]")) recOpen[e.target.dataset.id] = e.target.open;
   }, true);
-  $("btn-demo-stop").onclick = (e) => run(e.target, async () => {
+  const stopDemo = $("btn-demo-stop");
+  if (stopDemo) stopDemo.onclick = (e) => run(e.target, async () => {
     await api("/api/demo/stop");
     toast("Demo stopped. The AI agent keeps watching until you switch it off.");
   });
