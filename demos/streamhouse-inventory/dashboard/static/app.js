@@ -550,6 +550,7 @@ let recsPrimed = false, recsData = [], lastAgent = null, recsForce = false, recs
 
 function recTitle(r) {
   if (r.action === "MARKDOWN") return `${Math.round(r.discount_pct * 100)}% markdown on ${r.product} in ${regionName(r.region)}`;
+  if (r.action === "ORDER") return `Order ${r.executed_units ?? r.units} × ${r.product} from the warehouse for ${regionName(r.to_region)} (${channelName(r.channel)})`;
   return `Move ${r.executed_units ?? r.units} × ${r.product}: ${regionName(r.from_region)} → ${regionName(r.to_region)} (${channelName(r.channel)})`;
 }
 
@@ -629,7 +630,7 @@ function renderRecs(a) {
     let foot;
     if (pending) {
       foot = `<div class="rec-actions">
-        ${r.action === "TRANSFER"
+        ${r.action === "TRANSFER" || r.action === "ORDER"
           ? `<label>Units <input type="number" data-units="${r.id}" min="1" max="${r.max_units}" value="${typed[r.id] ?? r.units}" /></label>
              <span class="muted rec-value" data-value-for="${r.id}">${transferValueText(r, typed[r.id] ?? r.units)}</span>`
           : `<span class="muted rec-value">All channels in ${regionName(r.region)} for ${r.periods} ${P}s; end it early from the promo banner.</span>`}

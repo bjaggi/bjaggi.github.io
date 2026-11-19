@@ -63,7 +63,10 @@
     event_time: scenario.started_t, planned_end: now + 24 * period, status: "STARTED"
   }];
 
-  const pending = {
+  const stockDelta = {};
+  const decisions = [];
+  const stats = { transfers: 0, units_moved: 0, value_moved: 0, ticks: 12, checks: 36 };
+  let openRecs = [{
     id: "rec-wait-1",
     t: now - 60000,
     kind: "STOCKOUT",
@@ -82,7 +85,7 @@
     detected: "North America East Stores is selling 6 units/hour (3.0x its normal 2/hour) with 21 on hand: sells out in 3.5 hours. A supplier order takes 8 hours, too late.",
     found: "North America West Stores has 106 units, 35 hours of cover. It keeps 24 hours for its own shoppers, so 34 are spare.",
     proposal_text: "Move 37 units from North America West Stores to North America East Stores, arriving in 1 hour. That lifts North America East to about 10 hours of cover."
-  };
+  }];
   const history = [{
     id: "rec-w-1",
     t: now - 120000,
@@ -105,6 +108,118 @@
     proposal_text: "Move 78 units from Europe Stores to North America East Stores.",
     result: "Stock or demand changed, so the agent withdrew it. Nothing was moved."
   }];
+
+  function stockKey(sku, region, channel) {
+    return `${sku}|${region}|${channel}`;
+  }
+
+  function recommendations() {
+    return [...openRecs.filter(r => r.status === "PENDING"), ...history];
+  }
+
+  function commitStock(rec) {
+    const units = rec.units || 0;
+    if (units <= 0) return;
+    const to = stockKey(rec.sku, rec.to_region, rec.channel);
+    if (rec.action === "TRANSFER") {
+      const from = stockKey(rec.sku, rec.from_region, rec.channel);
+      stockDelta[from] = (stockDelta[from] || 0) - units;
+      stats.transfers += 1;
+    }
+    stockDelta[to] = (stockDelta[to] || 0) + units;
+    stats.units_moved += units;
+    stats.value_moved += units * (rec.price || 0);
+    decisions.unshift({
+      id: "dec-" + Date.now(),
+      t: Date.now(),
+      action: rec.action,
+      sku: rec.sku,
+      product: rec.product,
+      channel: rec.channel,
+      from_region: rec.from_region,
+      to_region: rec.to_region,
+      units,
+      headline: rec.action === "ORDER"
+        ? `Ordered ${units} units of ${rec.product} from the warehouse`
+        : `Moved ${units} units of ${rec.product} from a slower location`,
+      detected: rec.detected,
+      found: rec.found,
+      action_text: rec.proposal_text
+    });
+    if (decisions.length > 8) decisions.length = 8;
+  }
+
+  function finishRec(rec, status, by, result) {
+    commitStock(rec);
+    rec.status = status;
+    rec.decided_t = Date.now();
+    rec.decided_by = by;
+    rec.result = result;
+    history.unshift({ ...rec });
+    if (history.length > 12) history.length = 12;
+    openRecs = openRecs.filter(r => r.id !== rec.id);
+  }
+
+  function applyMove(rec) {
+    finishRec(rec, "AUTO", "agent (autonomous)", rec.action === "ORDER"
+      ? "The agent ordered this from the warehouse."
+      : "The agent moved stock from a location where it was not selling.");
+  }
+
+  function settleWaiting() {
+    openRecs.filter(r => r.status === "PENDING").forEach(applyMove);
+  }
+
+  function regionName(id) {
+    return (regions.find(r => r.id === id) || {}).name || id;
+  }
+
+  function balanceShortages() {
+    const groups = {};
+    riskRows().forEach(r => {
+      const key = r.sku + "|" + r.channel;
+      (groups[key] || (groups[key] = [])).push({
+        sku: r.sku, region: r.region, channel: r.channel,
+        on_hand: r.on_hand, rate: r.forecast_next || 1
+      });
+    });
+    Object.values(groups).forEach(list => {
+      let guard = 0;
+      while (guard++ < 12) {
+        list.forEach(r => { r.cover = r.rate > 0 ? r.on_hand / r.rate : 99; });
+        list.sort((a, b) => a.cover - b.cover);
+        const poor = list[0];
+        const rich = list[list.length - 1];
+        if (!poor || poor === rich || poor.cover >= 6 || rich.cover <= 6) break;
+        const need = Math.max(1, Math.ceil(6 * poor.rate - poor.on_hand));
+        const spare = Math.floor(rich.on_hand - 6 * rich.rate);
+        const units = Math.min(need, spare);
+        if (units < 1) break;
+        const product = products.find(p => p.sku === poor.sku);
+        poor.on_hand += units;
+        rich.on_hand -= units;
+        applyMove({
+          id: "auto-" + poor.sku + "-" + poor.region + "-" + poor.channel + "-" + guard,
+          t: Date.now(),
+          kind: "STOCKOUT",
+          action: "TRANSFER",
+          sku: poor.sku,
+          product: product.name,
+          channel: poor.channel,
+          from_region: rich.region,
+          to_region: poor.region,
+          units,
+          max_units: spare,
+          rate: poor.rate,
+          dest_on_hand: poor.on_hand - units,
+          price: product.price,
+          detected: `${regionName(poor.region)} ${channels[poor.channel].name} had about ${poor.cover.toFixed(1)} hours of cover.`,
+          found: `${regionName(rich.region)} had stock to spare after keeping 6 hours for itself.`,
+          proposal_text: `Move ${units} units from ${regionName(rich.region)} to ${regionName(poor.region)} so the short location is no longer at risk.`
+        });
+      }
+    });
+  }
 
   function riskRows() {
     const rows = [];
@@ -130,6 +245,7 @@
           if (p.sku === "OUT-TRAIL-JKT" && region.id === "EMEA" && channel === "STORE") {
             onHand = 142; rate = 1.4;
           }
+          onHand = Math.max(0, onHand + (stockDelta[stockKey(p.sku, region.id, channel)] || 0));
           const cover = rate > 0 ? onHand / rate : 40;
           const level = onHand <= 0 ? "OUT_OF_STOCK" : cover > 120 ? "OVERSTOCK" : cover < 6 ? "HIGH" : cover < 12 ? "MEDIUM" : "LOW";
           rows.push({
@@ -171,10 +287,6 @@
     };
   }
 
-  function recommendations() {
-    return [{ ...pending, status: "PENDING" }, ...history];
-  }
-
   function snapshot(sku) {
     return {
       version,
@@ -197,9 +309,9 @@
         pending: recommendations().filter(r => r.status === "PENDING"),
         recommendations: recommendations(),
         monitored: 36,
-        decisions: [],
+        decisions,
         in_transit: [],
-        stats: { transfers: 0, units_moved: 0, value_moved: 0, ticks: 12, checks: 36 },
+        stats,
         policy: { trigger_cover: 6, target_cover: 10, donor_keep_cover: 8, transit_periods: 1, supplier_lead_time: 8 }
       },
       scenario: scenario
@@ -213,6 +325,101 @@
       if (typeof es.onmessage === "function") es.onmessage({ data: JSON.stringify(snapshot(es.sku)) });
     });
   }
+
+  function fluctuate() {
+    for (let i = 0; i < 8; i++) {
+      const p = products[Math.floor(Math.random() * products.length)];
+      const region = regions[Math.floor(Math.random() * regions.length)];
+      const channel = Math.random() < 0.55 ? "STORE" : "ONLINE";
+      const key = stockKey(p.sku, region.id, channel);
+      const selling = Math.random() < 0.85;
+      let amount = 1 + Math.floor(Math.random() * 5);
+      if (scenario && p.sku === scenario.sku && region.id === scenario.surge_region) amount += 4;
+      stockDelta[key] = (stockDelta[key] || 0) + (selling ? -amount : Math.ceil(amount / 2));
+      if (selling) events += amount;
+    }
+  }
+
+  function alreadyQueued(sku, region, channel) {
+    return openRecs.some(r => r.status === "PENDING" && r.sku === sku && r.to_region === region && r.channel === channel);
+  }
+
+  function agentStep() {
+    if (!agentOn) return;
+    if (requireApproval && openRecs.filter(r => r.status === "PENDING").length >= 3) return;
+    const rows = riskRows();
+    const poor = rows
+      .filter(r => r.periods_of_cover < 6)
+      .sort((a, b) => a.periods_of_cover - b.periods_of_cover)[0];
+    if (!poor || alreadyQueued(poor.sku, poor.region, poor.channel)) return;
+    const product = products.find(p => p.sku === poor.sku);
+    const slow = rows
+      .filter(r => r.sku === poor.sku && r.channel === poor.channel && r.region !== poor.region
+        && r.forecast_next <= poor.forecast_next && r.periods_of_cover > 14
+        && r.on_hand > 8 * r.forecast_next)
+      .sort((a, b) => b.periods_of_cover - a.periods_of_cover)[0];
+    const need = Math.max(1, Math.ceil(8 * (poor.forecast_next || 1) - poor.on_hand));
+    let rec;
+    if (slow) {
+      const spare = Math.floor(slow.on_hand - 8 * slow.forecast_next);
+      const units = Math.min(need, spare);
+      if (units >= 1) {
+        rec = {
+          id: "live-" + Date.now(),
+          t: Date.now(),
+          kind: "STOCKOUT",
+          action: "TRANSFER",
+          sku: poor.sku,
+          product: product.name,
+          channel: poor.channel,
+          from_region: slow.region,
+          to_region: poor.region,
+          units,
+          max_units: spare,
+          rate: poor.forecast_next,
+          dest_on_hand: poor.on_hand,
+          price: product.price,
+          detected: `${regionName(poor.region)} ${channels[poor.channel].name} is selling about ${Math.round(poor.forecast_next)} units/hour and has ${poor.on_hand} left.`,
+          found: `${regionName(slow.region)} is selling slower and can spare ${spare} units.`,
+          proposal_text: `Move ${units} units from ${regionName(slow.region)} to ${regionName(poor.region)}, where it is selling faster.`
+        };
+      }
+    }
+    if (!rec) {
+      const units = need;
+      rec = {
+        id: "live-" + Date.now(),
+        t: Date.now(),
+        kind: "STOCKOUT",
+        action: "ORDER",
+        sku: poor.sku,
+        product: product.name,
+        channel: poor.channel,
+        from_region: null,
+        to_region: poor.region,
+        units,
+        max_units: units,
+        rate: poor.forecast_next,
+        dest_on_hand: poor.on_hand,
+        price: product.price,
+        detected: `${regionName(poor.region)} ${channels[poor.channel].name} is running low, with about ${poor.periods_of_cover} hours of cover.`,
+        found: "No other location has stock it can spare without running short itself.",
+        proposal_text: `Order ${units} units from the warehouse for ${regionName(poor.region)} ${channels[poor.channel].name}.`
+      };
+    }
+    if (requireApproval) {
+      rec.status = "PENDING";
+      openRecs.push(rec);
+    } else {
+      applyMove(rec);
+    }
+  }
+
+  setInterval(() => {
+    fluctuate();
+    agentStep();
+    publish();
+  }, 2500);
 
   class HostedStream {
     constructor(url) {
@@ -234,19 +441,27 @@
     else if (path.startsWith("/api/datagen")) body = { producer: { sent: { simulated: events }, rejected_by_data_contract: rejected ? { bad: rejected } : {} } };
     else if (path.startsWith("/api/agent/approval/")) {
       requireApproval = path.endsWith("/on");
+      if (!requireApproval) settleWaiting();
       body = { require_approval: requireApproval };
       publish();
     } else if (path.startsWith("/api/agent/proposals/")) {
       const parts = path.split("/");
       const id = parts[4];
       const decision = parts[5];
-      const rec = pending.id === id ? pending : history.find(r => r.id === id);
-      if (rec) {
-        rec.status = decision === "approve" ? "APPROVED" : "REJECTED";
-        rec.decided_t = Date.now();
-        rec.decided_by = "planner";
-        rec.result = decision === "approve" ? "Transfer sent to the warehouse." : "Left in place.";
-        if (rec === pending) history.unshift({ ...rec });
+      const rec = openRecs.find(r => r.id === id) || history.find(r => r.id === id);
+      if (rec && rec.status === "PENDING") {
+        if (decision === "approve") {
+          finishRec(rec, "APPROVED", "planner", rec.action === "ORDER"
+            ? "Warehouse order sent."
+            : "Transfer sent.");
+        } else {
+          rec.status = "REJECTED";
+          rec.decided_t = Date.now();
+          rec.decided_by = "planner";
+          rec.result = "Left in place.";
+          history.unshift({ ...rec });
+          openRecs = openRecs.filter(r => r.id !== rec.id);
+        }
       }
       body = { decision: { headline: rec ? rec.title || rec.product : "Updated" } };
       publish();
