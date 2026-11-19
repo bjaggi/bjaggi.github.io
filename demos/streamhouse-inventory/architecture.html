@@ -54,6 +54,7 @@
                 <li><a class="text-primary hover:text-dark" href="#pillars">Five platform pillars</a></li>
                 <li><a class="text-primary hover:text-dark" href="#serving-database">No separate serving database</a></li>
                 <li><a class="text-primary hover:text-dark" href="#topics">Topics</a></li>
+                <li><a class="text-primary hover:text-dark" href="#inventory-health">What inventory.health carries</a></li>
                 <li>
                     <a class="text-primary hover:text-dark" href="#agent-hosting">Where the AI agent is hosted</a>
                     <ol class="list-decimal pl-5 mt-1 space-y-1">
@@ -117,6 +118,30 @@
                     <tr><td>ai.recommendations</td><td>Streaming agent</td><td>Lightning Tables, approval screen</td></tr>
                     <tr><td>ai.approvals and ai.actions</td><td>Approval screen, then Flink</td><td>Order and warehouse sink connectors</td></tr>
                     <tr><td>dlq.contract-rejects</td><td>Schema Registry rules</td><td>Rejection counter on the dashboard</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="inventory-health" class="text-xl font-semibold text-dark mb-3">What inventory.health carries</h2>
+        <p class="text-dark leading-relaxed mb-4">Stores, the website, and the warehouse do not write this topic. They write sales and stock movements. A Flink job joins the latest forecast to the inventory position at that same moment and publishes one health record. In this repo that job is <a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a>, and the Flink table is named <span class="font-medium">stockout_risk</span>. The agent only reads the topic.</p>
+        <p class="text-dark leading-relaxed mb-4">The value is Avro. Flink registers the schema in Schema Registry when it creates the table, which is the Confluent Cloud default. The Kafka key is the product, the region, and the channel, so later readings for that location stay in order. Each closed forecast window appends a new record. The topic does not keep only the latest row.</p>
+        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
+            <table>
+                <thead>
+                    <tr><th>Field</th><th>What the agent needs it for</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>sku, region, channel</td><td>Which product and location this reading is about. These three fields are also the Kafka key.</td></tr>
+                    <tr><td>window_time</td><td>When the reading applies. The join uses this so stock and forecast are from the same moment.</td></tr>
+                    <tr><td>units_sold</td><td>How many units sold in the window that just closed.</td></tr>
+                    <tr><td>forecast_next</td><td>How many units the model expects in the next period.</td></tr>
+                    <tr><td>forecast_horizon, upper_horizon</td><td>Expected units over the next six periods, and the high end of that range. The high end sizes a restock.</td></tr>
+                    <tr><td>typical_rate</td><td>The location’s normal pace, so a quiet hour is not mistaken for overstock.</td></tr>
+                    <tr><td>promo_active</td><td>Whether a promotion is already lifting demand at this location.</td></tr>
+                    <tr><td>on_hand, on_order</td><td>Units in the location now, and units already coming from the supplier.</td></tr>
+                    <tr><td>periods_of_cover</td><td>On-hand stock divided by the next-period forecast. This is the number the agent compares with its policy.</td></tr>
+                    <tr><td>risk_level</td><td>OUT_OF_STOCK, HIGH, MEDIUM, LOW, OVERSTOCK, or WARMING_UP while the forecast is still collecting history. The agent is called for the risky values, not for a healthy row.</td></tr>
+                    <tr><td>suggested_replenishment_units</td><td>A starting quantity: the high end of the forecast, minus units on hand and already on order.</td></tr>
                 </tbody>
             </table>
         </div>
