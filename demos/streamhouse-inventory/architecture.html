@@ -75,10 +75,85 @@
             </ol>
         </nav>
         <p class="text-dark leading-relaxed mb-4">Peak season is uneven. Demand differs by region, channel, and product, and inventory has to be managed across all three at once. A promotion tells you that interest rose. It does not tell you which location will run out this afternoon, or which one is holding stock it will not sell. A shopper who finds an empty shelf, or an online order that waits on stock sitting somewhere else, is a sale the business already had.</p>
-        <p class="text-dark leading-relaxed mb-6">A Streamhouse keeps the dashboard, the inventory agent, and analytics on one current picture of that business. Connectors bring point-of-sale, commerce, warehouse, and planning systems into Kafka as they happen. Flink turns that stream into a forecast, a stock-health reading, and a recommendation. Lightning Tables, the Real-Time Context Engine, and Tableflow then serve the same state to the people running the day and to the lakehouse. When a planner approves a move, that approval returns to Kafka, and sink connectors carry it to the order and warehouse systems. The agent that proposed the move can run as a Streaming Agent on Confluent Intelligence, or as an application you host. Either way, the decision is written as its own event.</p>
+        <p class="text-dark leading-relaxed mb-6">A Streamhouse keeps the dashboard, the inventory agent, and analytics on one current picture of that business. Connectors bring point-of-sale, commerce, warehouse, and planning systems into Kafka as they happen. Flink turns that stream into a forecast, a stock-health reading, and a recommendation, and writes that state into Lightning Tables. The Real-Time Context Engine sits on those tables and serves them to the dashboard and to the agent. Tableflow sends the history to the lakehouse. When a planner approves a move, that approval returns to Kafka, and sink connectors carry it to the order and warehouse systems. The agent that proposed the move can run as a Streaming Agent on Confluent Intelligence, or as an application you host. Either way, the decision is written as its own event.</p>
 
-        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8">
-            <img src="img/architecture.png" alt="Architecture: sources, connectors, Kafka, Flink, Lightning Tables, Context Engine, Tableflow, and actions back to OMS and WMS" class="w-full h-auto">
+        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
+            <svg viewBox="0 0 980 640" role="img" aria-labelledby="arch-title arch-desc" class="w-full h-auto" style="min-width: 720px">
+                <title id="arch-title">Reference architecture: the Real-Time Context Engine sits on Lightning Tables</title>
+                <desc id="arch-desc">Sources flow through connectors into Kafka. Flink writes derived topics. Lightning Tables hold the live state. The Real-Time Context Engine sits on those tables and serves the dashboard and AI assistants. Tableflow sends history to the lakehouse.</desc>
+                <defs>
+                    <marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#9CA3AF"></path>
+                    </marker>
+                </defs>
+                <text x="16" y="28" fill="#0A3D62" font-size="18" font-weight="700">Reference architecture</text>
+                <text x="16" y="50" fill="#6b7280" font-size="13">The Real-Time Context Engine sits on Lightning Tables. Lightning Tables are its backend.</text>
+
+                <text x="16" y="92" fill="#6b7280" font-size="12" font-weight="700">SOURCES</text>
+                <rect x="110" y="72" width="120" height="36" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="170" y="95" text-anchor="middle" fill="#0A3D62" font-size="13">Store POS</text>
+                <rect x="242" y="72" width="130" height="36" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="307" y="95" text-anchor="middle" fill="#0A3D62" font-size="13">E-commerce</text>
+                <rect x="384" y="72" width="120" height="36" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="444" y="95" text-anchor="middle" fill="#0A3D62" font-size="13">OMS, WMS</text>
+                <rect x="516" y="72" width="120" height="36" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="576" y="95" text-anchor="middle" fill="#0A3D62" font-size="13">ERP</text>
+                <rect x="648" y="72" width="130" height="36" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="713" y="95" text-anchor="middle" fill="#0A3D62" font-size="13">Promotions</text>
+
+                <line x1="410" y1="108" x2="410" y2="132" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+
+                <text x="16" y="158" fill="#6b7280" font-size="12" font-weight="700">STREAM</text>
+                <rect x="110" y="136" width="668" height="48" rx="12" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="444" y="158" text-anchor="middle" fill="#0A3D62" font-size="14" font-weight="700">Kafka topics on Confluent Cloud</text>
+                <text x="444" y="176" text-anchor="middle" fill="#6b7280" font-size="12">Sales, stock, promotions, and the topics Flink writes back</text>
+
+                <line x1="444" y1="184" x2="444" y2="208" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+                <text x="456" y="200" fill="#6b7280" font-size="11">reads and writes</text>
+
+                <text x="16" y="236" fill="#6b7280" font-size="12" font-weight="700">PROCESS</text>
+                <rect x="110" y="212" width="668" height="56" rx="12" fill="#F5F9FF" stroke="#0A85EA"></rect>
+                <text x="444" y="234" text-anchor="middle" fill="#0A3D62" font-size="14" font-weight="700">Flink SQL and Streaming Agents</text>
+                <text x="444" y="252" text-anchor="middle" fill="#6b7280" font-size="12">Rollups, forecast, stock health, and the recommendation</text>
+
+                <line x1="300" y1="268" x2="300" y2="300" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+                <line x1="620" y1="268" x2="620" y2="300" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+
+                <text x="16" y="328" fill="#6b7280" font-size="12" font-weight="700">QUERY</text>
+                <rect x="110" y="304" width="360" height="132" rx="14" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <rect x="126" y="318" width="328" height="52" rx="10" fill="#0A3D62"></rect>
+                <text x="290" y="340" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">Real-Time Context Engine</text>
+                <text x="290" y="358" text-anchor="middle" fill="#d6e8ff" font-size="12">Serves the dashboard and the agents</text>
+                <rect x="126" y="378" width="328" height="44" rx="10" fill="#fff" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="290" y="396" text-anchor="middle" fill="#0A3D62" font-size="14" font-weight="700">Lightning Tables</text>
+                <text x="290" y="412" text-anchor="middle" fill="#6b7280" font-size="12">Backend of the Context Engine</text>
+
+                <rect x="500" y="304" width="278" height="132" rx="14" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="639" y="352" text-anchor="middle" fill="#0A3D62" font-size="14" font-weight="700">Tableflow</text>
+                <text x="639" y="374" text-anchor="middle" fill="#6b7280" font-size="12">History to Iceberg</text>
+                <text x="639" y="396" text-anchor="middle" fill="#6b7280" font-size="12">Lakehouse and BI</text>
+
+                <line x1="290" y1="436" x2="290" y2="468" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+
+                <text x="16" y="496" fill="#6b7280" font-size="12" font-weight="700">CONSUMERS</text>
+                <rect x="110" y="472" width="168" height="48" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="194" y="500" text-anchor="middle" fill="#0A3D62" font-size="13" font-weight="700">Dashboard</text>
+                <rect x="294" y="472" width="176" height="48" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="382" y="500" text-anchor="middle" fill="#0A3D62" font-size="13" font-weight="700">AI assistants</text>
+
+                <line x1="194" y1="520" x2="194" y2="548" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+
+                <text x="16" y="576" fill="#6b7280" font-size="12" font-weight="700">ACTIONS</text>
+                <rect x="110" y="552" width="180" height="44" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="200" y="578" text-anchor="middle" fill="#0A3D62" font-size="13">Approvals topic</text>
+                <line x1="290" y1="574" x2="318" y2="574" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+                <rect x="326" y="552" width="180" height="44" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="416" y="578" text-anchor="middle" fill="#0A3D62" font-size="13">Sink connectors</text>
+                <line x1="506" y1="574" x2="534" y2="574" stroke="#9CA3AF" stroke-width="1.5" marker-end="url(#arch-arrow)"></line>
+                <rect x="542" y="552" width="180" height="44" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="632" y="578" text-anchor="middle" fill="#0A3D62" font-size="13">OMS and WMS</text>
+            </svg>
+            <figcaption class="text-sm text-gray-600 mt-3">Lightning Tables hold the live state. The Real-Time Context Engine sits on top of them and is what the dashboard and the agents query. Tableflow is the separate path for history.</figcaption>
         </figure>
 
         <h2 id="pillars" class="text-xl font-semibold text-dark mb-3">Five platform pillars</h2>
@@ -92,13 +167,13 @@
                     <tr><td>Connect</td><td>Managed connectors</td><td>Brings in point of sale, e-commerce, order, warehouse, and ERP data, and writes approved actions back out.</td></tr>
                     <tr><td>Process</td><td>Confluent Cloud for Apache Flink</td><td>Sales rollups, hourly forecast, forecast-versus-inventory join, and stock-out and overstock detection.</td></tr>
                     <tr><td>Govern</td><td>Stream Governance and Schema Registry</td><td>Data contracts that reject bad records before they reach the forecast.</td></tr>
-                    <tr><td>Query</td><td>Lightning Tables, Tableflow, Real-Time Context Engine</td><td>Serves live state to the dashboard and the agent, and sends history to the lakehouse.</td></tr>
+                    <tr><td>Query</td><td>Lightning Tables, with the Real-Time Context Engine on top. Tableflow for history.</td><td>Lightning Tables are the backend. The Context Engine serves that live state to the dashboard and the agent. Tableflow sends history to the lakehouse.</td></tr>
                 </tbody>
             </table>
         </div>
 
         <h2 id="serving-database" class="text-xl font-semibold text-dark mb-3">No separate serving database</h2>
-        <p class="text-dark leading-relaxed mb-4">A conventional build adds a database or cache that someone has to scale and keep in sync with Kafka. Lightning Tables materializes the topics directly, so the dashboard and agents query a managed table.</p>
+        <p class="text-dark leading-relaxed mb-4">A conventional build adds a database or cache that someone has to scale and keep in sync with Kafka. Lightning Tables materialize the topics directly. The Real-Time Context Engine uses those tables as its backend, so the dashboard and the agents query the Context Engine rather than a database of their own.</p>
         <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8">
             <img src="img/lightning-tables.png" alt="Without Lightning Tables there is an extra serving database. With Lightning Tables, Kafka topics and Flink jobs feed a managed table." class="w-full h-auto">
         </figure>
@@ -119,8 +194,8 @@
                     <tr><td>demand.sales-rollup</td><td>Flink</td><td>Forecast, Lightning Tables</td></tr>
                     <tr><td>demand.forecast</td><td>Flink</td><td>Health join, Lightning Tables</td></tr>
                     <tr><td>inventory.position</td><td>Flink</td><td>Health join, Lightning Tables</td></tr>
-                    <tr><td>inventory.health</td><td>Flink</td><td>Lightning Tables, agent</td></tr>
-                    <tr><td>ai.recommendations</td><td>Streaming agent</td><td>Lightning Tables, approval screen</td></tr>
+                    <tr><td>inventory.health</td><td>Flink</td><td>Lightning Tables, then the Context Engine and the agent</td></tr>
+                    <tr><td>ai.recommendations</td><td>Streaming agent</td><td>Lightning Tables, then the Context Engine and the approval screen</td></tr>
                     <tr><td>ai.approvals and ai.actions</td><td>Approval screen, then Flink</td><td>Order and warehouse sink connectors</td></tr>
                     <tr><td>dlq.contract-rejects</td><td>Schema Registry rules</td><td>Rejection counter on the dashboard</td></tr>
                 </tbody>
@@ -235,7 +310,7 @@
                 </tbody>
             </table>
         </div>
-        <p class="text-dark leading-relaxed mb-6">Lookup tools are Flink functions, so they read the health table and the Real-Time Context Engine inside the job. They are not a copy of last night’s warehouse file. The propose tools only shape the recommendation. An MCP tool is the option when a step must call a system outside Flink, such as a carrier cutoff. This stock decision does not need that. The numbers are already on the stream.</p>
+        <p class="text-dark leading-relaxed mb-6">Lookup tools are Flink functions. They read the current state through the Real-Time Context Engine, and that engine reads Lightning Tables. They are not a copy of last night’s warehouse file. The propose tools only shape the recommendation. An MCP tool is the option when a step must call a system outside Flink, such as a carrier cutoff. This stock decision does not need that. The numbers are already on the stream.</p>
 
         <h3 id="one-health-event" class="text-lg font-semibold text-dark mb-2">One health event, one recommendation</h3>
         <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4">
@@ -244,7 +319,7 @@
                 <li>The agent calls find spare stock, then supplier timing. It now knows who can give units, and whether a new purchase order would arrive in time.</li>
                 <li>It chooses one outcome. A transfer uses the smaller of what the short location needs and what the donor can spare. An escalation is used when every other region needs its own stock. A markdown is used when the location is overstocked and nowhere else is short.</li>
                 <li>It returns one result: what it noticed, what it found, the action, the units, and the locations. The statement writes that as one event on <span class="font-medium">ai.recommendations</span>. The same key, product plus location, keeps later events in order.</li>
-                <li>Lightning Tables show the event on the dashboard. When approval is required, nothing goes to the warehouse until a planner approves. That approval is its own event. A later Flink job turns an approval into <span class="font-medium">ai.actions</span>, and a sink connector sends the transfer or the order out. If the policy is set to act on its own, that same action event is written without the wait.</li>
+                <li>The Real-Time Context Engine, backed by Lightning Tables, shows the event on the dashboard. When approval is required, nothing goes to the warehouse until a planner approves. That approval is its own event. A later Flink job turns an approval into <span class="font-medium">ai.actions</span>, and a sink connector sends the transfer or the order out. If the policy is set to act on its own, that same action event is written without the wait.</li>
                 <li>A later health event can show the location is safe again, because stock arrived or the promo ended. A small Flink rule then withdraws the open recommendation. The model is not asked to remember that.</li>
                 <li>The runtime logs each tool call and can replay the session. A planner can see why the agent chose that move, and the same health event can be run again after the prompt or the policy changes.</li>
             </ol>
@@ -388,7 +463,7 @@ WHERE h.risk_level IN ('OUT_OF_STOCK', 'HIGH', 'MEDIUM', 'OVERSTOCK');</pre>
         </figure>
         <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4">
             <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed">
-                <li>Lightning Tables show the waiting recommendation on the dashboard: what the agent noticed, what it found, the action, and the units.</li>
+                <li>The Real-Time Context Engine, backed by Lightning Tables, shows the waiting recommendation on the dashboard: what the agent noticed, what it found, the action, and the units.</li>
                 <li>A planner approves it, lowers the unit count to what the donor can spare, or rejects it. Each of those choices is an event on <span class="font-medium">ai.approvals</span>, with the recommendation, the person, and the choice.</li>
                 <li>A Flink job reads an approval and only then writes <span class="font-medium">ai.actions</span>. Sink connectors carry an approved transfer or markdown to the warehouse and the order system. A rejection writes no action.</li>
                 <li>If a later health event shows the location is safe again before anyone answers, a Flink rule withdraws the open recommendation. The planner is not asked to approve a move the stock no longer needs.</li>
