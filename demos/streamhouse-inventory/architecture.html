@@ -51,15 +51,15 @@
         <nav aria-label="On this page" class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-6">
             <p class="text-sm font-semibold tracking-wide uppercase text-primary mb-2">On this page</p>
             <ol class="list-decimal pl-5 space-y-1 text-dark">
+                <li><a class="text-primary hover:text-dark" href="#pillars">Five platform pillars</a></li>
+                <li><a class="text-primary hover:text-dark" href="#serving-database">No separate serving database</a></li>
+                <li><a class="text-primary hover:text-dark" href="#topics">Topics</a></li>
                 <li>
-                    <a class="text-primary hover:text-dark" href="#pillars">Five platform pillars</a>
+                    <a class="text-primary hover:text-dark" href="#inventory-health">What inventory.health carries</a>
                     <ol class="list-decimal pl-5 mt-1">
                         <li><a class="text-primary hover:text-dark" href="#forecast-next">How forecast_next is calculated</a></li>
                     </ol>
                 </li>
-                <li><a class="text-primary hover:text-dark" href="#serving-database">No separate serving database</a></li>
-                <li><a class="text-primary hover:text-dark" href="#topics">Topics</a></li>
-                <li><a class="text-primary hover:text-dark" href="#inventory-health">What inventory.health carries</a></li>
                 <li>
                     <a class="text-primary hover:text-dark" href="#agent-hosting">Where the AI agent is hosted</a>
                     <ol class="list-decimal pl-5 mt-1 space-y-1">
@@ -79,8 +79,18 @@
                 </li>
             </ol>
         </nav>
-        <p class="text-dark leading-relaxed mb-4">Peak season is uneven. Demand differs by region, channel, and product, and inventory has to be managed across all three at once. A promotion tells you that interest rose. It does not tell you which location will run out this afternoon, or which one is holding stock it will not sell. A shopper who finds an empty shelf, or an online order that waits on stock sitting somewhere else, is a sale the business already had.</p>
-        <p class="text-dark leading-relaxed mb-6">A Streamhouse keeps the dashboard, the inventory agent, and analytics on one current picture of that business. Connectors bring point-of-sale, commerce, warehouse, and planning systems into Kafka as they happen. Flink turns that stream into a forecast, a stock-health reading, and a recommendation, and writes that state into Lightning Tables. The Real-Time Context Engine sits on those tables and serves them to the dashboard and to the agent. Tableflow sends the history to the lakehouse. When a planner approves a move, that approval returns to Kafka, and sink connectors carry it to the order and warehouse systems. The agent that proposed the move can run as a Streaming Agent on Confluent Intelligence, or as an application you host. Either way, the decision is written as its own event.</p>
+        <h2 class="text-xl font-semibold text-dark mb-3">The problem, and the idea in one page</h2>
+        <p class="text-dark leading-relaxed mb-4">Peak holiday season is uneven. Demand is different in every region, on every channel (store or web), and for every product. Inventory has to be managed across all three at once.</p>
+        <p class="text-dark leading-relaxed mb-4">A promotion tells you that interest went up. It does not tell you which location will run out of stock this afternoon, or which location is sitting on stock it will never sell. If a shopper finds an empty shelf, or an online order waits for stock that is sitting in another region, that is a sale you already had and lost.</p>
+        <p class="text-dark leading-relaxed mb-3"><span class="font-medium">The idea:</span> keep one live picture of the business, and let the dashboard, the AI agent, and analytics all use it. Here is how StreamHouse builds that picture:</p>
+        <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
+            <li><span class="font-medium">Connectors</span> bring data from point-of-sale, e-commerce, warehouse, and planning systems into Kafka the moment it happens.</li>
+            <li><span class="font-medium">Flink</span> turns that stream into three things: a demand forecast, a stock-health reading, and a recommendation. It saves the latest state in <span class="font-medium">Lightning Tables</span>.</li>
+            <li>The <span class="font-medium">Real-Time Context Engine</span> sits on top of those tables. It gives the dashboard and the AI agent fast answers about the current state of the business.</li>
+            <li><span class="font-medium">Tableflow</span> copies the history into the lakehouse for analytics.</li>
+            <li>When a planner approves a move, the approval goes back into Kafka. <span class="font-medium">Sink connectors</span> then pass it to the order and warehouse systems.</li>
+        </ol>
+        <p class="text-dark leading-relaxed mb-6">The agent that proposes the moves can run inside Confluent Cloud as a <span class="font-medium">Streaming Agent</span>, or as an application you host yourself. Either way, every decision is saved as its own event, so you can always see what was decided and why.</p>
 
         <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
             <svg viewBox="0 0 980 700" role="img" aria-labelledby="arch-title arch-desc" class="w-full h-auto" style="min-width: 720px">
@@ -164,7 +174,7 @@
                 <rect x="542" y="596" width="180" height="44" rx="10" fill="#fff" stroke="#D1D5DB"></rect>
                 <text x="632" y="622" text-anchor="middle" fill="#0A3D62" font-size="13">OMS and WMS</text>
             </svg>
-            <figcaption class="text-sm text-gray-600 mt-3">Lightning Tables answer low-latency queries over MCP, SQL, or an API, with no separate database. The Real-Time Context Engine sits on them and serves AI agents live business context over MCP. Tableflow turns the streams into Iceberg or Delta tables for the lakehouse.</figcaption>
+            <figcaption class="text-sm text-gray-600 mt-3">Sources (store POS, e-commerce, order and warehouse systems, ERP, promotions) flow through connectors into Kafka topics on Confluent Cloud. Flink reads those topics and writes new ones. Lightning Tables hold the live state. The Real-Time Context Engine sits on those tables and serves dashboards and AI agents. Tableflow sends history to the lakehouse. Approved actions go out through sink connectors to the order and warehouse systems.</figcaption>
         </figure>
 
         <h2 id="pillars" class="text-xl font-semibold text-dark mb-3">Five platform pillars</h2>
@@ -174,17 +184,123 @@
                     <tr><th>Pillar</th><th>Confluent product</th><th>What it does</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td>Stream</td><td>Kafka on Confluent Cloud</td><td>Durable record of every sale, stock movement, promotion, and supplier order.</td></tr>
-                    <tr><td>Connect</td><td>Managed connectors</td><td>Brings in point of sale, e-commerce, order, warehouse, and ERP data, and writes approved actions back out.</td></tr>
-                    <tr><td>Process</td><td>Confluent Cloud for Apache Flink</td><td>Sales rollups, an hourly <span class="font-medium">forecast_next</span> from <span class="font-medium">ML_FORECAST</span>, the forecast-versus-inventory join, and stock-out and overstock detection.</td></tr>
-                    <tr><td>Govern</td><td>Stream Governance and Schema Registry</td><td>Data contracts that reject bad records before they reach the forecast.</td></tr>
-                    <tr><td>Query</td><td>Lightning Tables, with the Real-Time Context Engine on top. Tableflow for history.</td><td>Lightning Tables are the backend. The Context Engine serves that live state to the dashboard and the agent. Tableflow sends history to the lakehouse.</td></tr>
+                    <tr><td>Stream</td><td>Kafka on Confluent Cloud</td><td>Keeps a lasting record of every sale, stock movement, promotion, and supplier order.</td></tr>
+                    <tr><td>Connect</td><td>Managed connectors</td><td>Brings in data from point-of-sale, e-commerce, order, warehouse, and ERP systems. Also sends approved actions back out.</td></tr>
+                    <tr><td>Process</td><td>Confluent Cloud for Apache Flink</td><td>Adds up sales, builds the hourly forecast, compares forecast to stock, and spots stock-outs and overstock.</td></tr>
+                    <tr><td>Govern</td><td>Stream Governance and Schema Registry</td><td>Sets data rules (contracts) that block bad records before they reach the forecast.</td></tr>
+                    <tr><td>Query</td><td>Lightning Tables, with the Real-Time Context Engine on top. Tableflow for history.</td><td>Lightning Tables store the live state. The Context Engine serves it to the dashboard and the agent. Tableflow sends history to the lakehouse.</td></tr>
                 </tbody>
             </table>
         </div>
 
+        <h2 id="serving-database" class="text-xl font-semibold text-dark mb-3">No separate serving database</h2>
+        <p class="text-dark leading-relaxed mb-4">In a typical build, you add a database or cache next to Kafka so apps can query the data. Someone then has to scale it and keep it in sync with Kafka.</p>
+        <p class="text-dark leading-relaxed mb-4">Here, <span class="font-medium">Lightning Tables read the Kafka topics directly</span>. The Real-Time Context Engine uses those tables as its backend. So the dashboard and the agents ask the Context Engine, and there is no extra database to run.</p>
+        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8">
+            <img src="img/lightning-tables.png" alt="Without Lightning Tables there is an extra serving database. With Lightning Tables, Kafka topics and Flink jobs feed a managed table." class="w-full h-auto">
+        </figure>
+
+        <h2 id="topics" class="text-xl font-semibold text-dark mb-3">Topics</h2>
+        <p class="text-dark leading-relaxed mb-4">A topic is a named stream of events in Kafka. This design uses five source topics, seven derived topics (written by Flink or the agent), and one dead-letter topic (a holding place for rejected records).</p>
+        <p class="text-dark leading-relaxed mb-4">Events for the same product and location share one key. That keeps them in the order they happened.</p>
+        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
+            <table>
+                <thead>
+                    <tr><th>Topic</th><th>Written by</th><th>Read by</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>sales.pos-events</td><td>Store point of sale</td><td>Flink sales rollups, Tableflow</td></tr>
+                    <tr><td>sales.ecom-events</td><td>Web and app orders</td><td>Flink sales rollups, Tableflow</td></tr>
+                    <tr><td>inventory.movements</td><td>Warehouse and order systems</td><td>Flink inventory position</td></tr>
+                    <tr><td>supplier.orders</td><td>ERP</td><td>Flink restock logic</td></tr>
+                    <tr><td>merch.promo-events</td><td>Planning tools</td><td>Flink forecast</td></tr>
+                    <tr><td>demand.sales-rollup</td><td>Flink</td><td>Forecast, Lightning Tables</td></tr>
+                    <tr><td>demand.forecast</td><td>Flink</td><td>The <span class="font-medium">inventory.health</span> job, Lightning Tables</td></tr>
+                    <tr><td>inventory.position</td><td>Flink</td><td>The <span class="font-medium">inventory.health</span> job, Lightning Tables</td></tr>
+                    <tr><td>inventory.health</td><td>Flink</td><td>Lightning Tables, then the Context Engine and the agent</td></tr>
+                    <tr><td>ai.recommendations</td><td>Streaming Agent</td><td>Lightning Tables, then the Context Engine and the approval screen</td></tr>
+                    <tr><td>ai.approvals and ai.actions</td><td>Approval screen, then Flink</td><td>Order and warehouse sink connectors</td></tr>
+                    <tr><td>dlq.contract-rejects</td><td>Schema Registry rules</td><td>Rejection counter on the dashboard</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="inventory-health" class="text-xl font-semibold text-dark mb-3">What inventory.health carries</h2>
+        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">inventory.health</span> is the topic the agent acts on. Each record answers two questions for one product, in one region, on one channel:</p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-4">
+            <li>How many hours of stock are left?</li>
+            <li>Is this location running out, or holding too much?</li>
+        </ul>
+        <p class="text-dark leading-relaxed mb-3"><span class="font-medium">Where the record comes from.</span> Stores, the website, and the warehouse never write to this topic. They only publish raw events (a sale, a stock movement) to their own topics. From those raw events, Flink builds two pictures:</p>
+        <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
+            <li>the <span class="font-medium">hourly forecast</span> (how much we expect to sell), and</li>
+            <li>the <span class="font-medium">current stock position</span> (how much we have and what is on the way).</li>
+        </ol>
+        <p class="text-dark leading-relaxed mb-4">Each time an hour of the forecast closes, one Flink job joins the two pictures and adds one record to <span class="font-medium">inventory.health</span>. In the repo, that job is <a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a>, and the Flink table is called <span class="font-medium">stockout_risk</span>.</p>
+        <p class="text-dark leading-relaxed mb-4">The agent only reads this topic. Writing a recommendation and moving stock happen on other topics.</p>
+        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">How each record is stored.</span> Each record is an Avro message. When Flink creates the table on Confluent Cloud, it registers the schema in Schema Registry. That means a dashboard or an agent can read the record without keeping its own copy of the layout. The Kafka key is product + region + channel, so all readings for one location stay in order.</p>
+        <p class="text-dark leading-relaxed mb-4">The topic is an <span class="font-medium">append-only log</span>: every closed forecast hour adds a new record. This keeps a history of how risk changed during the day. A compacted topic would keep only the latest record per key. This design needs the history, so it does not use one.</p>
+        <h3 class="text-lg font-semibold text-dark mb-2">Fields</h3>
+        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
+            <table>
+                <thead>
+                    <tr><th>Field</th><th>What the agent uses it for</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>sku, region, channel</td><td>Which product and location this reading is about. These three fields are also the Kafka key.</td></tr>
+                    <tr><td>window_time</td><td>The hour this reading applies to. The join uses it so stock and forecast come from the same moment.</td></tr>
+                    <tr><td>units_sold</td><td>Units sold in the hour that just closed.</td></tr>
+                    <tr><td>forecast_next</td><td>Units we expect to sell in the next hour.</td></tr>
+                    <tr><td>forecast_horizon, upper_horizon</td><td>Expected units over the next six hours, and the high end of that range. The high end is used to size a restock.</td></tr>
+                    <tr><td>typical_rate</td><td>The location's normal pace. It stops a quiet hour from being mistaken for overstock.</td></tr>
+                    <tr><td>promo_active</td><td>Whether a promotion is already lifting demand here.</td></tr>
+                    <tr><td>on_hand, on_order</td><td>Units in the location now, and units already on the way from the supplier.</td></tr>
+                    <tr><td>periods_of_cover</td><td>On-hand stock divided by the next-hour forecast. In other words, how many hours the stock will last. The agent compares this to its policy.</td></tr>
+                    <tr><td>risk_level</td><td>One of OUT_OF_STOCK, HIGH, MEDIUM, LOW, OVERSTOCK, or WARMING_UP (the forecast is still collecting history). The agent is called for the risky values, not for healthy rows.</td></tr>
+                    <tr><td>suggested_replenishment_units</td><td>A starting quantity: the high end of the six-hour forecast, minus units on hand, minus units already on order.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="text-lg font-semibold text-dark mb-2">How cover and risk are worked out</h3>
+        <p class="text-dark leading-relaxed mb-3">The join takes <span class="font-medium">forecast_next</span> from the forecast and looks up the stock position as of the same hour. It then sets <span class="font-medium">periods_of_cover</span> and <span class="font-medium">risk_level</span>:</p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-4">
+            <li><span class="font-medium">Cover</span> = on-hand stock ÷ next-hour forecast.</li>
+            <li><span class="font-medium">Risk</span> compares on-hand stock with the six-hour forecast. Zero stock is <span class="font-medium">OUT_OF_STOCK</span>. If there is stock but no forecast yet, the row is <span class="font-medium">WARMING_UP</span>.</li>
+        </ul>
+        <pre class="sql mb-4">SELECT
+  f.forecast_next,
+  i.on_hand,
+  i.on_order,
+  CASE
+    WHEN f.forecast_next IS NULL OR f.forecast_next &lt;= 0 THEN CAST(NULL AS DOUBLE)
+    ELSE ROUND(CAST(i.on_hand AS DOUBLE) / f.forecast_next, 1)
+  END AS periods_of_cover,
+  CASE
+    WHEN i.on_hand &lt;= 0                                         THEN 'OUT_OF_STOCK'
+    WHEN f.forecast_next IS NULL                                THEN 'WARMING_UP'
+    WHEN i.on_hand &lt; f.forecast_horizon                         THEN 'HIGH'
+    WHEN i.on_hand &lt; f.upper_horizon                            THEN 'MEDIUM'
+    WHEN CAST(i.on_hand AS DOUBLE)
+         / GREATEST(f.typical_rate, f.forecast_next, 0.5) &gt; 120 THEN 'OVERSTOCK'
+    ELSE 'LOW'
+  END AS risk_level
+FROM `demand_forecast` AS f
+JOIN `inventory_latest` FOR SYSTEM_TIME AS OF f.window_time AS i
+  ON f.sku = i.sku
+ AND f.region = i.region
+ AND f.channel = i.channel</pre>
+        <p class="text-dark leading-relaxed mb-8">The full statement is in <a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a>.</p>
+
         <h3 id="forecast-next" class="text-lg font-semibold text-dark mb-2">How forecast_next is calculated</h3>
-        <p class="text-dark leading-relaxed mb-4">The stock-health statement does not calculate <span class="font-medium">forecast_next</span>. It reads that column from <span class="font-medium">demand_forecast</span>. Each row of <span class="font-medium">demand_windowed</span> is one simulated hour of sales for a product, region, and channel. <span class="font-medium">ML_FORECAST</span> fits an ARIMA model to that history and predicts the next 6 hours. <span class="font-medium">forecast_next</span> is the first of those hours, and it is not allowed to go below zero. The model waits until it has 16 hours of history, so the column is null until then and the health query marks the row <span class="font-medium">WARMING_UP</span>.</p>
+        <p class="text-dark leading-relaxed mb-4">The job that writes <span class="font-medium">inventory.health</span> does not calculate <span class="font-medium">forecast_next</span> itself. It reads that column from <span class="font-medium">demand_forecast</span>.</p>
+        <p class="text-dark leading-relaxed mb-3">Here is how the forecast is made:</p>
+        <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
+            <li>Each row of <span class="font-medium">demand_windowed</span> is one simulated hour of sales for one product, region, and channel.</li>
+            <li><span class="font-medium">ML_FORECAST</span> learns the pattern in that history using a statistical model called <span class="font-medium">ARIMA</span>. It then predicts the next 6 hours.</li>
+            <li><span class="font-medium">forecast_next</span> is the first of those 6 hours. It can never go below zero.</li>
+            <li>The model needs 16 hours of history before it will forecast. Until then, <span class="font-medium">forecast_next</span> is empty (null), and the <span class="font-medium">inventory.health</span> job marks the row <span class="font-medium">WARMING_UP</span>.</li>
+        </ol>
         <pre class="sql mb-4">GREATEST(fc[1].forecast_value, 0.0) AS forecast_next
 ...
 ML_FORECAST(
@@ -201,87 +317,50 @@ ML_FORECAST(
   ORDER BY window_time
   RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
 ) AS fc</pre>
-        <p class="text-dark leading-relaxed mb-8">The full statement is <a class="text-primary hover:text-dark font-semibold" href="flink/03_demand_forecast.sql">flink/03_demand_forecast.sql</a>. The health join that uses the column is <a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a>.</p>
-
-        <h2 id="serving-database" class="text-xl font-semibold text-dark mb-3">No separate serving database</h2>
-        <p class="text-dark leading-relaxed mb-4">A conventional build adds a database or cache that someone has to scale and keep in sync with Kafka. Lightning Tables materialize the topics directly. The Real-Time Context Engine uses those tables as its backend, so the dashboard and the agents query the Context Engine rather than a database of their own.</p>
-        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8">
-            <img src="img/lightning-tables.png" alt="Without Lightning Tables there is an extra serving database. With Lightning Tables, Kafka topics and Flink jobs feed a managed table." class="w-full h-auto">
-        </figure>
-
-        <h2 id="topics" class="text-xl font-semibold text-dark mb-3">Topics</h2>
-        <p class="text-dark leading-relaxed mb-4">The design uses five source topics, seven derived topics, and a dead-letter topic. Events for one product and location stay on the same key, so they remain ordered.</p>
-        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
+        <p class="text-dark leading-relaxed mb-3">What the settings mean:</p>
+        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4 overflow-x-auto">
             <table>
                 <thead>
-                    <tr><th>Topic</th><th>Written by</th><th>Read by</th></tr>
+                    <tr><th>Setting</th><th>Meaning</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td>sales.pos-events</td><td>Store point of sale</td><td>Flink rollups, Tableflow</td></tr>
-                    <tr><td>sales.ecom-events</td><td>Web and app orders</td><td>Flink rollups, Tableflow</td></tr>
-                    <tr><td>inventory.movements</td><td>Warehouse and order systems</td><td>Flink inventory position</td></tr>
-                    <tr><td>supplier.orders</td><td>ERP</td><td>Flink restock logic</td></tr>
-                    <tr><td>merch.promo-events</td><td>Planning tools</td><td>Flink forecast features</td></tr>
-                    <tr><td>demand.sales-rollup</td><td>Flink</td><td>Forecast, Lightning Tables</td></tr>
-                    <tr><td>demand.forecast</td><td>Flink</td><td>Health join, Lightning Tables</td></tr>
-                    <tr><td>inventory.position</td><td>Flink</td><td>Health join, Lightning Tables</td></tr>
-                    <tr><td>inventory.health</td><td>Flink</td><td>Lightning Tables, then the Context Engine and the agent</td></tr>
-                    <tr><td>ai.recommendations</td><td>Streaming agent</td><td>Lightning Tables, then the Context Engine and the approval screen</td></tr>
-                    <tr><td>ai.approvals and ai.actions</td><td>Approval screen, then Flink</td><td>Order and warehouse sink connectors</td></tr>
-                    <tr><td>dlq.contract-rejects</td><td>Schema Registry rules</td><td>Rejection counter on the dashboard</td></tr>
+                    <tr><td>horizon = 6</td><td>Predict the next 6 hours.</td></tr>
+                    <tr><td>minTrainingSize = 16</td><td>Wait for at least 16 hours of history.</td></tr>
+                    <tr><td>maxTrainingSize = 256</td><td>Use at most the latest 256 hours.</td></tr>
+                    <tr><td>enableStl = false</td><td>Do not split the data into trend and seasonal parts first.</td></tr>
+                    <tr><td>PARTITION BY sku, region, channel</td><td>Build a separate forecast for each product, region, and channel.</td></tr>
                 </tbody>
             </table>
         </div>
-
-        <h2 id="inventory-health" class="text-xl font-semibold text-dark mb-3">What inventory.health carries</h2>
-        <p class="text-dark leading-relaxed mb-4">Stores, the website, and the warehouse do not write this topic. They write sales and stock movements. A Flink job joins the latest forecast to the inventory position at that same moment and publishes one health record. In this repo that job is <a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a>, and the Flink table is named <span class="font-medium">stockout_risk</span>. The agent only reads the topic.</p>
-        <p class="text-dark leading-relaxed mb-4">The value is Avro. Flink registers the schema in Schema Registry when it creates the table, which is the Confluent Cloud default. The Kafka key is the product, the region, and the channel, so later readings for that location stay in order. Each closed forecast window appends a new record. The topic does not keep only the latest row.</p>
-        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
-            <table>
-                <thead>
-                    <tr><th>Field</th><th>What the agent needs it for</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td>sku, region, channel</td><td>Which product and location this reading is about. These three fields are also the Kafka key.</td></tr>
-                    <tr><td>window_time</td><td>When the reading applies. The join uses this so stock and forecast are from the same moment.</td></tr>
-                    <tr><td>units_sold</td><td>How many units sold in the window that just closed.</td></tr>
-                    <tr><td>forecast_next</td><td>How many units the model expects in the next period.</td></tr>
-                    <tr><td>forecast_horizon, upper_horizon</td><td>Expected units over the next six periods, and the high end of that range. The high end sizes a restock.</td></tr>
-                    <tr><td>typical_rate</td><td>The location’s normal pace, so a quiet hour is not mistaken for overstock.</td></tr>
-                    <tr><td>promo_active</td><td>Whether a promotion is already lifting demand at this location.</td></tr>
-                    <tr><td>on_hand, on_order</td><td>Units in the location now, and units already coming from the supplier.</td></tr>
-                    <tr><td>periods_of_cover</td><td>On-hand stock divided by the next-period forecast. This is the number the agent compares with its policy.</td></tr>
-                    <tr><td>risk_level</td><td>OUT_OF_STOCK, HIGH, MEDIUM, LOW, OVERSTOCK, or WARMING_UP while the forecast is still collecting history. The agent is called for the risky values, not for a healthy row.</td></tr>
-                    <tr><td>suggested_replenishment_units</td><td>A starting quantity: the high end of the forecast, minus units on hand and already on order.</td></tr>
-                </tbody>
-            </table>
-        </div>
+        <p class="text-dark leading-relaxed mb-8">The full statement is in <a class="text-primary hover:text-dark font-semibold" href="flink/03_demand_forecast.sql">flink/03_demand_forecast.sql</a>. The file <a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a> reads the column when it writes <span class="font-medium">inventory.health</span>.</p>
 
         <h2 id="agent-hosting" class="text-xl font-semibold text-dark mb-3">Where the AI agent is hosted</h2>
-        <p class="text-dark leading-relaxed mb-4">The job stays the same wherever the agent runs. It watches demand and stock as they change, across products, regions, and channels, and it proposes a transfer, a supplier order, or a markdown. A planner can approve each move, or the team can let the agent act. There are two ways to host it.</p>
+        <p class="text-dark leading-relaxed mb-4">The agent's job is the same wherever it runs. It watches demand and stock as they change, across products, regions, and channels. It then proposes one of three things: a <span class="font-medium">transfer</span>, a <span class="font-medium">supplier order</span>, or a <span class="font-medium">markdown</span>. A planner can approve each move, or the team can let the agent act on its own.</p>
+        <p class="text-dark leading-relaxed mb-4">There are two ways to host it:</p>
         <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-6 overflow-x-auto">
             <table>
                 <thead>
-                    <tr><th>Option</th><th>Where it runs</th><th>How it does the job</th></tr>
+                    <tr><th>Option</th><th>Where it runs</th><th>How it works</th></tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>Confluent Intelligence Streaming Agents</td>
                         <td>On Confluent Cloud, as a Flink job. There is no separate agent server to run.</td>
-                        <td>Each inventory health event wakes the agent. It reasons with a model, calls tools, and writes a recommendation back onto Kafka.</td>
+                        <td>Each inventory-health event wakes the agent. It reasons with a model, calls tools, and writes a recommendation back to Kafka.</td>
                     </tr>
                     <tr>
                         <td>An application you host</td>
-                        <td>Your own service, subscribed to the same topics. The live demo on this site follows this shape, without a cluster.</td>
-                        <td>The service keeps its own loop. It reads the stream, decides, and publishes the same recommendation and approval events.</td>
+                        <td>Your own service, reading the same topics. The live demo on this site works this way, without a cluster.</td>
+                        <td>Your service runs its own loop. It reads the stream, decides, and publishes the same recommendation and approval events.</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
         <h3 id="streaming-agents" class="text-lg font-semibold text-dark mb-2">Streaming Agents on Confluent Intelligence</h3>
-        <p class="text-dark leading-relaxed mb-4">Confluent Intelligence is the managed real-time AI layer on Kafka and Flink. A Streaming Agent is an event-driven agent that runs as a Flink job on Confluent Cloud, on the same stream as the forecast and the stock position. It does not poll a database, and it does not wait for a nightly batch.</p>
-        <p class="text-dark leading-relaxed mb-4">You define it with a model, a prompt, and tools, in Flink SQL or in the Agent Management Console. A continuous Flink statement then calls that agent, with <span class="font-medium">AI_RUN_AGENT</span>, for each inventory health row that needs a decision. The runtime runs the reason-and-tool loop and returns one result. The statement writes that result to <span class="font-medium">ai.recommendations</span>.</p>
+        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">Confluent Intelligence</span> is the managed, real-time AI layer on Kafka and Flink. A <span class="font-medium">Streaming Agent</span> is an agent that reacts to events and runs as a Flink job on Confluent Cloud, right next to the forecast and the stock position. It does not poll a database, and it does not wait for a nightly batch.</p>
+        <p class="text-dark leading-relaxed mb-4">You set it up with three things: a <span class="font-medium">model</span>, a <span class="font-medium">prompt</span>, and <span class="font-medium">tools</span>. You can do this in Flink SQL or in the Agent Management Console.</p>
+        <p class="text-dark leading-relaxed mb-4">Then a continuous Flink statement calls the agent, using <span class="font-medium">AI_RUN_AGENT</span>, for each inventory-health row that needs a decision. The agent works through its reason-and-tool loop and returns one result. The statement writes that result to <span class="font-medium">ai.recommendations</span>.</p>
         <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-6 overflow-x-auto">
             <svg viewBox="0 0 980 250" role="img" aria-labelledby="agent-flow-title agent-flow-desc" class="w-full h-auto" style="min-width: 760px">
                 <title id="agent-flow-title">The agent reads one topic, decides, and writes the decision to a different topic</title>
@@ -318,51 +397,75 @@ ML_FORECAST(
                 <text x="829" y="148" text-anchor="middle" fill="#0A3D62" font-size="14">for that location</text>
                 <text x="829" y="176" text-anchor="middle" fill="#6b7280" font-size="13">Action, units, from, to, why</text>
             </svg>
-            <figcaption class="text-sm text-gray-600 mt-3">The agent never writes its decision back onto the topic it read. <span class="font-medium text-dark">inventory.health</span> stays the measured risk. <span class="font-medium text-dark">ai.recommendations</span> is the decision.</figcaption>
+            <figcaption class="text-sm text-gray-600 mt-3">A health event on <span class="font-medium text-dark">inventory.health</span> is read by a Flink Streaming Agent. The agent calls tools to find spare stock and supplier timing, then picks a transfer, a markdown, or an escalation. It writes that decision as a new event on <span class="font-medium text-dark">ai.recommendations</span>. The agent never writes its decision back to the topic it read. <span class="font-medium text-dark">inventory.health</span> stays the measured risk. <span class="font-medium text-dark">ai.recommendations</span> is the decision.</figcaption>
         </figure>
 
         <h3 id="before-the-agent" class="text-lg font-semibold text-dark mb-2">What Flink calculates first</h3>
-        <p class="text-dark leading-relaxed mb-4">The forecast is ordinary Flink SQL, not the model. Sales and promo events become an hourly forecast. Inventory movements and supplier orders become on-hand and on-order. A join of those two writes <span class="font-medium">inventory.health</span>: one row per product, region, and channel, with cover, risk, and the reason.</p>
-        <p class="text-dark leading-relaxed mb-6">The agent is called only when that row says a location is running out or sitting on too much stock. A healthy row does not wake the model. The agent does not recompute the forecast. It decides what to do about a risk Flink has already measured.</p>
+        <p class="text-dark leading-relaxed mb-3">The forecast is ready before any agent runs:</p>
+        <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
+            <li>Sales and promo events become an <span class="font-medium">hourly forecast</span>.</li>
+            <li>Inventory movements and supplier orders become <span class="font-medium">on-hand</span> and <span class="font-medium">on-order</span> numbers.</li>
+            <li>A join of the two writes <span class="font-medium">inventory.health</span>: one row per product, region, and channel, with cover and risk.</li>
+        </ol>
+        <p class="text-dark leading-relaxed mb-4">The section <a class="text-primary hover:text-dark font-semibold" href="#forecast-next">How forecast_next is calculated</a> shows the statement that produces the next-hour number.</p>
+        <p class="text-dark leading-relaxed mb-6">The agent is called only when a row says a location is running out or holding too much. A healthy row does not wake the model. The agent does not recompute the forecast. Its job is to decide what to do about a risk that Flink has already measured.</p>
 
         <h3 id="agent-tools" class="text-lg font-semibold text-dark mb-2">Tools the agent can call</h3>
-        <p class="text-dark leading-relaxed mb-4">The prompt states the policy: act when cover falls under the trigger, refill toward a target, leave every donor enough stock for its own forecast, and treat a supplier order as too late when it would arrive after the stock-out. The model does not invent those numbers. It calls tools, and the tools read the current tables.</p>
+        <p class="text-dark leading-relaxed mb-3">The prompt sets the policy:</p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-4">
+            <li>Act when cover falls below the trigger.</li>
+            <li>Refill toward a target.</li>
+            <li>Leave every donor region enough stock for its own forecast.</li>
+            <li>Treat a supplier order as too late if it would arrive after the stock-out.</li>
+        </ul>
+        <p class="text-dark leading-relaxed mb-4">The model does not make up these numbers. It calls tools, and the tools read the current tables.</p>
         <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4 overflow-x-auto">
             <table>
                 <thead>
                     <tr><th>Tool</th><th>Where it runs</th><th>What it does</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td>Find spare stock</td><td>Flink function</td><td>Looks across regions for the same product and channel. Returns on-hand, forecast, and how many units each region can give after keeping its own cover.</td></tr>
+                    <tr><td>Find spare stock</td><td>Flink function</td><td>Looks across regions for the same product and channel. Returns on-hand, forecast, and how many units each region can give while keeping enough for itself.</td></tr>
                     <tr><td>Supplier timing</td><td>Flink function</td><td>Returns how long a new supplier order takes, and how many units are already on order for this location.</td></tr>
                     <tr><td>Propose transfer</td><td>Flink function</td><td>Returns a recommendation: from, to, units, and the two reasons. It does not move stock.</td></tr>
-                    <tr><td>Propose markdown</td><td>Flink function</td><td>Returns a recommendation to discount a location that will not sell through, and that no other region needs.</td></tr>
-                    <tr><td>Escalate</td><td>Flink function</td><td>Returns a recommendation to expedite the supplier, because no region can spare the units.</td></tr>
+                    <tr><td>Propose markdown</td><td>Flink function</td><td>Returns a recommendation to discount a location that will not sell through, when no other region needs the stock.</td></tr>
+                    <tr><td>Escalate</td><td>Flink function</td><td>Returns a recommendation to speed up the supplier, because no region can spare the units.</td></tr>
                 </tbody>
             </table>
         </div>
-        <p class="text-dark leading-relaxed mb-6">Lookup tools are Flink functions. They read the current state through the Real-Time Context Engine, and that engine reads Lightning Tables. They are not a copy of last night’s warehouse file. The propose tools only shape the recommendation. An MCP tool is the option when a step must call a system outside Flink, such as a carrier cutoff. This stock decision does not need that. The numbers are already on the stream.</p>
+        <p class="text-dark leading-relaxed mb-6">The lookup tools are Flink functions. They read live state through the Real-Time Context Engine, which reads Lightning Tables. They do not use a copy of last night's warehouse file. The propose tools only shape the recommendation. You would use an <span class="font-medium">MCP tool</span> when a step must call a system outside Flink, such as a carrier cutoff time. This stock decision does not need one, because the numbers are already on the stream.</p>
 
         <h3 id="one-health-event" class="text-lg font-semibold text-dark mb-2">One health event, one recommendation</h3>
+        <p class="text-dark leading-relaxed mb-3">Here is what happens, step by step, for a single inventory-health event:</p>
         <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4">
             <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed">
-                <li>The statement passes in the health row: product, region, channel, on hand, on order, forecast, cover, risk, and whether a promo is running.</li>
-                <li>The agent calls find spare stock, then supplier timing. It now knows who can give units, and whether a new purchase order would arrive in time.</li>
-                <li>It chooses one outcome. A transfer uses the smaller of what the short location needs and what the donor can spare. An escalation is used when every other region needs its own stock. A markdown is used when the location is overstocked and nowhere else is short.</li>
-                <li>It returns one result: what it noticed, what it found, the action, the units, and the locations. The statement writes that as one event on <span class="font-medium">ai.recommendations</span>. The same key, product plus location, keeps later events in order.</li>
-                <li>The Real-Time Context Engine, backed by Lightning Tables, shows the event on the dashboard. When approval is required, nothing goes to the warehouse until a planner approves. That approval is its own event. A later Flink job turns an approval into <span class="font-medium">ai.actions</span>, and a sink connector sends the transfer or the order out. If the policy is set to act on its own, that same action event is written without the wait.</li>
-                <li>A later health event can show the location is safe again, because stock arrived or the promo ended. A small Flink rule then withdraws the open recommendation. The model is not asked to remember that.</li>
-                <li>The runtime logs each tool call and can replay the session. A planner can see why the agent chose that move, and the same health event can be run again after the prompt or the policy changes.</li>
+                <li><span class="font-medium">The input.</span> The statement passes in the health row: product, region, channel, on-hand, on-order, forecast, cover, risk, and whether a promo is running.</li>
+                <li><span class="font-medium">The research.</span> The agent calls find spare stock, then supplier timing. Now it knows who can give units, and whether a new purchase order would arrive in time.</li>
+                <li><span class="font-medium">The choice.</span> The agent picks one outcome. A transfer uses the smaller of what the short location needs and what the donor can spare. An escalation is used when every other region needs its own stock. A markdown is used when the location has too much stock and nowhere else is short.</li>
+                <li><span class="font-medium">The result.</span> The agent returns what it noticed, what it found, the action, the units, and the locations. The statement writes this as one event on <span class="font-medium">ai.recommendations</span>. The same key (product + location) keeps later events in order.</li>
+                <li><span class="font-medium">The review.</span> The Real-Time Context Engine, backed by Lightning Tables, shows the event on the dashboard. If approval is required, nothing goes to the warehouse until a planner approves. The approval is its own event. A later Flink job turns it into <span class="font-medium">ai.actions</span>, and a sink connector sends the transfer or order out. If the policy lets the agent act on its own, the action event is written without waiting.</li>
+                <li><span class="font-medium">The clean-up.</span> A later health event may show that the location is safe again (stock arrived, or the promo ended). A small Flink rule then withdraws the open recommendation. The model does not have to remember anything.</li>
+                <li><span class="font-medium">The audit trail.</span> The runtime logs every tool call and can replay the session. A planner can see why the agent chose a move. The same health event can be run again after you change the prompt or policy.</li>
             </ol>
         </div>
 
         <h3 id="holiday-example" class="text-lg font-semibold text-dark mb-2">A holiday rush, as the agent sees it</h3>
-        <p class="text-dark leading-relaxed mb-4">North America East stores start selling a hero shoe much faster than the last forecast. Cover falls under the trigger. Supplier timing says a new order arrives after the store would stock out.</p>
-        <p class="text-dark leading-relaxed mb-4">Find spare stock returns North America West. After West keeps enough for its own forecast, units are spare. The agent writes one transfer recommendation, West to East, with both reasons on the event. The dashboard shows it. The planner approves. The approval event becomes a warehouse transfer.</p>
-        <p class="text-dark leading-relaxed mb-4">If West were also short, the agent would escalate and ask the planner to expedite the supplier. It would not invent a transfer. If East instead held weeks of cover and no region was short, the agent would suggest a markdown.</p>
+        <p class="text-dark leading-relaxed mb-4">Stores in North America East start selling a hero shoe much faster than the last forecast predicted. Cover falls below the trigger. Supplier timing says a new order would arrive after the store runs out.</p>
+        <p class="text-dark leading-relaxed mb-4">Find spare stock returns North America West. After West keeps enough for its own forecast, it still has units to spare. The agent writes one <span class="font-medium">transfer</span> recommendation, West to East, with both reasons attached. The dashboard shows it, and the planner approves. The approval event becomes a warehouse transfer.</p>
+        <p class="text-dark leading-relaxed mb-2">Two variations:</p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-4">
+            <li>If West were also short, the agent would <span class="font-medium">escalate</span> and ask the planner to speed up the supplier. It would not invent a transfer.</li>
+            <li>If East instead held far more stock than it needed and no region was short, the agent would suggest a <span class="font-medium">markdown</span>.</li>
+        </ul>
 
         <h3 id="sample-code" class="text-lg font-semibold text-dark mb-2">Sample code</h3>
-        <p class="text-dark leading-relaxed mb-4">The demo pipeline calculates <span class="font-medium">stockout_risk</span>. It does not yet run an agent. The statement below is the missing piece. It reads that table, which is the <span class="font-medium">inventory.health</span> topic, asks the Streaming Agent for one decision, and inserts the result into a different table, <span class="font-medium">ai_recommendations</span>. That table is the <span class="font-medium">ai.recommendations</span> topic. The same file is in the repo at <a class="text-primary hover:text-dark font-semibold" href="flink/06_inventory_agent.sql">flink/06_inventory_agent.sql</a>. It is a sample, so the demo Terraform does not deploy it.</p>
+        <p class="text-dark leading-relaxed mb-3">The demo pipeline calculates <span class="font-medium">stockout_risk</span>, but it does not yet run an agent. The statement below is the missing piece. Here is what it does:</p>
+        <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
+            <li>Reads <span class="font-medium">stockout_risk</span> (this is the <span class="font-medium">inventory.health</span> topic).</li>
+            <li>Asks the Streaming Agent for one decision.</li>
+            <li>Inserts the result into a different table, <span class="font-medium">ai_recommendations</span> (this is the <span class="font-medium">ai.recommendations</span> topic).</li>
+        </ol>
+        <p class="text-dark leading-relaxed mb-4">The same file is in the repo at <a class="text-primary hover:text-dark font-semibold" href="flink/06_inventory_agent.sql">flink/06_inventory_agent.sql</a>. It is a sample, so the demo Terraform does not deploy it.</p>
         <pre class="sql mb-4">CREATE AGENT `inventory_agent`
 USING MODEL `inventory_llm`
 USING PROMPT 'You are the inventory agent for one product, region, and channel. Read the health row in the message. Call find_spare_stock and supplier_timing before you decide. Return one line only: TRANSFER from-region to-region units, or MARKDOWN region discount, or ESCALATE. Use TRANSFER when another region can spare units after keeping its own cover. The unit count is the smaller of what this location needs and what the donor can spare. Use ESCALATE when no region can spare stock and a supplier order would arrive after the stock-out. Use MARKDOWN when this location is overstocked and no other region is short. Do not invent a transfer. Do not move stock.'
@@ -398,8 +501,18 @@ LATERAL TABLE(
   )
 ) AS agent
 WHERE h.risk_level IN ('OUT_OF_STOCK', 'HIGH', 'MEDIUM', 'OVERSTOCK');</pre>
-        <p class="text-dark leading-relaxed mb-4">Replace the model connection with one in your environment, and register the two lookup functions before creating the tools. Healthy rows are filtered out, so the model is not called when nothing needs a decision. <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/streaming-agents/create-and-run-streaming-agents.html" target="_blank" rel="noopener noreferrer">Create and run Streaming Agents</a></p>
-        <p class="text-dark leading-relaxed mb-8">Use Streaming Agents when the agent should live next to the data and every decision should be an event on the stream. Host the agent yourself when it already runs in another application and only needs the stream as its input and its record.</p>
+        <p class="text-dark leading-relaxed mb-2"><span class="font-medium">Before you run it:</span></p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-4">
+            <li>Replace the model connection with one from your own environment.</li>
+            <li>Register the two lookup functions before you create the tools.</li>
+            <li>Healthy rows are filtered out by the <span class="font-medium">WHERE</span> clause, so the model is not called when nothing needs a decision.</li>
+        </ul>
+        <p class="text-dark leading-relaxed mb-4"><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/streaming-agents/create-and-run-streaming-agents.html" target="_blank" rel="noopener noreferrer">Create and run Streaming Agents</a></p>
+        <p class="text-dark leading-relaxed mb-2"><span class="font-medium">Which hosting option should you pick?</span></p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-8">
+            <li>Choose <span class="font-medium">Streaming Agents</span> when the agent should live next to the data, and every decision should be an event on the stream.</li>
+            <li>Choose <span class="font-medium">your own hosted application</span> when the agent already runs in another application and only needs the stream as its input and its record.</li>
+        </ul>
 
         <h2 id="approval-flow" class="text-xl font-semibold text-dark mb-3">From a sales spike to an approved move</h2>
         <p class="text-dark leading-relaxed mb-4">The agent proposes a stock move or a markdown. A planner approves it on the dashboard. If no region has spare stock, the agent escalates instead of inventing a transfer. The approval is itself an event on a topic.</p>
@@ -408,7 +521,7 @@ WHERE h.risk_level IN ('OUT_OF_STOCK', 'HIGH', 'MEDIUM', 'OVERSTOCK');</pre>
         </figure>
 
         <h3 id="human-approval" class="text-lg font-semibold text-dark mb-2">When a person must approve each decision</h3>
-        <p class="text-dark leading-relaxed mb-4">Requiring approval does not change what the agent reads or what it recommends. It still reads <span class="font-medium">inventory.health</span> and still writes one decision to <span class="font-medium">ai.recommendations</span>. That write does not move stock. The recommendation waits.</p>
+        <p class="text-dark leading-relaxed mb-4">Requiring approval does not change what the agent reads or what it recommends. It still reads <span class="font-medium">inventory.health</span>, and it still writes one decision to <span class="font-medium">ai.recommendations</span>. That write does not move any stock. The recommendation simply waits.</p>
         <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4 overflow-x-auto">
             <svg viewBox="0 0 980 430" role="img" aria-labelledby="approval-gate-title approval-gate-desc" class="w-full h-auto" style="min-width: 760px">
                 <title id="approval-gate-title">A person approves each agent decision before stock moves</title>
@@ -486,23 +599,32 @@ WHERE h.risk_level IN ('OUT_OF_STOCK', 'HIGH', 'MEDIUM', 'OVERSTOCK');</pre>
                 <text x="856" y="368" text-anchor="middle" fill="#374151" font-size="14" font-weight="700">No action is sent</text>
                 <text x="856" y="390" text-anchor="middle" fill="#6b7280" font-size="12">Stock stays where it is</text>
             </svg>
-            <figcaption class="text-sm text-gray-600 mt-3">The recommendation waits on <span class="font-medium text-dark">ai.recommendations</span>. Only an approval on <span class="font-medium text-dark">ai.approvals</span> produces <span class="font-medium text-dark">ai.actions</span>. A later health event can withdraw the recommendation before the planner answers.</figcaption>
+            <figcaption class="text-sm text-gray-600 mt-3">The agent reads <span class="font-medium text-dark">inventory.health</span> and writes a waiting recommendation to <span class="font-medium text-dark">ai.recommendations</span>. A planner approves, changes the units, or rejects. That choice is written to <span class="font-medium text-dark">ai.approvals</span>. Only an approval becomes <span class="font-medium text-dark">ai.actions</span> and is sent to the warehouse. A rejection sends nothing.</figcaption>
         </figure>
         <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4">
             <img src="img/human-acts-on-recommendation.jpg" alt="A planner reviews an AI recommendation to move 116 units from West to East and can approve it, change the units, or reject it." class="w-full h-auto rounded-lg">
-            <figcaption class="text-sm text-gray-600 mt-3">A person acts on each recommendation. Approve sends the move on. Change units keeps the same move with a smaller quantity. Reject sends nothing.</figcaption>
+            <figcaption class="text-sm text-gray-600 mt-3">Approve sends the move on as proposed. Change units keeps the same move, but with a smaller quantity. Reject sends nothing. Stock stays where it is.</figcaption>
         </figure>
+        <p class="text-dark leading-relaxed mb-2">The planner has three choices:</p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-4">
+            <li><span class="font-medium">Approve:</span> send the move on as proposed.</li>
+            <li><span class="font-medium">Change units:</span> keep the same move, but with a smaller quantity.</li>
+            <li><span class="font-medium">Reject:</span> send nothing. Stock stays where it is.</li>
+        </ul>
+        <p class="text-dark leading-relaxed mb-3">What happens, step by step:</p>
         <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4">
             <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed">
                 <li>The Real-Time Context Engine, backed by Lightning Tables, shows the waiting recommendation on the dashboard: what the agent noticed, what it found, the action, and the units.</li>
-                <li>A planner approves it, lowers the unit count to what the donor can spare, or rejects it. Each of those choices is an event on <span class="font-medium">ai.approvals</span>, with the recommendation, the person, and the choice.</li>
-                <li>A Flink job reads an approval and only then writes <span class="font-medium">ai.actions</span>. Sink connectors carry an approved transfer or markdown to the warehouse and the order system. A rejection writes no action.</li>
+                <li>The planner approves it, lowers the units to what the donor can spare, or rejects it. Each choice is an event on <span class="font-medium">ai.approvals</span>, recording the recommendation, the person, and the choice.</li>
+                <li>A Flink job reads the approval and only then writes <span class="font-medium">ai.actions</span>. Sink connectors carry an approved transfer or markdown to the warehouse and order systems. A rejection writes no action.</li>
                 <li>If a later health event shows the location is safe again before anyone answers, a Flink rule withdraws the open recommendation. The planner is not asked to approve a move the stock no longer needs.</li>
             </ol>
         </div>
-        <p class="text-dark leading-relaxed mb-8">Nothing reaches the warehouse while a recommendation is waiting. The same topics are used when the team lets the agent act on its own. The difference is that the action event is written without an approval event in front of it. For this design, a person approves each move, because sending units in a peak season takes them from a region that may need them.</p>
+        <p class="text-dark leading-relaxed mb-4">Nothing reaches the warehouse while a recommendation is waiting.</p>
+        <p class="text-dark leading-relaxed mb-4">The same topics are used when the team lets the agent act on its own. The only difference is that the action event is written without an approval event in front of it.</p>
+        <p class="text-dark leading-relaxed mb-8"><span class="font-medium">Why this design requires approval:</span> in the peak holiday season, sending units to one region takes them from another region that may need them. A person should decide that trade-off.</p>
 
-        <p class="text-dark">The hosted walkthrough uses the same story without a cluster. <a class="text-primary hover:text-dark font-semibold" href="demo.html">Open the live demo</a></p>
+        <p class="text-dark">The hosted walkthrough tells the same story without a cluster. <a class="text-primary hover:text-dark font-semibold" href="demo.html">Open the live demo</a></p>
     </div>
 </body>
 </html>
