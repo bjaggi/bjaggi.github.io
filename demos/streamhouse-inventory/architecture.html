@@ -51,9 +51,12 @@
         <nav aria-label="On this page" class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-6">
             <p class="text-sm font-semibold tracking-wide uppercase text-primary mb-2">On this page</p>
             <ol class="list-decimal pl-5 space-y-1 text-dark">
+                <li><a class="text-primary hover:text-dark" href="#problem">The problem</a></li>
+                <li><a class="text-primary hover:text-dark" href="#solution-overview">Solution overview</a></li>
                 <li><a class="text-primary hover:text-dark" href="#pillars">Five platform pillars</a></li>
                 <li><a class="text-primary hover:text-dark" href="#serving-database">No separate serving database</a></li>
                 <li><a class="text-primary hover:text-dark" href="#topics">Topics</a></li>
+                <li><a class="text-primary hover:text-dark" href="#flink-processing">Flink processing</a></li>
                 <li>
                     <a class="text-primary hover:text-dark" href="#inventory-health">What inventory.health carries</a>
                     <ol class="list-decimal pl-5 mt-1">
@@ -64,7 +67,6 @@
                     <a class="text-primary hover:text-dark" href="#agent-hosting">Where the AI agent is hosted</a>
                     <ol class="list-decimal pl-5 mt-1 space-y-1">
                         <li><a class="text-primary hover:text-dark" href="#streaming-agents">Streaming Agents on Confluent Intelligence</a></li>
-                        <li><a class="text-primary hover:text-dark" href="#before-the-agent">What Flink calculates first</a></li>
                         <li><a class="text-primary hover:text-dark" href="#agent-tools">Tools the agent can call</a></li>
                         <li><a class="text-primary hover:text-dark" href="#one-health-event">One health event, one recommendation</a></li>
                         <li><a class="text-primary hover:text-dark" href="#holiday-example">A holiday rush, as the agent sees it</a></li>
@@ -79,13 +81,16 @@
                 </li>
             </ol>
         </nav>
-        <h2 class="text-xl font-semibold text-dark mb-3">The problem, and the idea in one page</h2>
+        <h2 id="problem" class="text-xl font-semibold text-dark mb-3">The problem</h2>
         <p class="text-dark leading-relaxed mb-4">Peak holiday season is uneven. Demand is different in every region, on every channel (store or web), and for every product. Inventory has to be managed across all three at once.</p>
-        <p class="text-dark leading-relaxed mb-4">A promotion tells you that interest went up. It does not tell you which location will run out of stock this afternoon, or which location is sitting on stock it will never sell. If a shopper finds an empty shelf, or an online order waits for stock that is sitting in another region, that is a sale you already had and lost.</p>
-        <p class="text-dark leading-relaxed mb-3"><span class="font-medium">The idea:</span> keep one live picture of the business, and let the dashboard, the AI agent, and analytics all use it. Here is how StreamHouse builds that picture:</p>
+        <p class="text-dark leading-relaxed mb-8">A promotion tells you that interest went up. It does not tell you which location will run out of stock this afternoon, or which location is sitting on stock it will never sell. If a shopper finds an empty shelf, or an online order waits for stock that is sitting in another region, that is a sale you already had and lost.</p>
+
+        <h2 id="solution-overview" class="text-xl font-semibold text-dark mb-3">Solution overview</h2>
+        <p class="text-dark leading-relaxed mb-4">StreamHouse keeps one live picture of demand and stock. The dashboard, the AI agent, and analytics all use that picture. A sale does not sit in a file until the next morning.</p>
+        <p class="text-dark leading-relaxed mb-3">The path from a sale to a stock move has five steps:</p>
         <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
             <li><span class="font-medium">Connectors</span> bring data from point-of-sale, e-commerce, warehouse, and planning systems into Kafka the moment it happens.</li>
-            <li><span class="font-medium">Flink</span> turns that stream into three things: a demand forecast, a stock-health reading, and a recommendation. It saves the latest state in <span class="font-medium">Lightning Tables</span>.</li>
+            <li><span class="font-medium">Flink</span> turns that stream into a demand forecast and a stock-health reading. <a class="text-primary hover:text-dark font-semibold" href="#flink-processing">Flink processing</a> walks through those two jobs. Lightning Tables hold the result.</li>
             <li>The <span class="font-medium">Real-Time Context Engine</span> sits on top of those tables. It gives the dashboard and the AI agent fast answers about the current state of the business.</li>
             <li><span class="font-medium">Tableflow</span> copies the history into the lakehouse for analytics.</li>
             <li>When a planner approves a move, the approval goes back into Kafka. <span class="font-medium">Sink connectors</span> then pass it to the order and warehouse systems.</li>
@@ -176,6 +181,7 @@
             </svg>
             <figcaption class="text-sm text-gray-600 mt-3">Sources (store POS, e-commerce, order and warehouse systems, ERP, promotions) flow through connectors into Kafka topics on Confluent Cloud. Flink reads those topics and writes new ones. Lightning Tables hold the live state. The Real-Time Context Engine sits on those tables and serves dashboards and AI agents. Tableflow sends history to the lakehouse. Approved actions go out through sink connectors to the order and warehouse systems.</figcaption>
         </figure>
+        <p class="text-dark leading-relaxed mb-8">The next sections name the platform pieces and the topics. <a class="text-primary hover:text-dark font-semibold" href="#flink-processing">Flink processing</a> is the calculation in the middle of this picture. The agent and the approval gate come after that.</p>
 
         <h2 id="pillars" class="text-xl font-semibold text-dark mb-3">Five platform pillars</h2>
         <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
@@ -225,6 +231,69 @@
             </table>
         </div>
 
+        <h2 id="flink-processing" class="text-xl font-semibold text-dark mb-3">Flink processing</h2>
+        <p class="text-dark leading-relaxed mb-4">Flink does this calculation before any agent runs. There are two lanes, and they meet once. The agent later reads the result. It does not rebuild it.</p>
+        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">Sales.</span> Each sale is one event. Flink groups those events into <span class="font-medium">demand_windowed</span>: one simulated hour of sales for one product, in one region, on one channel. When that hour closes, <span class="font-medium">ML_FORECAST</span> writes <span class="font-medium">demand_forecast</span>. It predicts the next six hours. <span class="font-medium">forecast_next</span> is the first of those hours. Until 16 hours of history exist, that value is empty, and the health row is marked <span class="font-medium">WARMING_UP</span>.</p>
+        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">Stock.</span> Warehouse movements and supplier orders update <span class="font-medium">inventory_latest</span>. That table is how many units are in the location now, and how many are already on the way, for the same product and location.</p>
+        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">The join.</span> When the forecast hour closes, <span class="font-medium">stockout_risk</span> joins <span class="font-medium">demand_forecast</span> to <span class="font-medium">inventory_latest</span> as of that same hour. The join writes cover and risk. The Flink table is <span class="font-medium">stockout_risk</span>. The Kafka topic is <span class="font-medium">inventory.health</span>.</p>
+        <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4 overflow-x-auto">
+            <svg viewBox="0 0 980 520" role="img" aria-labelledby="flink-flow-title flink-flow-desc" class="w-full h-auto" style="min-width: 760px">
+                <title id="flink-flow-title">Flink builds demand_forecast, then joins it to stock to write stockout_risk</title>
+                <desc id="flink-flow-desc">Sales become one hour of demand, then an ARIMA forecast in demand_forecast. Stock movements become the latest on-hand and on-order in inventory_latest. stockout_risk joins those two at the same hour and that table is the inventory.health topic.</desc>
+                <defs>
+                    <marker id="flink-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#0A85EA"></path>
+                    </marker>
+                </defs>
+
+                <text x="36" y="22" fill="#6b7280" font-size="12" font-weight="700" letter-spacing="0.06em">SALES</text>
+                <rect x="36" y="32" width="340" height="68" rx="12" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="206" y="58" text-anchor="middle" fill="#0A3D62" font-size="15" font-weight="700">Store POS and web sales</text>
+                <text x="206" y="80" text-anchor="middle" fill="#6b7280" font-size="13">One event each time a unit sells</text>
+
+                <text x="604" y="22" fill="#6b7280" font-size="12" font-weight="700" letter-spacing="0.06em">STOCK</text>
+                <rect x="604" y="32" width="340" height="68" rx="12" fill="#fff" stroke="#D1D5DB"></rect>
+                <text x="774" y="58" text-anchor="middle" fill="#0A3D62" font-size="15" font-weight="700">Movements and supplier orders</text>
+                <text x="774" y="80" text-anchor="middle" fill="#6b7280" font-size="13">Units on hand, and units on the way</text>
+
+                <line x1="206" y1="100" x2="206" y2="132" stroke="#0A85EA" stroke-width="2" marker-end="url(#flink-arrow)"></line>
+                <line x1="774" y1="100" x2="774" y2="188" stroke="#0A85EA" stroke-width="2" marker-end="url(#flink-arrow)"></line>
+
+                <rect x="36" y="136" width="340" height="80" rx="12" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="206" y="162" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700" letter-spacing="0.06em">FLINK TABLE</text>
+                <text x="206" y="186" text-anchor="middle" fill="#0A3D62" font-size="16" font-weight="700">demand_windowed</text>
+                <text x="206" y="206" text-anchor="middle" fill="#6b7280" font-size="13">One simulated hour of sales</text>
+
+                <line x1="206" y1="216" x2="206" y2="252" stroke="#0A85EA" stroke-width="2" marker-end="url(#flink-arrow)"></line>
+                <text x="218" y="240" fill="#0A85EA" font-size="12" font-weight="700">each closed hour</text>
+
+                <rect x="36" y="256" width="340" height="96" rx="12" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="206" y="282" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700" letter-spacing="0.06em">FLINK TABLE</text>
+                <text x="206" y="306" text-anchor="middle" fill="#0A3D62" font-size="16" font-weight="700">demand_forecast</text>
+                <text x="206" y="328" text-anchor="middle" fill="#0A3D62" font-size="13">ML_FORECAST, next 6 hours</text>
+                <text x="206" y="346" text-anchor="middle" fill="#6b7280" font-size="13">forecast_next is the first hour</text>
+
+                <rect x="604" y="192" width="340" height="96" rx="12" fill="#F5F9FF" stroke="#0A85EA" stroke-width="1.5"></rect>
+                <text x="774" y="218" text-anchor="middle" fill="#0A85EA" font-size="11" font-weight="700" letter-spacing="0.06em">FLINK TABLE</text>
+                <text x="774" y="242" text-anchor="middle" fill="#0A3D62" font-size="16" font-weight="700">inventory_latest</text>
+                <text x="774" y="264" text-anchor="middle" fill="#0A3D62" font-size="13">Latest on_hand and on_order</text>
+                <text x="774" y="282" text-anchor="middle" fill="#6b7280" font-size="13">for that product and location</text>
+
+                <line x1="206" y1="352" x2="206" y2="446" stroke="#0A85EA" stroke-width="2"></line>
+                <line x1="206" y1="446" x2="246" y2="446" stroke="#0A85EA" stroke-width="2" marker-end="url(#flink-arrow)"></line>
+
+                <line x1="774" y1="288" x2="774" y2="446" stroke="#0A85EA" stroke-width="2"></line>
+                <line x1="774" y1="446" x2="734" y2="446" stroke="#0A85EA" stroke-width="2" marker-end="url(#flink-arrow)"></line>
+
+                <rect x="254" y="400" width="472" height="96" rx="14" fill="#0A3D62"></rect>
+                <text x="490" y="426" text-anchor="middle" fill="#8ec8ff" font-size="11" font-weight="700" letter-spacing="0.05em">FLINK TABLE · TOPIC inventory.health</text>
+                <text x="490" y="454" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">stockout_risk</text>
+                <text x="490" y="476" text-anchor="middle" fill="#d6e8ff" font-size="13">Cover and risk for one product and location</text>
+            </svg>
+            <figcaption class="text-sm text-gray-600 mt-3">Two Flink jobs, then one join. Sales become <span class="font-medium text-dark">demand_forecast</span>. Stock movements become <span class="font-medium text-dark">inventory_latest</span>. <span class="font-medium text-dark">stockout_risk</span> joins them at the same hour, and that table is the <span class="font-medium text-dark">inventory.health</span> topic.</figcaption>
+        </figure>
+        <p class="text-dark leading-relaxed mb-8">The next section lists every field on that health record and shows the join. <a class="text-primary hover:text-dark font-semibold" href="#forecast-next">How forecast_next is calculated</a> shows the forecast statement.</p>
+
         <h2 id="inventory-health" class="text-xl font-semibold text-dark mb-3">What inventory.health carries</h2>
         <p class="text-dark leading-relaxed mb-4"><span class="font-medium">inventory.health</span> is the topic the agent acts on. Each record answers two questions for one product, in one region, on one channel:</p>
         <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-4">
@@ -237,6 +306,47 @@
             <li>the <span class="font-medium">current stock position</span> (how much we have and what is on the way).</li>
         </ol>
         <p class="text-dark leading-relaxed mb-4">Each time an hour of the forecast closes, one Flink job joins the two pictures and adds one record to <span class="font-medium">inventory.health</span>. In the repo, that job is <a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a>, and the Flink table is called <span class="font-medium">stockout_risk</span>.</p>
+        <pre class="sql mb-4">CREATE TABLE `stockout_risk` (
+  WATERMARK FOR `window_time` AS `window_time` - INTERVAL '1' SECOND
+)
+DISTRIBUTED BY (sku, region, channel) INTO 3 BUCKETS
+WITH (
+  'value.fields-include' = 'all'
+)
+AS
+SELECT
+  f.sku,
+  f.region,
+  f.channel,
+  f.window_time,
+  f.units_sold,
+  f.forecast_next,
+  f.forecast_horizon,
+  f.upper_horizon,
+  f.typical_rate,
+  f.promo_active,
+  i.on_hand,
+  i.on_order,
+  CASE
+    WHEN f.forecast_next IS NULL OR f.forecast_next &lt;= 0 THEN CAST(NULL AS DOUBLE)
+    ELSE ROUND(CAST(i.on_hand AS DOUBLE) / f.forecast_next, 1)
+  END AS periods_of_cover,
+  CASE
+    WHEN i.on_hand &lt;= 0                                         THEN 'OUT_OF_STOCK'
+    WHEN f.forecast_next IS NULL                                THEN 'WARMING_UP'
+    WHEN i.on_hand &lt; f.forecast_horizon                         THEN 'HIGH'
+    WHEN i.on_hand &lt; f.upper_horizon                            THEN 'MEDIUM'
+    WHEN CAST(i.on_hand AS DOUBLE)
+         / GREATEST(f.typical_rate, f.forecast_next, 0.5) &gt; 120 THEN 'OVERSTOCK'
+    ELSE 'LOW'
+  END AS risk_level,
+  GREATEST(CAST(CEIL(f.upper_horizon) AS INT) - i.on_hand - i.on_order, 0) AS suggested_replenishment_units
+FROM `demand_forecast` AS f
+JOIN `inventory_latest` FOR SYSTEM_TIME AS OF f.window_time AS i
+  ON f.sku = i.sku
+ AND f.region = i.region
+ AND f.channel = i.channel;</pre>
+        <p class="text-dark leading-relaxed mb-4">The full statement is in <a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a>.</p>
         <p class="text-dark leading-relaxed mb-4">The agent only reads this topic. Writing a recommendation and moving stock happen on other topics.</p>
         <p class="text-dark leading-relaxed mb-4"><span class="font-medium">How each record is stored.</span> Each record is an Avro message. When Flink creates the table on Confluent Cloud, it registers the schema in Schema Registry. That means a dashboard or an agent can read the record without keeping its own copy of the layout. The Kafka key is product + region + channel, so all readings for one location stay in order.</p>
         <p class="text-dark leading-relaxed mb-4">The topic is an <span class="font-medium">append-only log</span>: every closed forecast hour adds a new record. This keeps a history of how risk changed during the day. A compacted topic would keep only the latest record per key. This design needs the history, so it does not use one.</p>
@@ -268,29 +378,6 @@
             <li><span class="font-medium">Cover</span> = on-hand stock ÷ next-hour forecast.</li>
             <li><span class="font-medium">Risk</span> compares on-hand stock with the six-hour forecast. Zero stock is <span class="font-medium">OUT_OF_STOCK</span>. If there is stock but no forecast yet, the row is <span class="font-medium">WARMING_UP</span>.</li>
         </ul>
-        <pre class="sql mb-4">SELECT
-  f.forecast_next,
-  i.on_hand,
-  i.on_order,
-  CASE
-    WHEN f.forecast_next IS NULL OR f.forecast_next &lt;= 0 THEN CAST(NULL AS DOUBLE)
-    ELSE ROUND(CAST(i.on_hand AS DOUBLE) / f.forecast_next, 1)
-  END AS periods_of_cover,
-  CASE
-    WHEN i.on_hand &lt;= 0                                         THEN 'OUT_OF_STOCK'
-    WHEN f.forecast_next IS NULL                                THEN 'WARMING_UP'
-    WHEN i.on_hand &lt; f.forecast_horizon                         THEN 'HIGH'
-    WHEN i.on_hand &lt; f.upper_horizon                            THEN 'MEDIUM'
-    WHEN CAST(i.on_hand AS DOUBLE)
-         / GREATEST(f.typical_rate, f.forecast_next, 0.5) &gt; 120 THEN 'OVERSTOCK'
-    ELSE 'LOW'
-  END AS risk_level
-FROM `demand_forecast` AS f
-JOIN `inventory_latest` FOR SYSTEM_TIME AS OF f.window_time AS i
-  ON f.sku = i.sku
- AND f.region = i.region
- AND f.channel = i.channel</pre>
-        <p class="text-dark leading-relaxed mb-8">The full statement is in <a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a>.</p>
 
         <h3 id="forecast-next" class="text-lg font-semibold text-dark mb-2">How forecast_next is calculated</h3>
         <p class="text-dark leading-relaxed mb-4">The job that writes <span class="font-medium">inventory.health</span> does not calculate <span class="font-medium">forecast_next</span> itself. It reads that column from <span class="font-medium">demand_forecast</span>.</p>
@@ -400,15 +487,7 @@ ML_FORECAST(
             <figcaption class="text-sm text-gray-600 mt-3">A health event on <span class="font-medium text-dark">inventory.health</span> is read by a Flink Streaming Agent. The agent calls tools to find spare stock and supplier timing, then picks a transfer, a markdown, or an escalation. It writes that decision as a new event on <span class="font-medium text-dark">ai.recommendations</span>. The agent never writes its decision back to the topic it read. <span class="font-medium text-dark">inventory.health</span> stays the measured risk. <span class="font-medium text-dark">ai.recommendations</span> is the decision.</figcaption>
         </figure>
 
-        <h3 id="before-the-agent" class="text-lg font-semibold text-dark mb-2">What Flink calculates first</h3>
-        <p class="text-dark leading-relaxed mb-3">The forecast is ready before any agent runs:</p>
-        <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
-            <li>Sales and promo events become an <span class="font-medium">hourly forecast</span>.</li>
-            <li>Inventory movements and supplier orders become <span class="font-medium">on-hand</span> and <span class="font-medium">on-order</span> numbers.</li>
-            <li>A join of the two writes <span class="font-medium">inventory.health</span>: one row per product, region, and channel, with cover and risk.</li>
-        </ol>
-        <p class="text-dark leading-relaxed mb-4">The section <a class="text-primary hover:text-dark font-semibold" href="#forecast-next">How forecast_next is calculated</a> shows the statement that produces the next-hour number.</p>
-        <p class="text-dark leading-relaxed mb-6">The agent is called only when a row says a location is running out or holding too much. A healthy row does not wake the model. The agent does not recompute the forecast. Its job is to decide what to do about a risk that Flink has already measured.</p>
+        <p class="text-dark leading-relaxed mb-6">By the time the agent runs, <a class="text-primary hover:text-dark font-semibold" href="#flink-processing">Flink processing</a> has already written <span class="font-medium">inventory.health</span>. The agent is called only when a row says a location is running out or holding too much. A healthy row does not wake the model. The agent does not recompute the forecast. Its job is to decide what to do about a risk that Flink has already measured.</p>
 
         <h3 id="agent-tools" class="text-lg font-semibold text-dark mb-2">Tools the agent can call</h3>
         <p class="text-dark leading-relaxed mb-3">The prompt sets the policy:</p>
