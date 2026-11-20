@@ -300,7 +300,7 @@
         </div>
 
         <h2 id="topics" class="text-xl font-semibold text-dark mb-3">Topics</h2>
-        <p class="text-dark leading-relaxed mb-4">A topic is a named stream of events in Kafka. This design uses five source topics, seven derived topics (written by Flink or the agent), and one dead-letter topic (a holding place for rejected records).</p>
+        <p class="text-dark leading-relaxed mb-4">A topic is a named stream of events in Kafka. This design uses five source topics and seven derived topics, written by Flink or the agent. Schema Registry rejects a record that breaks its contract.</p>
         <p class="text-dark leading-relaxed mb-4">Events for the same product and location share one key. That keeps them in the order they happened.</p>
         <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
             <table>
@@ -319,7 +319,6 @@
                     <tr><td>inventory.health</td><td>Flink</td><td>Lightning Tables, then the Context Engine and the agent</td></tr>
                     <tr><td>ai.recommendations</td><td>Streaming Agent</td><td>Lightning Tables, then the Context Engine and the approval screen</td></tr>
                     <tr><td>ai.approvals and ai.actions</td><td>Approval screen, then Flink</td><td>Order and warehouse sink connectors</td></tr>
-                    <tr><td>dlq.contract-rejects</td><td>Schema Registry rules</td><td>Rejection counter on the dashboard</td></tr>
                 </tbody>
             </table>
         </div>
