@@ -51,50 +51,49 @@
     }
     .site-back:hover { text-decoration: underline; }
 
-    .what {
-      margin: 0 0 14px;
-      padding: 14px 18px 16px;
+    .header-actions {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      flex: none;
+    }
+    .demo-guide { position: relative; }
+    .demo-guide summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      list-style: none;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .demo-guide summary::-webkit-details-marker { display: none; }
+    .demo-guide summary svg { flex: none; }
+    .demo-guide summary:focus-visible {
+      outline: 2px solid var(--info);
+      outline-offset: 3px;
+    }
+    .demo-guide-panel {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      z-index: 20;
+      width: min(420px, 80vw);
+      padding: 14px;
       border-radius: 14px;
       background: #fff;
       border: 1px solid var(--border);
-    }
-    .what summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      list-style: none;
-      cursor: pointer;
-      font-family: var(--font-display);
-      font-size: 15px;
-      font-weight: 800;
-      letter-spacing: -.01em;
-      text-transform: uppercase;
-    }
-    .what summary::-webkit-details-marker { display: none; }
-    .what summary::after {
-      content: "";
-      width: 8px;
-      height: 8px;
-      border-right: 2px solid var(--text);
-      border-bottom: 2px solid var(--text);
-      transform: rotate(45deg);
-      margin-top: -4px;
-      flex: none;
-    }
-    .what[open] summary::after {
-      transform: rotate(-135deg);
-      margin-top: 4px;
-    }
-    .what summary:focus-visible {
-      outline: 2px solid var(--info);
-      outline-offset: 4px;
-      border-radius: 4px;
+      box-shadow: 0 12px 32px rgba(17, 17, 17, 0.12);
     }
     .what-lead {
-      margin: 12px 0 14px;
-      max-width: none;
-      font-size: 15px;
+      margin: 0 0 12px;
+      font-size: 14px;
       line-height: 1.5;
       color: var(--text);
     }
@@ -168,8 +167,80 @@
       color: var(--muted);
     }
     .trend .kpis { margin: 14px 0 12px; }
-    .trend:not([open]) .trend-body { display: none; }
-    .what:not([open]) > :not(summary) { display: none; }
+    details.trend:not([open]) .trend-body { display: none; }
+    .demo-guide:not([open]) .demo-guide-panel { display: none; }
+
+    .view { margin-top: 22px; }
+    .page-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-tab {
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 0;
+      padding: 12px 18px 10px;
+      margin-bottom: -1px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .page-tab:hover { color: var(--text); }
+    .page-tab.on {
+      background: transparent;
+      color: var(--text);
+      border-bottom-color: var(--accent);
+    }
+    .page-tab:focus-visible {
+      outline: 2px solid var(--info);
+      outline-offset: 3px;
+    }
+    [data-tab-panel] { padding-top: 16px; }
+    [data-tab-panel][hidden] { display: none !important; }
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .day-pick {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .day-pick select {
+      font: inherit;
+      font-weight: 600;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .day-group { margin-top: 16px; }
+    .day-group h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--panel-2);
+    }
+    .history-item b { display: block; margin: 2px 0; }
+    .history-item .muted { color: var(--muted); font-size: 12px; }
+    @media (max-width: 800px) {
+      .history-grid { grid-template-columns: minmax(0, 1fr); }
+    }
 
     .controls {
       display: flex;
@@ -194,8 +265,11 @@
       flex-wrap: wrap;
       align-items: center;
       gap: 8px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
     }
     #btn-bad { border-color: var(--border); color: var(--muted); }
 
@@ -256,7 +330,25 @@
       cursor: pointer;
       line-height: 1.35;
     }
-    .approval-choice input { margin-top: 3px; accent-color: #0A3D62; }
+    .approval-choice input { margin-top: 10px; accent-color: #0A3D62; }
+    .choice-icon {
+      flex: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: var(--panel-2);
+      color: #0A3D62;
+    }
+    .approval-mode.is-required .approval-choice:has(input[value="required"]:checked) .choice-icon {
+      background: #fff1e6;
+      color: #c75300;
+    }
+    .approval-mode:not(.is-required) .approval-choice:has(input[value="auto"]:checked) .choice-icon {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+    }
     .approval-choice b { display: block; font-size: 14px; }
     .approval-choice small { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; font-weight: 400; }
     .approval-mode.is-required { border-color: #c75300; background: #fff8f1; }
@@ -325,7 +417,36 @@
           <div class="tagline" id="brand-tagline"></div>
         </div>
       </div>
-      <a class="site-back" href="../../index.html">← Back to HomePage</a>
+      <div class="header-actions">
+        <details class="demo-guide">
+          <summary>
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M8 7.2v4.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+              <circle cx="8" cy="4.6" r="0.8" fill="currentColor"></circle>
+            </svg>
+            Demo guide
+          </summary>
+          <div class="demo-guide-panel">
+            <p class="what-lead">This page is a live view of a store during a busy holiday season. Sales, promotions, and stock levels update as they happen, across all product lines, all regions, and all channels (stores or online).</p>
+            <div class="what-grid">
+              <article>
+                <h3>Forecast and stock</h3>
+                <p>The chart compares units sold with the forecast. When a location is about to run out, the agent recommends a move or an order.</p>
+              </article>
+              <article>
+                <h3>Humans and AI</h3>
+                <p>Humans and an AI agent can track demand and manage inventory round the clock. The agent suggests moving stock from a location that has plenty to one that is running low, or ordering more. A person can approve each move, or let the agent act on its own.</p>
+              </article>
+              <article>
+                <h3>Try it</h3>
+                <p>Pick a product, then start a promo or the Black Friday demo. Watch the chart, the low-stock list, and the recommendations change.</p>
+              </article>
+            </div>
+          </div>
+        </details>
+        <a class="site-back" href="../../index.html">← Back to HomePage</a>
+      </div>
     </div>
     <div class="stack">
       <span class="chip">Apache Kafka</span>
@@ -336,53 +457,94 @@
     </div>
   </header>
 
-  <details class="what" id="what">
-    <summary id="what-heading">What this tool does</summary>
-    <p class="what-lead">This page is a live view of a store during a busy holiday season. Sales, promotions, and stock levels update as they happen, across all product lines, all regions, and all channels (stores or online).</p>
-    <div class="what-grid">
-      <article>
-        <h3>Forecast and stock</h3>
-        <p>The chart compares units sold with the forecast. When a location is about to run out, it shows up under Restock needed.</p>
-      </article>
-      <article>
-        <h3>Humans and AI</h3>
-        <p>Humans and an AI agent can track demand and manage inventory round the clock. The agent suggests moving stock from a location that has plenty to one that is running low, or ordering more. A person can approve each move, or let the agent act on its own.</p>
-      </article>
-      <article>
-        <h3>Try it</h3>
-        <p>Pick a product, then start a promo or the Black Friday demo. Watch the chart, the low-stock list, and the recommendations change.</p>
-      </article>
-    </div>
-  </details>
-
   <section class="controls">
     <div class="control-filters">
       <label>Product <select id="sku"></select></label>
       <label>Region <select id="region"></select></label>
       <label>Channel <select id="channel"></select></label>
     </div>
-    <div class="control-actions">
-      <button id="btn-demo" class="demo-btn" hidden>▶ Black Friday demo</button>
-      <button id="btn-agent" class="agent-btn" title="AI inventory agent: watches every location and moves stock between regions">AI agent: OFF</button>
-      <button id="btn-launch" class="primary">Trigger launch</button>
-      <button id="btn-promo">Start promo</button>
-      <button id="btn-restock">Restock</button>
-      <button id="btn-bad" class="ghost">Send bad record</button>
-    </div>
   </section>
 
+  <div class="view">
+  <div class="page-tabs" role="tablist" aria-label="Demo sections">
+    <button type="button" class="page-tab on" role="tab" aria-selected="true" data-tab="inventory">Manage Inventory &amp; demand</button>
+    <button type="button" class="page-tab" role="tab" aria-selected="false" data-tab="trend">Trend &amp; Forecast</button>
+    <button type="button" class="page-tab" role="tab" aria-selected="false" data-tab="recs">AI Recommendations</button>
+    <button type="button" class="page-tab" role="tab" aria-selected="false" data-tab="summary">Daily summary</button>
+  </div>
+
+  <div data-tab-panel="inventory">
   <div class="workspace">
   <div class="col-main">
+  <section class="card">
+    <div class="card-title"><span>Inventory health, every product and location</span><small>forecast vs inventory, temporal join in Flink</small></div>
+    <div class="risk-legend" id="risk-legend"></div>
+    <div class="risk-grid" id="risk-grid"></div>
+  </section>
+  </div>
+
+  <aside class="side-panel">
+    <div data-recs-slot="inventory">
+    <div class="card recs" id="recs">
+    <div class="recs-head">
+      <div class="card-title"><span>AI Recommendations <b id="recs-waiting" class="count"></b></span></div>
+    </div>
+    <fieldset class="approval-mode is-required" id="approval-mode">
+      <legend>Who acts on a recommendation</legend>
+      <label class="approval-choice">
+        <input type="radio" name="approval-mode" value="required" checked>
+        <span class="choice-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.7"></circle>
+            <path d="M4.5 18.5c.8-2.6 2.6-4 4.5-4s3.7 1.4 4.5 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+            <path d="M15 11.5l1.6 1.6L20 9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </span>
+        <span><b>A person must approve</b><small>Every move waits. Nothing is sent until you approve it.</small></span>
+      </label>
+      <label class="approval-choice">
+        <input type="radio" name="approval-mode" value="auto">
+        <span class="choice-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3.5v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+            <circle cx="12" cy="3.2" r="1" fill="currentColor"></circle>
+            <rect x="5" y="6.5" width="14" height="11" rx="4" stroke="currentColor" stroke-width="1.7"></rect>
+            <circle cx="9.5" cy="11.5" r="1.15" fill="currentColor"></circle>
+            <circle cx="14.5" cy="11.5" r="1.15" fill="currentColor"></circle>
+            <path d="M9.5 14.8h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+          </svg>
+        </span>
+        <span><b>The agent acts on its own</b><small>Waiting recommendations are approved immediately.</small></span>
+      </label>
+    </fieldset>
+    <div class="recs-filters">
+      <div class="chips" id="recs-status"></div>
+      <div class="chips" id="recs-kind"></div>
+    </div>
+    <div class="recs-list" id="recs-list"></div>
+    </div>
+    </div>
+  </aside>
+  </div>
+  </div>
+
+  <div data-tab-panel="trend" hidden>
+  <div class="control-actions">
+    <button id="btn-demo" class="demo-btn" hidden>▶ Black Friday demo</button>
+    <button id="btn-agent" class="agent-btn" title="AI inventory agent: watches every location and moves stock between regions">AI agent: OFF</button>
+    <button id="btn-launch" class="primary">Trigger launch</button>
+    <button id="btn-promo">Start promo</button>
+    <button id="btn-restock">Restock</button>
+    <button id="btn-bad" class="ghost">Send bad record</button>
+  </div>
   <section class="guide" id="guide">
     <div class="step"><b>1</b><div><strong>Watch a normal day</strong>White line = units sold. Orange dashed line = what the model predicted.</div></div>
     <div class="step"><b>2</b><div><strong>Create a demand spike</strong>Click <em>Trigger product drop</em> or <em>Start flash promo</em>. Sales jump within 10 seconds.</div></div>
-    <div class="step"><b>3</b><div><strong>See the system react</strong>The forecast catches up in seconds and low-stock locations appear under <em>Restock needed</em>.</div></div>
+    <div class="step"><b>3</b><div><strong>See the system react</strong>The forecast catches up in seconds and the agent recommends a move or an order.</div></div>
     <div class="step"><b>4</b><div><strong>Act on it</strong>Click <em>Restock</em> on a location. Hover the chart any time to see why demand moved.</div></div>
     <button class="guide-x" id="guide-x" title="Hide the guide">×</button>
   </section>
-
-  <details class="trend" id="trend">
-    <summary><span>Trend and forecast<small>Units sold, the forecast, the sales event, and why demand moved</small></span></summary>
+  <section class="trend" id="trend">
     <div class="trend-body">
     <section class="kpis">
       <div class="kpi"><div class="label">Sold, last hour</div><div class="value" id="kpi-actual">-</div><div class="sub" id="kpi-actual-sub"></div></div>
@@ -404,60 +566,180 @@
       <div class="promos" id="promos"></div>
     </div>
     </div>
-  </details>
-
-  <main>
-    <div class="card">
-      <div class="card-title"><span>Restock needed <b id="restock-count" class="count"></b></span><small>forecast demand vs stock on hand, per location</small></div>
-      <div id="restock-list" class="restock-grid"><div class="empty">Every location has enough stock for the forecast.</div></div>
-    </div>
-  </main>
-
-  <section class="card">
-    <div class="card-title"><span>Inventory health, every product and location</span><small>forecast vs inventory, temporal join in Flink</small></div>
-    <div class="risk-legend" id="risk-legend"></div>
-    <div class="risk-grid" id="risk-grid"></div>
   </section>
   </div>
 
-  <aside class="side-panel">
-    <div class="card agent-card" id="agent-card" hidden>
-      <div class="card-title"><span>AI inventory agent <b id="agent-state" class="agent-state"></b></span><small id="agent-policy"></small></div>
-      <div class="agent-stats" id="agent-stats"></div>
-      <div class="agent-feed" id="agent-feed"></div>
+  <div data-tab-panel="recs" hidden>
+    <div data-recs-slot="recs"></div>
+    <div class="history-grid">
+      <section class="card">
+        <div class="card-title"><span>History of recommendations</span><small>Past suggestions, including ones the agent withdrew</small></div>
+        <div class="history-list" id="rec-history"><div class="empty">No past recommendations yet.</div></div>
+      </section>
+      <section class="card">
+        <div class="card-title"><span>Human actions</span><small>Approvals, changes, and rejections by a person</small></div>
+        <div class="history-list" id="human-actions"><div class="empty">No person has acted on a recommendation yet.</div></div>
+      </section>
     </div>
-    <div class="card recs" id="recs">
-    <div class="recs-head">
-      <div class="card-title"><span>AI Recommendations <b id="recs-waiting" class="count"></b></span></div>
-    </div>
-    <fieldset class="approval-mode is-required" id="approval-mode">
-      <legend>Who acts on a recommendation</legend>
-      <label class="approval-choice">
-        <input type="radio" name="approval-mode" value="required" checked>
-        <span><b>A person must approve</b><small>Every move waits. Nothing is sent until you approve it.</small></span>
-      </label>
-      <label class="approval-choice">
-        <input type="radio" name="approval-mode" value="auto">
-        <span><b>The agent acts on its own</b><small>Waiting recommendations are approved immediately.</small></span>
-      </label>
-    </fieldset>
-    <div class="recs-filters">
-      <div class="chips" id="recs-status"></div>
-      <div class="chips" id="recs-kind"></div>
-    </div>
-    <div class="recs-list" id="recs-list"></div>
-    </div>
-  </aside>
   </div>
 
-  <div id="toast" class="toast"></div>
-  <script src="hosted-mock.js?v=4"></script>
-  <script src="dashboard/static/app.js?v=19"></script>
+  <div data-tab-panel="summary" hidden>
+    <section class="card">
+      <div class="card-title">
+        <span>Daily summary<small id="day-summary-note">Product cost is the retail price times the units. Shipment is $2 a unit inside North America, $6 a unit to or from Europe, and $3 a unit from the warehouse. A rejection or a withdrawal ships nothing.</small></span>
+        <label class="day-pick">Date
+          <select id="day-picker"><option value="all">All days</option></select>
+        </label>
+      </div>
+      <section class="kpis" id="day-kpis"></section>
+      <div id="day-decisions"><div class="empty">No decisions yet. They appear here after a person or the agent acts.</div></div>
+    </section>
+  </div>
+  </div>
+  <script src="hosted-mock.js?v=6"></script>
+  <script src="dashboard/static/app.js?v=23"></script>
   <script>
-    document.getElementById("trend").addEventListener("toggle", (event) => {
-      if (!event.target.open || !window.Chart) return;
-      const chart = Chart.getChart("chart");
-      if (chart) requestAnimationFrame(() => chart.resize());
+    const tabButtons = [...document.querySelectorAll(".page-tab")];
+    const tabPanels = [...document.querySelectorAll("[data-tab-panel]")];
+    function showTab(name) {
+      tabButtons.forEach((button) => {
+        const on = button.dataset.tab === name;
+        button.classList.toggle("on", on);
+        button.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      tabPanels.forEach((panel) => { panel.hidden = panel.dataset.tabPanel !== name; });
+      const recs = document.getElementById("recs");
+      const slot = document.querySelector(`[data-recs-slot="${name}"]`);
+      if (recs && slot && recs.parentElement !== slot) slot.appendChild(recs);
+      if (name === "trend" && window.Chart) {
+        const chart = Chart.getChart("chart");
+        if (chart) requestAnimationFrame(() => chart.resize());
+      }
+    }
+    tabButtons.forEach((button) => button.addEventListener("click", () => showTab(button.dataset.tab)));
+
+    function recLine(r) {
+      const units = r.executed_units ?? r.units;
+      let what = r.product || r.sku || "Recommendation";
+      if (r.action === "MARKDOWN") what = `Markdown on ${what}`;
+      else if (r.action === "ORDER") what = `Order ${units} × ${what}`;
+      else if (r.from_region || r.to_region) what = `Move ${units} × ${what}`;
+      const when = r.decided_t || r.t;
+      const clock = when ? new Date(when).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
+      return { what, clock, status: r.status || "", who: r.decided_by || "", result: r.result || "" };
+    }
+    window.renderRecHistory = function (agent) {
+      const history = document.getElementById("rec-history");
+      const humans = document.getElementById("human-actions");
+      if (!history || !humans || !agent) return;
+      const recs = agent.recommendations || [];
+      const past = recs.filter((r) => r.status !== "PENDING")
+        .sort((a, b) => (b.decided_t || b.t) - (a.decided_t || a.t));
+      const acted = recs.filter((r) => r.decided_by && !/agent|auto/i.test(r.decided_by))
+        .sort((a, b) => (b.decided_t || b.t) - (a.decided_t || a.t));
+      history.innerHTML = past.length ? past.map((r) => {
+        const row = recLine(r);
+        return `<article class="history-item"><span class="muted">${row.status}${row.clock ? ` · ${row.clock}` : ""}</span><b>${row.what}</b>${row.result ? `<div>${row.result}</div>` : ""}</article>`;
+      }).join("") : `<div class="empty">No past recommendations yet.</div>`;
+      humans.innerHTML = acted.length ? acted.map((r) => {
+        const row = recLine(r);
+        const verb = r.status === "REJECTED" ? "Rejected" : "Approved";
+        return `<article class="history-item"><span class="muted">${verb} by ${row.who}${row.clock ? ` · ${row.clock}` : ""}</span><b>${row.what}</b>${row.result ? `<div>${row.result}</div>` : ""}</article>`;
+      }).join("") : `<div class="empty">No person has acted on a recommendation yet.</div>`;
+      renderDaySummary(agent);
+    };
+    let summaryDay = "all";
+    let summaryAgent = null;
+    function dayKey(ts) {
+      const d = new Date(ts);
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${d.getFullYear()}-${month}-${day}`;
+    }
+    function dayLabel(key) {
+      const [year, month, day] = key.split("-").map(Number);
+      return new Date(year, month - 1, day).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    }
+    function renderDaySummary(agent) {
+      summaryAgent = agent;
+      const kpis = document.getElementById("day-kpis");
+      const list = document.getElementById("day-decisions");
+      const picker = document.getElementById("day-picker");
+      if (!kpis || !list || !picker || !agent) return;
+      const decided = (agent.recommendations || [])
+        .filter((r) => r.status !== "PENDING" && r.status !== "WITHDRAWN" && (r.decided_t || r.t))
+        .sort((a, b) => (a.decided_t || a.t) - (b.decided_t || b.t));
+      const days = [...new Set(decided.map((r) => dayKey(r.decided_t || r.t)))];
+      if (!days.includes(summaryDay)) summaryDay = "all";
+      picker.innerHTML = `<option value="all">All days</option>` + days.map((key) => `<option value="${key}">${dayLabel(key)}</option>`).join("");
+      picker.value = summaryDay;
+      const shown = summaryDay === "all" ? decided : decided.filter((r) => dayKey(r.decided_t || r.t) === summaryDay);
+      const count = (status) => shown.filter((r) => r.status === status).length;
+      const money = (n) => `$${Math.round(n).toLocaleString()}`;
+      const unitsOf = (r) => Number(r.executed_units ?? r.units) || 0;
+      const moved = (r) => r.status !== "REJECTED" && r.status !== "WITHDRAWN";
+      const shipRate = (r) => {
+        if (!moved(r) || r.action === "MARKDOWN") return 0;
+        if (r.action === "ORDER" || !r.from_region) return 3;
+        const north = (id) => id === "NA-EAST" || id === "NA-WEST";
+        return north(r.from_region) && north(r.to_region) ? 2 : 6;
+      };
+      const productCost = (r) => unitsOf(r) * (Number(r.price) || 0);
+      const shipCost = (r) => unitsOf(r) * shipRate(r);
+      const units = shown.reduce((sum, r) => sum + (moved(r) ? unitsOf(r) : 0), 0);
+      const productTotal = shown.reduce((sum, r) => sum + (moved(r) ? productCost(r) : 0), 0);
+      const shipTotal = shown.reduce((sum, r) => sum + shipCost(r), 0);
+      const tiles = [
+        [shown.length, "decisions made"],
+        [count("APPROVED"), "approved by a person"],
+        [count("AUTO"), "made by the agent"],
+        [count("REJECTED"), "rejected"],
+        [units.toLocaleString(), "units moved or ordered"],
+        [money(productTotal), "product cost"],
+        [money(shipTotal), "shipment cost"]
+      ];
+      kpis.innerHTML = tiles.map(([value, label]) => `<div class="kpi"><div class="value">${value}</div><div class="label">${label}</div></div>`).join("");
+      const whoFor = (r) => {
+        if (r.status === "WITHDRAWN") return "Withdrawn by the agent";
+        if (r.status === "AUTO") return "Done by the agent";
+        if (r.status === "REJECTED") return `Rejected by ${r.decided_by || "a person"}`;
+        return `Approved by ${r.decided_by || "a person"}`;
+      };
+      const placeName = (id) => ({ "NA-EAST": "North America East", "NA-WEST": "North America West", EMEA: "Europe" })[id] || id || "";
+      const channelLabel = (id) => ({ ONLINE: "Web & App", STORE: "Stores" })[id] || "";
+      const decisionText = (r) => {
+        const units = r.executed_units ?? r.units;
+        const product = r.product || r.sku || "item";
+        const channel = channelLabel(r.channel);
+        const where = channel ? `, ${channel}` : "";
+        if (r.action === "ORDER") return `Order ${units} × ${product} from the warehouse for ${placeName(r.to_region)}${where}`;
+        if (r.action === "MARKDOWN") return `Mark down ${product}${r.region ? ` in ${placeName(r.region)}` : ""}${where}`;
+        if (r.from_region || r.to_region) return `Move ${units} × ${product} from ${placeName(r.from_region)} to ${placeName(r.to_region)}${where}`;
+        return r.proposal_text || product;
+      };
+      const item = (r) => {
+        const row = recLine(r);
+        const decision = decisionText(r);
+        const outcome = r.result && r.result !== decision ? r.result : "";
+        const cost = moved(r)
+          ? `Product ${money(productCost(r))} · Shipment ${money(shipCost(r))}`
+          : `Product ${money(productCost(r))} not shipped · Shipment $0`;
+        return `<article class="history-item"><span class="muted">${whoFor(r)}${row.clock ? ` · ${row.clock}` : ""}</span><b>${decision}</b><div>${cost}</div>${outcome ? `<div>${outcome}</div>` : ""}</article>`;
+      };
+      if (!shown.length) {
+        list.innerHTML = `<div class="empty">No decisions on this day.</div>`;
+        return;
+      }
+      const groups = summaryDay === "all" ? days : [summaryDay];
+      list.innerHTML = groups.map((key) => {
+        const rows = shown.filter((r) => dayKey(r.decided_t || r.t) === key);
+        if (!rows.length) return "";
+        return `<section class="day-group"><h3>${dayLabel(key)}</h3><div class="history-list">${rows.map(item).join("")}</div></section>`;
+      }).join("");
+    }
+    document.getElementById("day-picker").addEventListener("change", (event) => {
+      summaryDay = event.target.value;
+      if (summaryAgent) renderDaySummary(summaryAgent);
     });
   </script>
 </body>

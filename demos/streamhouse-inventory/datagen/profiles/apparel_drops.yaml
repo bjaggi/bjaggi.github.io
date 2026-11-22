@@ -4,8 +4,8 @@ id: apparel_drops
 
 brand:
   name: Stride Athletics
-  vertical: Footwear & Apparel
-  tagline: Real-time demand sensing for product drops and promotions
+  vertical: Footwear and apparel
+  tagline: Humans and AI agents track demand and manage inventory through the peak holiday season
   primary_color: "#111111"
   accent_color: "#FA5400"
 

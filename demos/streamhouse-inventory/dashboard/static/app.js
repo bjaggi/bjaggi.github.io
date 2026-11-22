@@ -99,7 +99,7 @@ async function init() {
   $("brand-name").textContent = "Powering AI Agents with StreamHouse to manage Inventory & demand in real time";
   if (localStorage.getItem("hideGuide") === "1") $("guide").hidden = true;
   $("guide-x").onclick = () => { $("guide").hidden = true; localStorage.setItem("hideGuide", "1"); };
-  $("brand-tagline").textContent = `${b.vertical || ""} · ${b.tagline || ""} · 1 period = ${profile.period.seconds}s = 1 simulated ${profile.period.label}`;
+  $("brand-tagline").textContent = [b.vertical, b.tagline].filter(Boolean).join(" · ");
   $("logo").textContent = b.name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   $("btn-launch").textContent = `Trigger ${(profile.launch.label || "launch").toLowerCase()}`;
   $("btn-promo").textContent = `Start ${(profile.promo.label || "promo").toLowerCase()}`;
@@ -447,6 +447,7 @@ function riskReason(r, promotions) {
 
 let lastRestockKey = "";
 function renderRestock(s) {
+  if (!$("restock-list")) return;
   const rows = s.risk.filter((r) => NEEDS_RESTOCK.includes(r.risk_level))
     .sort((a, b) => (a.risk_level === b.risk_level ? (a.periods_of_cover ?? 0) - (b.periods_of_cover ?? 0) : a.risk_level === "OUT_OF_STOCK" ? -1 : 1));
   $("restock-count").textContent = rows.length || "";
@@ -502,10 +503,14 @@ let lastAgentKey = "";
 function renderAgent(s) {
   const a = s.agent;
   const card = $("agent-card");
-  $("btn-agent").textContent = `AI agent: ${a.enabled ? "ON" : "OFF"}`;
-  $("btn-agent").classList.toggle("on", a.enabled);
-  card.hidden = !a.enabled && !a.decisions.length && !(a.pending || []).length;
+  const agentBtn = $("btn-agent");
+  if (agentBtn) {
+    agentBtn.textContent = `AI agent: ${a.enabled ? "ON" : "OFF"}`;
+    agentBtn.classList.toggle("on", a.enabled);
+  }
   renderRecs(a);
+  if (!card) return;
+  card.hidden = !a.enabled && !a.decisions.length && !(a.pending || []).length;
   if (card.hidden) return;
   const P = profile.period.label, pol = a.policy;
   $("agent-state").textContent = a.enabled ? "ON · 24/7" : "OFF";
@@ -575,6 +580,7 @@ function syncApprovalMode(required) {
 
 function renderRecs(a) {
   lastAgent = a;
+  if (window.renderRecHistory) window.renderRecHistory(a);
   syncApprovalMode(!!a.require_approval);
   const recs = a.recommendations || [];
   const waiting = recs.filter((r) => r.status === "PENDING");
@@ -937,7 +943,7 @@ function wireButtons() {
   };
   $("promo-status").addEventListener("click", endPromotion);
   $("promos").addEventListener("click", endPromotion);
-  $("restock-list").addEventListener("click", (e) => {
+  $("restock-list")?.addEventListener("click", (e) => {
     const b = e.target.closest("button");
     if (!b) return;
     run(b, async () => {

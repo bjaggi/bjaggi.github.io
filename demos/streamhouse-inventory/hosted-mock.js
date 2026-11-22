@@ -17,8 +17,8 @@
   const profile = {
     brand: {
       name: "Stride Athletics",
-      vertical: "Footwear & Apparel",
-      tagline: "Real-time demand sensing for product drops and promotions",
+      vertical: "Footwear and apparel",
+      tagline: "Humans and AI agents track demand and manage inventory through the peak holiday season",
       primary_color: "#111111",
       accent_color: "#FA5400"
     },
@@ -86,28 +86,7 @@
     found: "North America West Stores has 106 units, 35 hours of cover. It keeps 24 hours for its own shoppers, so 34 are spare.",
     proposal_text: "Move 37 units from North America West Stores to North America East Stores, arriving in 1 hour. That lifts North America East to about 10 hours of cover."
   }];
-  const history = [{
-    id: "rec-w-1",
-    t: now - 120000,
-    decided_t: now - 90000,
-    kind: "OVERSTOCK",
-    action: "TRANSFER",
-    status: "WITHDRAWN",
-    sku: "OUT-TRAIL-JKT",
-    product: "Trailhead Shell Jacket",
-    channel: "STORE",
-    from_region: "EMEA",
-    to_region: "NA-EAST",
-    units: 78,
-    max_units: 80,
-    rate: 1.4,
-    dest_on_hand: 40,
-    price: 120,
-    detected: "Europe Stores holds 142 units but typically sells 1.4/hour: 101 hours of stock.",
-    found: "North America East Stores sells faster, so the extra units would sell there.",
-    proposal_text: "Move 78 units from Europe Stores to North America East Stores.",
-    result: "Stock or demand changed, so the agent withdrew it. Nothing was moved."
-  }];
+  const history = [];
 
   function stockKey(sku, region, channel) {
     return `${sku}|${region}|${channel}`;
