@@ -25,6 +25,12 @@
         th, td { border-bottom: 1px solid #e5e7eb; padding: 0.55rem 0.4rem; text-align: left; vertical-align: top; }
         th { font-size: 0.75rem; letter-spacing: 0.03em; text-transform: uppercase; color: #6b7280; }
         h2[id], h3[id] { scroll-margin-top: 1rem; }
+        code.topic {
+            background: #eef2f6;
+            border-radius: 0.25rem;
+            padding: 0.05rem 0.35rem;
+            font-size: 0.85em;
+        }
         pre.sql {
             background: #0A3D62;
             color: #F5F9FF;
@@ -60,6 +66,7 @@
                     <a class="text-primary hover:text-dark" href="#inventory-health">What inventory.health carries</a>
                     <ol class="list-decimal pl-5 mt-1">
                         <li><a class="text-primary hover:text-dark" href="#forecast-next">How forecast_next is calculated</a></li>
+                        <li><a class="text-primary hover:text-dark" href="#tune-forecast">How to tune the forecast</a></li>
                     </ol>
                 </li>
                 <li>
@@ -100,13 +107,13 @@
         <p class="text-dark leading-relaxed mb-4">StreamHouse keeps one live picture of demand and stock. The dashboard, the AI agent, and analytics all use that picture. A sale does not sit in a file until the next morning.</p>
         <p class="text-dark leading-relaxed mb-3">The path from a sale to a stock move has five steps:</p>
         <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
-            <li><span class="font-medium">Connectors</span> bring data from point-of-sale, e-commerce, warehouse, and planning systems into Kafka the moment it happens.</li>
-            <li><span class="font-medium">Flink</span> turns that stream into a demand forecast and a stock-health reading. <a class="text-primary hover:text-dark font-semibold" href="#flink-processing">Flink processing</a> walks through those two jobs. Lightning Tables hold the result.</li>
-            <li>The <span class="font-medium">Real-Time Context Engine</span> sits on top of those tables. It gives the dashboard and the AI agent fast answers about the current state of the business.</li>
-            <li><span class="font-medium">Tableflow</span> copies the history into the lakehouse for analytics.</li>
+            <li><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/connectors/index.html" target="_blank" rel="noopener noreferrer">Connectors</a> bring data from point-of-sale, e-commerce, warehouse, and planning systems into Kafka the moment it happens.</li>
+            <li><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/flink/overview.html" target="_blank" rel="noopener noreferrer">Flink</a> turns that stream into a demand forecast and a stock-health reading. <a class="text-primary hover:text-dark font-semibold" href="#flink-processing">Flink processing</a> walks through those two jobs. <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/lightning-tables/overview.html" target="_blank" rel="noopener noreferrer">Lightning Tables</a> hold the result.</li>
+            <li>The <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/real-time-context-engine/overview.html" target="_blank" rel="noopener noreferrer">Real-Time Context Engine</a> sits on top of those tables. It gives the dashboard and the AI agent fast answers about the current state of the business.</li>
+            <li><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/topics/tableflow/overview.html" target="_blank" rel="noopener noreferrer">Tableflow</a> copies the history into the lakehouse for analytics.</li>
             <li>When a planner approves a move, the approval goes back into Kafka. <span class="font-medium">Sink connectors</span> then pass it to the order and warehouse systems.</li>
         </ol>
-        <p class="text-dark leading-relaxed mb-6">The agent that proposes the moves can run inside Confluent Cloud as a <span class="font-medium">Streaming Agent</span>, or as an application you host yourself. Either way, every decision is saved as its own event, so you can always see what was decided and why.</p>
+        <p class="text-dark leading-relaxed mb-6">The agent that proposes the moves can run inside Confluent Cloud as a <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/streaming-agents/overview.html" target="_blank" rel="noopener noreferrer">Streaming Agent</a>, or as an application you host yourself. Either way, every decision is saved as its own event, so you can always see what was decided and why.</p>
 
         <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
             <svg viewBox="0 0 980 700" role="img" aria-labelledby="arch-title arch-desc" class="w-full h-auto" style="min-width: 720px">
@@ -302,17 +309,17 @@
                     <tr><th>Pillar</th><th>Confluent product</th><th>What it does</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td>Stream</td><td>Kafka on Confluent Cloud</td><td>Keeps a lasting record of every sale, stock movement, promotion, and supplier order.</td></tr>
-                    <tr><td>Connect</td><td>Managed connectors</td><td>Brings in data from point-of-sale, e-commerce, order, warehouse, and ERP systems. Also sends approved actions back out.</td></tr>
-                    <tr><td>Process</td><td>Confluent Cloud for Apache Flink</td><td>Adds up sales, builds the hourly forecast, compares forecast to stock, and spots stock-outs and overstock.</td></tr>
-                    <tr><td>Govern</td><td>Stream Governance and Schema Registry</td><td>Sets data rules (contracts) that block bad records before they reach the forecast.</td></tr>
-                    <tr><td>Query</td><td>Lightning Tables, with the Real-Time Context Engine on top. Tableflow for history.</td><td>Lightning Tables store the live state. The Context Engine serves it to the dashboard and the agent. Tableflow sends history to the lakehouse.</td></tr>
+                    <tr><td>Stream</td><td><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/clusters/index.html" target="_blank" rel="noopener noreferrer">Kafka on Confluent Cloud</a></td><td>Keeps a lasting record of every sale, stock movement, promotion, and supplier order.</td></tr>
+                    <tr><td>Connect</td><td><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/connectors/index.html" target="_blank" rel="noopener noreferrer">Managed connectors</a></td><td>Brings in data from point-of-sale, e-commerce, order, warehouse, and ERP systems. Also sends approved actions back out.</td></tr>
+                    <tr><td>Process</td><td><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/flink/overview.html" target="_blank" rel="noopener noreferrer">Confluent Cloud for Apache Flink</a></td><td>Adds up sales, builds the hourly forecast, compares forecast to stock, and spots stock-outs and overstock.</td></tr>
+                    <tr><td>Govern</td><td><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/sr/fundamentals/data-contracts.html" target="_blank" rel="noopener noreferrer">Stream Governance and Schema Registry</a></td><td>Sets data rules (contracts) that block bad records before they reach the forecast.</td></tr>
+                    <tr><td>Query</td><td><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/lightning-tables/overview.html" target="_blank" rel="noopener noreferrer">Lightning Tables</a>, with the <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/real-time-context-engine/overview.html" target="_blank" rel="noopener noreferrer">Real-Time Context Engine</a> on top. <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/topics/tableflow/overview.html" target="_blank" rel="noopener noreferrer">Tableflow</a> for history.</td><td>Lightning Tables store the live state. The Context Engine serves it to the dashboard and the agent. Tableflow sends history to the lakehouse.</td></tr>
                 </tbody>
             </table>
         </div>
 
         <h2 id="topics" class="text-xl font-semibold text-dark mb-3">Topics</h2>
-        <p class="text-dark leading-relaxed mb-4">A topic is a named stream of events in Kafka. This design uses five source topics and seven derived topics, written by Flink or the agent. Schema Registry rejects a record that breaks its contract.</p>
+        <p class="text-dark leading-relaxed mb-4">A topic is a named stream of events in Kafka. This design uses five source topics and seven derived topics, written by Flink or the agent. <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/sr/fundamentals/data-contracts.html" target="_blank" rel="noopener noreferrer">Schema Registry</a> rejects a record that breaks its contract.</p>
         <p class="text-dark leading-relaxed mb-4">Events for the same product and location share one key. That keeps them in the order they happened.</p>
         <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-8 overflow-x-auto">
             <table>
@@ -336,11 +343,78 @@
         </div>
 
         <h2 id="flink-processing" class="text-xl font-semibold text-dark mb-3">Flink processing</h2>
-        <p class="text-dark leading-relaxed mb-4">Flink does this calculation before any agent runs. There are two lanes, and they meet once. The agent later reads the result. It does not rebuild it.</p>
-        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">Sales.</span> Each sale is one event. Flink groups those events into <span class="font-medium">demand_windowed</span>: one simulated hour of sales for one product, in one region, on one channel. When that hour closes, <span class="font-medium">ML_FORECAST</span> predicts the next six hours and writes one row to the table <span class="font-medium">demand_forecast</span>. Until 16 hours of history exist, the forecast values are empty, and the health row is marked <span class="font-medium">WARMING_UP</span>.</p>
-        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">demand_forecast</span> is the table. <span class="font-medium">forecast_next</span> is one column on that row. <span class="font-medium">ML_FORECAST</span> returns six hours. <span class="font-medium">forecast_next</span> is only the first hour: predicted units for the next hour, and never below zero. The other five hours are added into another column, <span class="font-medium">forecast_horizon</span>. Later, <span class="font-medium">stockout_risk</span> divides on-hand stock by <span class="font-medium">forecast_next</span> to get hours of cover. It does not forecast again.</p>
-        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">Stock.</span> Warehouse movements and supplier orders update <span class="font-medium">inventory_latest</span>. That table is how many units are in the location now, and how many are already on the way, for the same product and location.</p>
-        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">The join.</span> When the forecast hour closes, <span class="font-medium">stockout_risk</span> joins <span class="font-medium">demand_forecast</span> to <span class="font-medium">inventory_latest</span> as of that same hour. The join writes cover and risk. The Flink table is <span class="font-medium">stockout_risk</span>. The Kafka topic is <span class="font-medium">inventory.health</span>.</p>
+        <p class="text-dark leading-relaxed mb-4">Flink turns raw sales and stock events into one clear answer per location: is this product about to run out, or are we holding too much?</p>
+        <p class="text-dark leading-relaxed mb-4">Three things happen, in this order: sales become a forecast, stock becomes a count, and a join combines the two.</p>
+        <h3 class="text-lg font-semibold text-dark mb-2">1. Sales become a forecast</h3>
+        <p class="text-dark leading-relaxed mb-4">Every sale is one event. Flink groups those events into <span class="font-medium">demand_windowed</span> using fixed <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/flink/reference/queries/window-tvf.html" target="_blank" rel="noopener noreferrer">one-hour windows</a>. Each row is one simulated hour of sales for one product, in one region, on one channel. When an hour closes, <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/builtin-functions/forecast.html" target="_blank" rel="noopener noreferrer">ML_FORECAST</a> predicts the next six hours and writes one row to <span class="font-medium">demand_forecast</span>. The model needs 16 hours of history first. Until then, the forecast values are empty, and the health row is marked <span class="font-medium">WARMING_UP</span>.</p>
+        <p class="text-dark leading-relaxed mb-3"><span class="font-medium">Which number is forecast_next?</span> <span class="font-medium">demand_forecast</span> is the table. <span class="font-medium">forecast_next</span> is one column in it.</p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-4">
+            <li><span class="font-medium">ML_FORECAST</span> returns six hours of predictions.</li>
+            <li><span class="font-medium">forecast_next</span> holds only the first hour: the predicted units for the next hour, never below zero.</li>
+            <li>The other five hours are added together in a second column, <span class="font-medium">forecast_horizon</span>.</li>
+        </ul>
+        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">stockout_risk</span> later divides on-hand stock by <span class="font-medium">forecast_next</span> to get hours of cover. It does not run the forecast again.</p>
+        <h3 class="text-lg font-semibold text-dark mb-2">2. Stock becomes a count</h3>
+        <p class="text-dark leading-relaxed mb-3">Warehouse movements and supplier orders update the table <span class="font-medium">inventory_latest</span>. For each product and location, that table keeps two fields:</p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-4">
+            <li><span class="font-medium">on_hand</span>: units in the location now</li>
+            <li><span class="font-medium">on_order</span>: units already on the way</li>
+        </ul>
+        <h3 class="text-lg font-semibold text-dark mb-2">3. The join</h3>
+        <p class="text-dark leading-relaxed mb-4">When the forecast hour closes, <span class="font-medium">stockout_risk</span> joins <span class="font-medium">demand_forecast</span> to <span class="font-medium">inventory_latest</span> as of that same hour. This is called a <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/flink/reference/queries/joins.html#temporal-joins" target="_blank" rel="noopener noreferrer">temporal join</a>, and it works by looking up each stock count as it was at that moment. The join writes two results: hours of cover and risk level.</p>
+        <p class="text-dark leading-relaxed mb-2">Two names for one thing:</p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-6">
+            <li>The Flink table is <span class="font-medium">stockout_risk</span>.</li>
+            <li>The Kafka topic is <span class="font-medium">inventory.health</span>.</li>
+        </ul>
+        <p class="text-dark leading-relaxed mb-4">Flink works in four stages. Each stage reads topics and writes a new one, so you can inspect the result of every step.</p>
+        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-6 overflow-x-auto">
+            <table>
+                <thead>
+                    <tr><th>Stage</th><th>Flink reads</th><th>Flink writes</th><th>What it answers</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1. Roll up sales</td>
+                        <td><code class="topic">sales.pos-events</code>, <code class="topic">sales.ecom-events</code></td>
+                        <td><code class="topic">demand.sales-rollup</code></td>
+                        <td>How many units sold this hour, per product, region, and channel?</td>
+                    </tr>
+                    <tr>
+                        <td>2. Forecast demand</td>
+                        <td><code class="topic">demand.sales-rollup</code>, <code class="topic">merch.promo-events</code></td>
+                        <td><code class="topic">demand.forecast</code></td>
+                        <td>How many units will sell in the next 6 hours?</td>
+                    </tr>
+                    <tr>
+                        <td>3. Track stock</td>
+                        <td><code class="topic">inventory.movements</code>, <code class="topic">supplier.orders</code></td>
+                        <td><code class="topic">inventory.position</code></td>
+                        <td>How many units are on hand, and how many are already on order?</td>
+                    </tr>
+                    <tr>
+                        <td>4. Measure risk</td>
+                        <td><code class="topic">demand.forecast</code>, <code class="topic">inventory.position</code></td>
+                        <td><code class="topic">inventory.health</code></td>
+                        <td>How many hours of stock are left, and is that safe?</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">Why this order matters.</span> Stages 1 and 3 run side by side. Stage 4 joins their results. The join always compares the forecast and the stock as of the same hour, so the two numbers never come from different moments.</p>
+        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">What Flink does not do.</span> Flink measures the risk. It does not decide what to do about it. The AI agent makes that decision, and only when stage 4 reports a risky row (<code class="topic">OUT_OF_STOCK</code>, <code class="topic">HIGH</code>, <code class="topic">MEDIUM</code>, or <code class="topic">OVERSTOCK</code>). Healthy rows never reach the model.</p>
+        <p class="text-dark leading-relaxed mb-3">Three smaller jobs also run in Flink:</p>
+        <ul class="list-disc pl-5 space-y-2 text-dark leading-relaxed mb-4">
+            <li><span class="font-medium">Withdraw stale recommendations.</span> If a later health reading shows the location is safe again, a rule cancels the open recommendation.</li>
+            <li><span class="font-medium">Turn approvals into actions.</span> When a planner approves a move, a job writes it to <code class="topic">ai.actions</code>. A rejection writes nothing.</li>
+            <li><span class="font-medium">Reject bad records.</span> Records that break the <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/sr/fundamentals/data-contracts.html" target="_blank" rel="noopener noreferrer">data contract</a> go to <code class="topic">dlq.contract-rejects</code> instead of reaching the forecast.</li>
+        </ul>
+        <p class="text-dark leading-relaxed mb-2">Where to find the code:</p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-6">
+            <li><a class="text-primary hover:text-dark font-semibold" href="flink/03_demand_forecast.sql">flink/03_demand_forecast.sql</a> covers stage 2.</li>
+            <li><a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a> covers stage 4.</li>
+            <li><a class="text-primary hover:text-dark font-semibold" href="flink/06_inventory_agent.sql">flink/06_inventory_agent.sql</a> is the agent.</li>
+        </ul>
         <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4 overflow-x-auto">
             <svg viewBox="0 0 980 520" role="img" aria-labelledby="flink-flow-title flink-flow-desc" class="w-full h-auto" style="min-width: 760px">
                 <title id="flink-flow-title">Flink builds demand_forecast, then joins it to stock to write stockout_risk</title>
@@ -489,7 +563,7 @@ JOIN `inventory_latest` FOR SYSTEM_TIME AS OF f.window_time AS i
         <p class="text-dark leading-relaxed mb-3">Here is how the forecast is made:</p>
         <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
             <li>Each row of <span class="font-medium">demand_windowed</span> is one simulated hour of sales for one product, region, and channel.</li>
-            <li><span class="font-medium">ML_FORECAST</span> learns the pattern in that history using a statistical model called <span class="font-medium">ARIMA</span>. It then predicts the next 6 hours.</li>
+            <li><span class="font-medium">ML_FORECAST</span> learns the pattern in that history using a statistical model called <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/builtin-functions/forecast.html" target="_blank" rel="noopener noreferrer">ARIMA</a>. It then predicts the next 6 hours.</li>
             <li><span class="font-medium">forecast_next</span> is the first of those 6 hours. It can never go below zero.</li>
             <li>The model needs 16 hours of history before it will forecast. Until then, <span class="font-medium">forecast_next</span> is empty (null), and the <span class="font-medium">inventory.health</span> job marks the row <span class="font-medium">WARMING_UP</span>.</li>
         </ol>
@@ -526,6 +600,55 @@ ML_FORECAST(
         </div>
         <p class="text-dark leading-relaxed mb-8">The full statement is in <a class="text-primary hover:text-dark font-semibold" href="flink/03_demand_forecast.sql">flink/03_demand_forecast.sql</a>. The file <a class="text-primary hover:text-dark font-semibold" href="flink/04b_stockout_risk.sql">flink/04b_stockout_risk.sql</a> reads the column when it writes <span class="font-medium">inventory.health</span>.</p>
 
+        <h3 id="tune-forecast" class="text-lg font-semibold text-dark mb-2">How to tune the forecast</h3>
+        <p class="text-dark leading-relaxed mb-4">The settings above are a starting point for a holiday demo, where one row is one simulated hour. Change them in the <span class="font-medium">JSON_OBJECT</span> inside <a class="text-primary hover:text-dark font-semibold" href="flink/03_demand_forecast.sql">flink/03_demand_forecast.sql</a>. The <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/builtin-functions/forecast.html#forecasting-parameters" target="_blank" rel="noopener noreferrer">ML_FORECAST parameter reference</a> lists every option, its default, and its limits. After a change, watch <span class="font-medium">rmse</span> on <span class="font-medium">demand_forecast</span>. That field is the recent gap between the forecast and the units that actually sold. A lower number is a closer forecast.</p>
+        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4 overflow-x-auto">
+            <table>
+                <thead>
+                    <tr><th>Knob</th><th>This demo</th><th>When to change it</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/builtin-functions/forecast.html#how-do-you-choose-a-forecast-horizon" target="_blank" rel="noopener noreferrer">horizon</a></td>
+                        <td>6</td>
+                        <td>How many hours ahead to predict. A longer horizon looks further out and is usually less accurate. There is no fixed upper limit for <span class="font-medium">ML_FORECAST</span>.</td>
+                    </tr>
+                    <tr>
+                        <td><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/builtin-functions/forecast.html#mintrainingsize" target="_blank" rel="noopener noreferrer">minTrainingSize</a></td>
+                        <td>16</td>
+                        <td>Hours of history required before a forecast is emitted. Raise it if the first forecasts swing too much. The health row stays <span class="font-medium">WARMING_UP</span> until this many hours exist. It must be greater than 1 and less than <span class="font-medium">maxTrainingSize</span>. The product default is 128.</td>
+                    </tr>
+                    <tr>
+                        <td><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/builtin-functions/forecast.html#maxtrainingsize" target="_blank" rel="noopener noreferrer">maxTrainingSize</a></td>
+                        <td>256</td>
+                        <td>How much history the model keeps. Lower it when last week's pattern should count less than the last few days. It must be greater than <span class="font-medium">minTrainingSize</span> and under 10,000. The product default is 512.</td>
+                    </tr>
+                    <tr>
+                        <td><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/builtin-functions/forecast.html#enablestl" target="_blank" rel="noopener noreferrer">enableStl</a> and <span class="font-medium">m</span></td>
+                        <td>false, <span class="font-medium">m</span> unset</td>
+                        <td>Turn STL on when sales repeat on a daily or weekly cycle. STL splits the series into trend, season, and leftover noise before ARIMA runs. <span class="font-medium">m</span> is the length of that cycle. In this demo one row is one hour, so a daily cycle is <span class="font-medium">m = 24</span>. <span class="font-medium">m</span> must be less than <span class="font-medium">minTrainingSize / 2</span>, so raise <span class="font-medium">minTrainingSize</span> to at least 49 before you set a daily season.</td>
+                    </tr>
+                    <tr>
+                        <td><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/builtin-functions/forecast.html#arima-model" target="_blank" rel="noopener noreferrer">p, q, and d</a></td>
+                        <td>unset</td>
+                        <td>Left unset, Flink uses auto-ARIMA and chooses the order. Set them only after you compare <span class="font-medium">aic</span> on the forecast row. A lower AIC is a better fit for the same data. <span class="font-medium">p</span> is how many past hours feed the next prediction, <span class="font-medium">q</span> is how many past errors do, and <span class="font-medium">d</span> is how many times the series is differenced so the level stops drifting.</td>
+                    </tr>
+                    <tr>
+                        <td>updateInterval</td>
+                        <td>unset</td>
+                        <td>How often the model retrains on new hours. Leave it unset unless retraining every hour is more work than the forecast needs.</td>
+                    </tr>
+                    <tr>
+                        <td>evalWindowSize</td>
+                        <td>unset (default 5)</td>
+                        <td>How many recent errors go into <span class="font-medium">rmse</span> and <span class="font-medium">aic</span>. A smaller window reacts faster when a promotion starts. A larger window ignores a single odd hour.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="text-dark leading-relaxed mb-4">The forecast is one series per product, region, and channel, because of <span class="font-medium">PARTITION BY sku, region, channel</span>. Each training point is one closed window from <a class="text-primary hover:text-dark font-semibold" href="flink/02_demand_windowed.sql">flink/02_demand_windowed.sql</a>. That window is 10 seconds of clock time and stands for one hour. If you change the window, <span class="font-medium">minTrainingSize</span>, <span class="font-medium">horizon</span>, and <span class="font-medium">m</span> all change meaning with it. Window types are documented under <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/flink/reference/queries/window-tvf.html" target="_blank" rel="noopener noreferrer">windowing table functions</a>.</p>
+        <p class="text-dark leading-relaxed mb-8">A second path is <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/builtin-functions/forecast.html#ai-forecast" target="_blank" rel="noopener noreferrer">AI_FORECAST</a>. That function uses a foundation model Confluent hosts. IBM Granite TTM is the default. TimesFM, FlowState, and PatchTST-FM are the other choices. You tune <span class="font-medium">horizon</span>, <span class="font-medium">minContextSize</span>, and <span class="font-medium">maxContextSize</span>, not <span class="font-medium">p</span>, <span class="font-medium">q</span>, and <span class="font-medium">d</span>. It is an early-access feature. This repo deploys it only when <span class="font-medium">enable_ai_forecast</span> is true, from <a class="text-primary hover:text-dark font-semibold" href="flink/03b_demand_forecast_ai.sql">flink/03b_demand_forecast_ai.sql</a>. The <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/builtin-functions/forecast.html#which-forecasting-function-should-you-use-ai-forecast-or-ml-forecast" target="_blank" rel="noopener noreferrer">choice between the two functions</a> is in the forecast guide.</p>
+
         <h2 id="agent-hosting" class="text-xl font-semibold text-dark mb-3">Where the AI agent is hosted</h2>
         <p class="text-dark leading-relaxed mb-4">The agent's job is the same wherever it runs. It watches demand and stock as they change, across products, regions, and channels. It then proposes one of three things: a <span class="font-medium">transfer</span>, a <span class="font-medium">supplier order</span>, or a <span class="font-medium">markdown</span>. A planner can approve each move, or the team can let the agent act on its own.</p>
         <p class="text-dark leading-relaxed mb-4">There are two ways to host it:</p>
@@ -550,9 +673,9 @@ ML_FORECAST(
         </div>
 
         <h3 id="streaming-agents" class="text-lg font-semibold text-dark mb-2">Streaming Agents on Confluent Intelligence</h3>
-        <p class="text-dark leading-relaxed mb-4"><span class="font-medium">Confluent Intelligence</span> is the managed, real-time AI layer on Kafka and Flink. A <span class="font-medium">Streaming Agent</span> is an agent that reacts to events and runs as a Flink job on Confluent Cloud, right next to the forecast and the stock position. It does not poll a database, and it does not wait for a nightly batch.</p>
-        <p class="text-dark leading-relaxed mb-4">You set it up with three things: a <span class="font-medium">model</span>, a <span class="font-medium">prompt</span>, and <span class="font-medium">tools</span>. You can do this in Flink SQL or in the Agent Management Console.</p>
-        <p class="text-dark leading-relaxed mb-4">Then a continuous Flink statement calls the agent, using <span class="font-medium">AI_RUN_AGENT</span>, for each inventory-health row that needs a decision. The agent works through its reason-and-tool loop and returns one result. The statement writes that result to <span class="font-medium">ai.recommendations</span>.</p>
+        <p class="text-dark leading-relaxed mb-4"><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/confluent-intelligence/overview.html" target="_blank" rel="noopener noreferrer">Confluent Intelligence</a> is the managed, real-time AI layer on Kafka and Flink. A <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/streaming-agents/overview.html" target="_blank" rel="noopener noreferrer">Streaming Agent</a> is an agent that reacts to events and runs as a Flink job on Confluent Cloud, right next to the forecast and the stock position. It does not poll a database, and it does not wait for a nightly batch.</p>
+        <p class="text-dark leading-relaxed mb-4">You set it up with three things: a <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/managed-model.html" target="_blank" rel="noopener noreferrer">model</a>, a <span class="font-medium">prompt</span>, and <span class="font-medium">tools</span>. You can do this in Flink SQL or in the Agent Management Console.</p>
+        <p class="text-dark leading-relaxed mb-4">Then a continuous Flink statement calls the agent, using <a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/flink/reference/functions/model-inference-functions.html" target="_blank" rel="noopener noreferrer">AI_RUN_AGENT</a>, for each inventory-health row that needs a decision. The agent works through its reason-and-tool loop and returns one result. The statement writes that result to <span class="font-medium">ai.recommendations</span>.</p>
         <figure class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-6 overflow-x-auto">
             <svg viewBox="0 0 980 250" role="img" aria-labelledby="agent-flow-title agent-flow-desc" class="w-full h-auto" style="min-width: 760px">
                 <title id="agent-flow-title">The agent reads one topic, decides, and writes the decision to a different topic</title>
