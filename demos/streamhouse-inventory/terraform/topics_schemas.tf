@@ -69,34 +69,6 @@ resource "confluent_kafka_topic" "source" {
   }
 }
 
-resource "confluent_tag" "pii" {
-  schema_registry_cluster {
-    id = data.confluent_schema_registry_cluster.main.id
-  }
-  rest_endpoint = data.confluent_schema_registry_cluster.main.rest_endpoint
-  credentials {
-    key    = confluent_api_key.schema_registry.id
-    secret = confluent_api_key.schema_registry.secret
-  }
-
-  name        = "PII"
-  description = "Personally identifiable information"
-}
-
-resource "confluent_tag" "demand_signal" {
-  schema_registry_cluster {
-    id = data.confluent_schema_registry_cluster.main.id
-  }
-  rest_endpoint = data.confluent_schema_registry_cluster.main.rest_endpoint
-  credentials {
-    key    = confluent_api_key.schema_registry.id
-    secret = confluent_api_key.schema_registry.secret
-  }
-
-  name        = "DemandSignal"
-  description = "Event stream used as an input to demand forecasting"
-}
-
 resource "confluent_schema" "source" {
   for_each = local.topics
 
@@ -129,29 +101,6 @@ resource "confluent_schema" "source" {
     key    = confluent_api_key.schema_registry.id
     secret = confluent_api_key.schema_registry.secret
   }
-
-  depends_on = [
-    confluent_kafka_topic.source,
-    confluent_tag.pii,
-    confluent_tag.demand_signal,
-  ]
-}
-
-resource "confluent_tag_binding" "demand_signal" {
-  for_each = toset(["clickstream", "cart_events", "orders", "pos_sales", "inventory_updates", "promotions"])
-
-  schema_registry_cluster {
-    id = data.confluent_schema_registry_cluster.main.id
-  }
-  rest_endpoint = data.confluent_schema_registry_cluster.main.rest_endpoint
-  credentials {
-    key    = confluent_api_key.schema_registry.id
-    secret = confluent_api_key.schema_registry.secret
-  }
-
-  tag_name    = confluent_tag.demand_signal.name
-  entity_name = "${data.confluent_schema_registry_cluster.main.id}:${confluent_kafka_cluster.main.id}:${each.key}"
-  entity_type = "kafka_topic"
 
   depends_on = [confluent_kafka_topic.source]
 }

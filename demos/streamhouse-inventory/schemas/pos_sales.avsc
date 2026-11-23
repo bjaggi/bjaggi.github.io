@@ -6,7 +6,7 @@
   "fields": [
     {"name": "txn_id", "type": "string"},
     {"name": "store_id", "type": "string"},
-    {"name": "loyalty_id", "type": ["null", "string"], "default": null, "confluent:tags": ["PII"]},
+    {"name": "loyalty_id", "type": ["null", "string"], "default": null},
     {"name": "sku", "type": "string"},
     {"name": "region", "type": "string"},
     {"name": "units", "type": "int"},

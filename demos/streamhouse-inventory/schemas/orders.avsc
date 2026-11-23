@@ -5,7 +5,7 @@
   "doc": "E-commerce order line (web or app).",
   "fields": [
     {"name": "order_id", "type": "string"},
-    {"name": "customer_id", "type": "string", "confluent:tags": ["PII"]},
+    {"name": "customer_id", "type": "string"},
     {"name": "sku", "type": "string"},
     {"name": "region", "type": "string", "doc": "Fulfilment region"},
     {"name": "device", "type": "string", "doc": "WEB or APP"},

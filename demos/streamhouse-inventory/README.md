@@ -28,7 +28,7 @@ flowchart LR
     ctl["Control API: launch, promo, restock, bad record"]
   end
   sim --> topics["clickstream, cart_events, orders, pos_sales, inventory_updates, promotions"]
-  topics --> sg["Schema Registry: Avro, data contract rules, PII tags"]
+  topics --> sg["Schema Registry: Avro and data contract rules"]
   topics --> view["demand_signals view"]
   subgraph flink [Confluent Cloud Flink SQL]
     view --> win["demand_windowed: TUMBLE per sku/region/channel"]
@@ -56,8 +56,8 @@ days) so forecasts are warm almost immediately.
 
 | Path | What it does |
 | --- | --- |
-| [terraform/](terraform/) | Environment (Stream Governance Advanced), Standard Kafka cluster on AWS us-east-1, Flink compute pool, service accounts, API keys, topics, Avro schemas with data contract rules and tags, Flink statements, Tableflow. Writes `.env`. |
-| [schemas/](schemas/) | Avro schemas. PII fields are tagged inline with `confluent:tags`. |
+| [terraform/](terraform/) | Environment (Stream Governance Advanced), Standard Kafka cluster on AWS us-east-1, Flink compute pool, service accounts, API keys, topics, Avro schemas with data contract rules, Flink statements, Tableflow. Writes `.env`. |
+| [schemas/](schemas/) | Avro schemas for the source topics. |
 | [flink/](flink/) | The Flink SQL pipeline, numbered in execution order. Terraform deploys the same files. `99_presenter_queries.sql` has ad-hoc queries for the live demo. |
 | [datagen/](datagen/) | Simulator, Avro producer that enforces data contracts, control API on port 8001, vertical profiles. |
 | [explainer/](explainer/) | Consumes anomalies, calls watsonx.ai Granite, writes `forecast_explanations`. |

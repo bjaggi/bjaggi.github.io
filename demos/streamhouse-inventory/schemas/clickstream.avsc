@@ -6,7 +6,7 @@
   "fields": [
     {"name": "event_id", "type": "string"},
     {"name": "session_id", "type": "string"},
-    {"name": "customer_id", "type": "string", "confluent:tags": ["PII"]},
+    {"name": "customer_id", "type": "string"},
     {"name": "sku", "type": "string"},
     {"name": "region", "type": "string"},
     {"name": "device", "type": "string", "doc": "WEB or APP"},

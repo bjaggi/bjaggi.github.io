@@ -810,7 +810,9 @@ WHERE h.risk_level IN ('OUT_OF_STOCK', 'HIGH', 'MEDIUM', 'OVERSTOCK');</pre>
         <h2 id="run-the-poc" class="text-xl font-semibold text-dark mb-3">Run the proof of concept</h2>
         <p class="text-dark leading-relaxed mb-4">Two ways to see this design. The <a class="text-primary hover:text-dark font-semibold" href="demo.html">hosted walkthrough</a> tells the story in the browser and does not need a cluster. The steps below stand the same pipeline up on Confluent Cloud and feed it mock holiday traffic.</p>
         <p class="text-dark leading-relaxed mb-4">The apply creates a Standard Kafka cluster on AWS <span class="font-medium">us-east-1</span>, Stream Governance Advanced, the source topics, Avro schemas, a Flink compute pool, and the Flink jobs through <span class="font-medium">stockout_risk</span>. A Python generator then writes the sales and stock events. The dashboard on your laptop reads the forecast and the health rows as Flink writes them.</p>
-        <p class="text-dark leading-relaxed mb-4">Work from the <span class="font-medium">demos/streamhouse-inventory</span> folder of this site's repository. The commands below assume that folder is the current directory.</p>
+        <p class="text-dark leading-relaxed mb-4">Clone <a class="text-primary hover:text-dark font-semibold" href="https://github.com/bjaggi/bjaggi.github.io">github.com/bjaggi/bjaggi.github.io</a> first. The proof of concept lives in <span class="font-medium">demos/streamhouse-inventory</span> inside that repository. Change into that folder before any <span class="font-medium">make</span> command. A new terminal usually starts in your home directory, so repeat the <span class="font-medium">cd</span> there. If you cloned into a different directory, <span class="font-medium">cd</span> to that copy instead.</p>
+        <pre class="sql mb-4">git clone https://github.com/bjaggi/bjaggi.github.io.git
+cd bjaggi.github.io/demos/streamhouse-inventory</pre>
 
         <h3 id="poc-prepare" class="text-lg font-semibold text-dark mb-2">Prepare the Confluent environment</h3>
         <p class="text-dark leading-relaxed mb-3">You need:</p>
@@ -846,14 +848,16 @@ cp terraform/terraform.tfvars.example terraform/terraform.tfvars</pre>
 
         <h3 id="poc-mock-data" class="text-lg font-semibold text-dark mb-2">Start the mock data</h3>
         <p class="text-dark leading-relaxed mb-4">The generator is the store, the website, and the warehouse for this proof of concept. It writes clickstream, cart events, web orders, store sales, stock updates, and promotions. One period is 10 seconds of clock time and stands for one simulated hour, so a simulated day takes about four minutes. At startup it backfills 72 periods, three simulated days, so the forecast has the 16 hours it needs.</p>
-        <p class="text-dark leading-relaxed mb-3">Leave this process running in its own terminal. The profile <span class="font-medium">apparel_drops</span> is the footwear and apparel holiday traffic. <span class="font-medium">grocery</span> is the other profile shipped in the repo.</p>
-        <pre class="sql mb-4">make gen
+        <p class="text-dark leading-relaxed mb-3">Leave this process running in its own terminal, after changing into the same demo folder. The profile <span class="font-medium">apparel_drops</span> is the footwear and apparel holiday traffic. <span class="font-medium">grocery</span> is the other profile shipped in the repo.</p>
+        <pre class="sql mb-4">cd bjaggi.github.io/demos/streamhouse-inventory
+make gen
 # or: make gen PROFILE=grocery</pre>
         <p class="text-dark leading-relaxed mb-8">A small control API listens on port 8001. The dashboard buttons call it to start a product drop, a flash promotion, a restock, or a record that Schema Registry should reject.</p>
 
         <h3 id="poc-dashboard" class="text-lg font-semibold text-dark mb-2">Open the dashboard</h3>
-        <p class="text-dark leading-relaxed mb-3">In a second terminal, from the same folder:</p>
-        <pre class="sql mb-4">make dashboard</pre>
+        <p class="text-dark leading-relaxed mb-3">In a second terminal, change into the demo folder again:</p>
+        <pre class="sql mb-4">cd bjaggi.github.io/demos/streamhouse-inventory
+make dashboard</pre>
         <p class="text-dark leading-relaxed mb-4">Open <a class="text-primary hover:text-dark font-semibold" href="http://localhost:8000">http://localhost:8000</a>. Within about a minute you should see units sold, the forecast band, and stockout risk. The header is the live cluster, not the hosted walkthrough.</p>
         <p class="text-dark leading-relaxed mb-3">Use the buttons in this order when you are showing the peak holiday season:</p>
         <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
@@ -896,7 +900,7 @@ cp terraform/terraform.tfvars.example terraform/terraform.tfvars</pre>
         <p class="text-dark leading-relaxed mb-8">These three tables are the backend the Real-Time Context Engine reads. The dashboard in this proof of concept still reads the Kafka topics directly. Lightning Tables are how an application or an agent looks up the current row without consuming the topic.</p>
 
         <h3 id="poc-optional" class="text-lg font-semibold text-dark mb-2">Tableflow, the explainer, and the streaming agent</h3>
-        <p class="text-dark leading-relaxed mb-3"><span class="font-medium">Tableflow.</span> After <span class="font-medium">demand_windowed</span>, <span class="font-medium">demand_forecast</span>, and <span class="font-medium">stockout_risk</span> are receiving records, set <span class="font-medium">enable_tableflow = true</span> in <span class="font-medium">terraform.tfvars</span> and run <span class="font-medium">make up</span> again. The first Iceberg snapshot can take about 15 minutes. Then run <span class="font-medium">make analytics</span> to query the history with DuckDB.</p>
+        <p class="text-dark leading-relaxed mb-3"><span class="font-medium">Tableflow.</span> From <span class="font-medium">demos/streamhouse-inventory</span>, after <span class="font-medium">demand_windowed</span>, <span class="font-medium">demand_forecast</span>, and <span class="font-medium">stockout_risk</span> are receiving records, set <span class="font-medium">enable_tableflow = true</span> in <span class="font-medium">terraform.tfvars</span> and run <span class="font-medium">make up</span> again. The first Iceberg snapshot can take about 15 minutes. Then run <span class="font-medium">make analytics</span> to query the history with DuckDB.</p>
         <p class="text-dark leading-relaxed mb-3"><span class="font-medium">Forecast explanations.</span> Add the IBM watsonx.ai key, project id, and region URL to <span class="font-medium">.env.local</span>, then run <span class="font-medium">make explainer</span> in a third terminal. Without those settings the explainer still writes a plain-language template to <span class="font-medium">forecast_explanations</span>.</p>
         <p class="text-dark leading-relaxed mb-8"><span class="font-medium">Flink Streaming Agent.</span> Terraform does not deploy <a class="text-primary hover:text-dark font-semibold" href="flink/06_inventory_agent.sql">flink/06_inventory_agent.sql</a>. That file is the sample from the architecture: it reads <span class="font-medium">stockout_risk</span> and writes <span class="font-medium">ai_recommendations</span>. Before it can run, replace the model connection and register the <span class="font-medium">find_spare_stock</span> and <span class="font-medium">supplier_timing</span> functions. Those functions are not in this repository. Until then, the recommendations you see come from the dashboard agent.</p>
 

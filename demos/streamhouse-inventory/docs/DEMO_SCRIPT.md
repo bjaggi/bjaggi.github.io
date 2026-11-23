@@ -43,7 +43,7 @@ Flink workspace: run queries 1 and 2 from `flink/99_presenter_queries.sql`.
 
 Governance moment: click **Send bad record** on the dashboard. The toast shows that
 Schema Registry's data contract rule (`units > 0`) rejected the record before it reached
-Kafka. Show the `orders-value` subject: the rules, plus the `PII` tag on `customer_id`.
+Kafka. Show the `orders-value` subject and the `units > 0` rule.
 
 ## 3. Forecasting in SQL (4 minutes)
 
