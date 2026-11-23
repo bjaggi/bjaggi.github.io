@@ -624,7 +624,7 @@ function renderRecs(a) {
   if (!shown.length) {
     list.innerHTML = `<div class="empty">${recs.length ? "No recommendations match this filter."
       : a.enabled ? "The agent is watching every location. Recommendations appear here when stock runs low or piles up."
-      : "Switch the AI agent on to get recommendations."}</div>`;
+      : "The agent is off. Turn it on with AI agent on the Trend & Forecast tab."}</div>`;
     return;
   }
   const P = profile.period.label;
@@ -890,6 +890,7 @@ function wireButtons() {
       if (!input.matches('input[name="approval-mode"]')) return;
       const on = input.value === "required";
       run(input, async () => {
+        if (lastAgent && !lastAgent.enabled) await api("/api/agent/on");
         await api(`/api/agent/approval/${on ? "on" : "off"}`);
         toast(on ? "Human approval required: the agent will ask before moving any stock."
           : "Autonomous mode: the agent acts on its own (anything waiting was auto-approved).");

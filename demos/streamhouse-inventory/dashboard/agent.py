@@ -46,7 +46,7 @@ class InventoryAgent:
         self.markdown_pct = markdown_pct
         self.markdown_periods = markdown_periods
 
-        self.enabled = False
+        self.enabled = True
         self.require_approval = True
         self.pending: dict[str, dict] = {}
         self.rejected_until: dict[tuple, int] = {}
@@ -190,18 +190,24 @@ class InventoryAgent:
                 if self._propose_or_execute(plan, needed):
                     transit_to[key] = units if not self.require_approval else 0
                     acted = True
-            elif self.escalated.get(key, -1) < self.stats["ticks"] - 6:
+            else:
+                last = self.escalated.get(key)
+                if last is not None and last >= self.stats["ticks"] - 6:
+                    continue
                 self.escalated[key] = self.stats["ticks"]
-                with self.lock:
-                    self.decisions.appendleft({
-                        "id": uuid.uuid4().hex[:8], "t": now, "action": "ESCALATE",
-                        "sku": r["sku"], "product": name, "channel": r["channel"], "to_region": r["region"],
-                        "headline": f"No spare {name} in any other region",
-                        "detected": detect,
-                        "found": "Every other region needs its stock for its own forecast demand.",
-                        "action_text": "Escalated to the planner: expedite the supplier order.",
-                    })
-                acted = True
+                units = max(need, self.min_units)
+                plan = {
+                    "key": key, "t": now, "kind": "STOCKOUT", "action": "ORDER",
+                    "sku": r["sku"], "product": name, "channel": r["channel"],
+                    "to_region": r["region"], "units": units, "max_units": units,
+                    "rate": rate, "dest_on_hand": r["on_hand"], "price": float(product.get("price", 0.0)),
+                    "detected": detect,
+                    "found": ("Every other region needs its stock for its own forecast, so none can spare "
+                              f"{self.min_units} units without dropping under {self.donor_keep_cover:.0f} {P}s of cover."),
+                    "before_cover": round(sells_out, 1),
+                }
+                if self._propose_or_execute(plan, needed):
+                    acted = True
         acted |= self._overstock_pass(rows, by_sku_channel, transit_to, needed, busy, now)
         with self.lock:
             for pid in [pid for pid, p in self.pending.items() if p["key"] not in needed]:
@@ -322,6 +328,10 @@ class InventoryAgent:
             return (f"Start a {plan['discount_pct'] * 100:.0f}% markdown on {plan['product']} in "
                     f"{self.regions.get(plan['region'])} for {plan['periods']} {P}s to sell down the excess "
                     f"while it still sells at a good price.")
+        if plan["action"] == "ORDER":
+            return (f"Order {units} units of {plan['product']} from the warehouse for "
+                    f"{self._loc(plan['to_region'], plan['channel'])}. No other region can spare stock. "
+                    f"The order takes {self.lead_time} {P}s.")
         return (f"Move {units} units from {self._loc(plan['from_region'], plan['channel'])} to "
                 f"{self._loc(plan['to_region'], plan['channel'])}, arriving in {self.transit_periods} {P}. "
                 f"That lifts {self.regions.get(plan['to_region'])} to about "
@@ -330,6 +340,8 @@ class InventoryAgent:
     def _execute_plan(self, plan: dict, units: int, approved_by: str | None = None) -> dict | None:
         if plan["action"] == "MARKDOWN":
             decision = self._execute_markdown(plan, approved_by)
+        elif plan["action"] == "ORDER":
+            decision = self._execute_order(plan, units, approved_by)
         else:
             decision = self._execute_transfer(plan, units, approved_by)
         if decision and plan["kind"] == "OVERSTOCK":
@@ -376,6 +388,39 @@ class InventoryAgent:
         log.info(decision["headline"])
         return decision
 
+    def _execute_order(self, plan: dict, units: int, approved_by: str | None) -> dict | None:
+        body = {"sku": plan["sku"], "region": plan["to_region"], "channel": plan["channel"], "units": int(units)}
+        try:
+            res = self.execute("restock", body)
+        except Exception as e:
+            log.warning("order failed: %s", e)
+            return None
+        if not res.get("restocked"):
+            return None
+        now = int(time.time() * 1000)
+        P = self.label
+        decision = {
+            "id": uuid.uuid4().hex[:8], "t": now, "action": "ORDER",
+            "sku": plan["sku"], "product": plan["product"], "channel": plan["channel"],
+            "to_region": plan["to_region"], "units": int(units), "approved_by": approved_by,
+            "headline": f"Ordered {int(units)} units of {plan['product']} for "
+                        f"{self.regions.get(plan['to_region'])} ({self.channels.get(plan['channel'], plan['channel'])})",
+            "detected": plan["detected"],
+            "found": plan["found"],
+            "action_text": (f"{'Approved by ' + approved_by + '. ' if approved_by else ''}"
+                            f"Warehouse order for {int(units)} units. Supplier lead time is {self.lead_time} {P}s."),
+            "before_cover": plan["before_cover"],
+        }
+        with self.lock:
+            self.in_transit.append({
+                "sku": plan["sku"], "to_region": plan["to_region"], "channel": plan["channel"],
+                "units": int(units), "t": now, "arrive_t": now + self.lead_time * self.period_ms,
+            })
+            self.decisions.appendleft(decision)
+            self.stats["orders"] = self.stats.get("orders", 0) + 1
+        log.info(decision["headline"])
+        return decision
+
     def _execute_markdown(self, plan: dict, approved_by: str | None) -> dict | None:
         body = {"sku": plan["sku"], "region": plan["region"], "discount_pct": plan["discount_pct"],
                 "periods": plan["periods"]}
@@ -403,6 +448,9 @@ class InventoryAgent:
     def set_require_approval(self, on: bool):
         with self.lock:
             self.require_approval = on
+            if not self.enabled:
+                self.enabled = True
+                self.enabled_at = int(time.time() * 1000)
             pending = list(self.pending.values()) if not on else []
             if not on:
                 self.pending.clear()
