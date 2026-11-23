@@ -86,11 +86,14 @@ resource "confluent_schema" "source" {
       dynamic "domain_rules" {
         for_each = each.value.rules
         content {
-          name       = domain_rules.value.name
-          kind       = "CONDITION"
-          type       = "CEL"
-          mode       = "WRITE"
-          expr       = domain_rules.value.expr
+          name = domain_rules.value.name
+          kind = "CONDITION"
+          type = "CEL"
+          mode = "WRITE"
+          expr = domain_rules.value.expr
+          # The provider's defaults are "NONE,NONE" and "ERROR,ERROR". Schema Registry
+          # rejects those two actions unless the mode is WRITEREAD or UPDOWN.
+          on_success = "NONE"
           on_failure = "ERROR"
         }
       }
@@ -103,4 +106,22 @@ resource "confluent_schema" "source" {
   }
 
   depends_on = [confluent_kafka_topic.source]
+}
+
+# The earlier config created a DemandSignal tag and bound it to the source topics.
+# Schema Registry returns 409 if Terraform deletes that tag while those bindings
+# still exist. Drop both from state and leave them in the catalog. This demo does
+# not use tags.
+removed {
+  from = confluent_tag.demand_signal
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = confluent_tag_binding.demand_signal
+  lifecycle {
+    destroy = false
+  }
 }
