@@ -2,7 +2,7 @@ locals {
   flink_dir = "${path.module}/../flink"
 
   flink_properties = {
-    "sql.current-catalog"  = confluent_environment.demo.display_name
+    "sql.current-catalog"  = local.environment_display_name
     "sql.current-database" = confluent_kafka_cluster.main.display_name
     "sql.local-time-zone"  = "UTC"
   }
@@ -20,7 +20,7 @@ resource "confluent_flink_statement" "watermarks" {
     id = data.confluent_organization.main.id
   }
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
   compute_pool {
     id = confluent_flink_compute_pool.main.id
@@ -30,6 +30,7 @@ resource "confluent_flink_statement" "watermarks" {
   }
   statement     = each.value
   properties    = local.flink_properties
+  stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint
   credentials {
     key    = confluent_api_key.flink.id
@@ -46,7 +47,7 @@ resource "confluent_flink_statement" "demand_signals" {
     id = data.confluent_organization.main.id
   }
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
   compute_pool {
     id = confluent_flink_compute_pool.main.id
@@ -56,6 +57,7 @@ resource "confluent_flink_statement" "demand_signals" {
   }
   statement     = file("${local.flink_dir}/01_demand_signals.sql")
   properties    = local.flink_properties
+  stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint
   credentials {
     key    = confluent_api_key.flink.id
@@ -72,7 +74,7 @@ resource "confluent_flink_statement" "demand_windowed" {
     id = data.confluent_organization.main.id
   }
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
   compute_pool {
     id = confluent_flink_compute_pool.main.id
@@ -82,6 +84,7 @@ resource "confluent_flink_statement" "demand_windowed" {
   }
   statement     = file("${local.flink_dir}/02_demand_windowed.sql")
   properties    = local.flink_properties
+  stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint
   credentials {
     key    = confluent_api_key.flink.id
@@ -98,7 +101,7 @@ resource "confluent_flink_statement" "demand_forecast" {
     id = data.confluent_organization.main.id
   }
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
   compute_pool {
     id = confluent_flink_compute_pool.main.id
@@ -108,6 +111,7 @@ resource "confluent_flink_statement" "demand_forecast" {
   }
   statement     = file("${local.flink_dir}/03_demand_forecast.sql")
   properties    = local.flink_properties
+  stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint
   credentials {
     key    = confluent_api_key.flink.id
@@ -124,7 +128,7 @@ resource "confluent_flink_statement" "demand_forecast_ai" {
     id = data.confluent_organization.main.id
   }
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
   compute_pool {
     id = confluent_flink_compute_pool.main.id
@@ -134,6 +138,7 @@ resource "confluent_flink_statement" "demand_forecast_ai" {
   }
   statement     = file("${local.flink_dir}/03b_demand_forecast_ai.sql")
   properties    = local.flink_properties
+  stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint
   credentials {
     key    = confluent_api_key.flink.id
@@ -150,7 +155,7 @@ resource "confluent_flink_statement" "inventory_latest" {
     id = data.confluent_organization.main.id
   }
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
   compute_pool {
     id = confluent_flink_compute_pool.main.id
@@ -160,6 +165,7 @@ resource "confluent_flink_statement" "inventory_latest" {
   }
   statement     = file("${local.flink_dir}/04a_inventory_latest.sql")
   properties    = local.flink_properties
+  stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint
   credentials {
     key    = confluent_api_key.flink.id
@@ -176,7 +182,7 @@ resource "confluent_flink_statement" "stockout_risk" {
     id = data.confluent_organization.main.id
   }
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
   compute_pool {
     id = confluent_flink_compute_pool.main.id
@@ -186,6 +192,7 @@ resource "confluent_flink_statement" "stockout_risk" {
   }
   statement     = file("${local.flink_dir}/04b_stockout_risk.sql")
   properties    = local.flink_properties
+  stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint
   credentials {
     key    = confluent_api_key.flink.id
@@ -205,7 +212,7 @@ resource "confluent_flink_statement" "demand_anomalies" {
     id = data.confluent_organization.main.id
   }
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
   compute_pool {
     id = confluent_flink_compute_pool.main.id
@@ -215,6 +222,7 @@ resource "confluent_flink_statement" "demand_anomalies" {
   }
   statement     = file("${local.flink_dir}/05_demand_anomalies.sql")
   properties    = local.flink_properties
+  stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint
   credentials {
     key    = confluent_api_key.flink.id

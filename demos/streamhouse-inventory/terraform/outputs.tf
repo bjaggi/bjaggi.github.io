@@ -10,8 +10,8 @@ resource "local_sensitive_file" "dotenv" {
     CLOUD=${var.cloud}
     CLOUD_REGION=${var.region}
     ORG_ID=${data.confluent_organization.main.id}
-    ENVIRONMENT_ID=${confluent_environment.demo.id}
-    ENVIRONMENT_NAME=${confluent_environment.demo.display_name}
+    ENVIRONMENT_ID=${local.environment_id}
+    ENVIRONMENT_NAME=${local.environment_display_name}
     KAFKA_CLUSTER_ID=${confluent_kafka_cluster.main.id}
     KAFKA_CLUSTER_NAME=${confluent_kafka_cluster.main.display_name}
     FLINK_COMPUTE_POOL_ID=${confluent_flink_compute_pool.main.id}
@@ -31,7 +31,7 @@ resource "local_sensitive_file" "dotenv" {
 }
 
 output "environment_id" {
-  value = confluent_environment.demo.id
+  value = local.environment_id
 }
 
 output "kafka_cluster_id" {
@@ -55,5 +55,15 @@ output "tableflow_catalog_uri" {
 }
 
 output "flink_workspace_hint" {
-  value = "Confluent Cloud > Environments > ${confluent_environment.demo.display_name} > Flink > ${confluent_flink_compute_pool.main.display_name} > Open SQL workspace (catalog=${confluent_environment.demo.display_name}, database=${confluent_kafka_cluster.main.display_name})"
+  value = "Confluent Cloud > Environments > ${local.environment_display_name} > Flink > ${confluent_flink_compute_pool.main.display_name} > Open SQL workspace (catalog=${local.environment_display_name}, database=${confluent_kafka_cluster.main.display_name})"
+}
+
+output "mock_data" {
+  value = <<-EOT
+    Mock data writes to clickstream, cart_events, orders, pos_sales, inventory_updates, and promotions.
+    From the demo folder, after apply: make venv && make gen
+    Flink then builds demand_windowed, demand_forecast, inventory_latest, and stockout_risk (the inventory.health topic).
+    Dashboard: make dashboard
+    Tableflow is off until those derived topics exist. Re-apply with enable_tableflow=true once the generator is running.
+  EOT
 }

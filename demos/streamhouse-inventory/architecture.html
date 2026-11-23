@@ -78,6 +78,18 @@
                         <li><a class="text-primary hover:text-dark" href="#human-approval">When a person must approve each decision</a></li>
                     </ol>
                 </li>
+                <li>
+                    <a class="text-primary hover:text-dark" href="#run-the-poc">Run the proof of concept</a>
+                    <ol class="list-decimal pl-5 mt-1 space-y-1">
+                        <li><a class="text-primary hover:text-dark" href="#poc-prepare">Prepare the Confluent environment</a></li>
+                        <li><a class="text-primary hover:text-dark" href="#poc-mock-data">Start the mock data</a></li>
+                        <li><a class="text-primary hover:text-dark" href="#poc-dashboard">Open the dashboard</a></li>
+                        <li><a class="text-primary hover:text-dark" href="#poc-names">Names on the cluster</a></li>
+                        <li><a class="text-primary hover:text-dark" href="#poc-lightning">Turn on Lightning Tables</a></li>
+                        <li><a class="text-primary hover:text-dark" href="#poc-optional">Tableflow, the explainer, and the streaming agent</a></li>
+                        <li><a class="text-primary hover:text-dark" href="#poc-stop">Stop the proof of concept</a></li>
+                    </ol>
+                </li>
             </ol>
         </nav>
         <h2 id="problem" class="text-xl font-semibold text-dark mb-3">The problem</h2>
@@ -795,7 +807,110 @@ WHERE h.risk_level IN ('OUT_OF_STOCK', 'HIGH', 'MEDIUM', 'OVERSTOCK');</pre>
         <p class="text-dark leading-relaxed mb-4">The same topics are used when the team lets the agent act on its own. The only difference is that the action event is written without an approval event in front of it.</p>
         <p class="text-dark leading-relaxed mb-8"><span class="font-medium">Why this design requires approval:</span> in the peak holiday season, sending units to one region takes them from another region that may need them. A person should decide that trade-off.</p>
 
-        <p class="text-dark">The hosted walkthrough tells the same story without a cluster. <a class="text-primary hover:text-dark font-semibold" href="demo.html">Open the live demo</a></p>
+        <h2 id="run-the-poc" class="text-xl font-semibold text-dark mb-3">Run the proof of concept</h2>
+        <p class="text-dark leading-relaxed mb-4">Two ways to see this design. The <a class="text-primary hover:text-dark font-semibold" href="demo.html">hosted walkthrough</a> tells the story in the browser and does not need a cluster. The steps below stand the same pipeline up on Confluent Cloud and feed it mock holiday traffic.</p>
+        <p class="text-dark leading-relaxed mb-4">The apply creates a Standard Kafka cluster on AWS <span class="font-medium">us-east-1</span>, Stream Governance Advanced, the source topics, Avro schemas, a Flink compute pool, and the Flink jobs through <span class="font-medium">stockout_risk</span>. A Python generator then writes the sales and stock events. The dashboard on your laptop reads the forecast and the health rows as Flink writes them.</p>
+        <p class="text-dark leading-relaxed mb-4">Work from the <span class="font-medium">demos/streamhouse-inventory</span> folder of this site's repository. The commands below assume that folder is the current directory.</p>
+
+        <h3 id="poc-prepare" class="text-lg font-semibold text-dark mb-2">Prepare the Confluent environment</h3>
+        <p class="text-dark leading-relaxed mb-3">You need:</p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-4">
+            <li>A Confluent Cloud organization.</li>
+            <li>A Cloud resource management API key for a user or service account with OrganizationAdmin. This key is only for Terraform. It is not a Kafka client key.</li>
+            <li>Terraform 1.5 or newer.</li>
+            <li><a class="text-primary hover:text-dark font-semibold" href="https://docs.astral.sh/uv/">uv</a>, so the generator can run on Python 3.12. Python 3.14 does not work, because the data-contract library has no wheel for it.</li>
+        </ul>
+        <p class="text-dark leading-relaxed mb-3">Create the local Python environment, then copy the Terraform settings and fill in the Cloud API key:</p>
+        <pre class="sql mb-4">make venv
+cp terraform/terraform.tfvars.example terraform/terraform.tfvars</pre>
+        <p class="text-dark leading-relaxed mb-3">Edit <span class="font-medium">terraform/terraform.tfvars</span>:</p>
+        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4 overflow-x-auto">
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>What to put</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>confluent_cloud_api_key</td><td>The Cloud resource management key.</td></tr>
+                    <tr><td>confluent_cloud_api_secret</td><td>The matching secret.</td></tr>
+                    <tr><td>environment_id</td><td>An existing environment id, such as <span class="font-medium">env-abc123</span>, or leave it empty to create an environment named from <span class="font-medium">prefix</span>. An existing environment must already have Stream Governance Advanced. The mock producer rejects a record that breaks its schema rule.</td></tr>
+                    <tr><td>prefix</td><td><span class="font-medium">streamhouse-inventory</span> is fine. The cluster is named <span class="font-medium">streamhouse-inventory-cluster</span>.</td></tr>
+                    <tr><td>cloud and region</td><td>Leave <span class="font-medium">AWS</span> and <span class="font-medium">us-east-1</span>. Lightning Tables are available on a Standard cluster in that region.</td></tr>
+                    <tr><td>enable_ai_forecast</td><td><span class="font-medium">false</span>, unless the organization is in the AI_FORECAST early access program.</td></tr>
+                    <tr><td>enable_tableflow</td><td><span class="font-medium">false</span> on this first apply. The Iceberg topics do not exist until Flink has processed mock data.</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="text-dark leading-relaxed mb-3">Apply. This takes several minutes. It writes <span class="font-medium">.env</span> with the bootstrap server, the Kafka and Schema Registry keys, and the Flink pool id. Do not commit that file.</p>
+        <pre class="sql mb-4">make up</pre>
+        <p class="text-dark leading-relaxed mb-8">When it finishes, Confluent Cloud has the cluster, seven source topics, their Avro schemas, and Flink statements that are already running. No sales have arrived yet, so <span class="font-medium">demand_forecast</span> and <span class="font-medium">stockout_risk</span> are still empty.</p>
+
+        <h3 id="poc-mock-data" class="text-lg font-semibold text-dark mb-2">Start the mock data</h3>
+        <p class="text-dark leading-relaxed mb-4">The generator is the store, the website, and the warehouse for this proof of concept. It writes clickstream, cart events, web orders, store sales, stock updates, and promotions. One period is 10 seconds of clock time and stands for one simulated hour, so a simulated day takes about four minutes. At startup it backfills 72 periods, three simulated days, so the forecast has the 16 hours it needs.</p>
+        <p class="text-dark leading-relaxed mb-3">Leave this process running in its own terminal. The profile <span class="font-medium">apparel_drops</span> is the footwear and apparel holiday traffic. <span class="font-medium">grocery</span> is the other profile shipped in the repo.</p>
+        <pre class="sql mb-4">make gen
+# or: make gen PROFILE=grocery</pre>
+        <p class="text-dark leading-relaxed mb-8">A small control API listens on port 8001. The dashboard buttons call it to start a product drop, a flash promotion, a restock, or a record that Schema Registry should reject.</p>
+
+        <h3 id="poc-dashboard" class="text-lg font-semibold text-dark mb-2">Open the dashboard</h3>
+        <p class="text-dark leading-relaxed mb-3">In a second terminal, from the same folder:</p>
+        <pre class="sql mb-4">make dashboard</pre>
+        <p class="text-dark leading-relaxed mb-4">Open <a class="text-primary hover:text-dark font-semibold" href="http://localhost:8000">http://localhost:8000</a>. Within about a minute you should see units sold, the forecast band, and stockout risk. The header is the live cluster, not the hosted walkthrough.</p>
+        <p class="text-dark leading-relaxed mb-3">Use the buttons in this order when you are showing the peak holiday season:</p>
+        <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
+            <li><span class="font-medium">Trigger launch</span> or <span class="font-medium">Start promo</span>. Demand jumps. The forecast band follows within a period or two. Risk on the short locations moves toward <span class="font-medium">HIGH</span> or <span class="font-medium">OUT_OF_STOCK</span>.</li>
+            <li><span class="font-medium">AI agent</span>. The dashboard agent reads <span class="font-medium">stockout_risk</span> and proposes a transfer, a supplier order, or a markdown. It does not run inside Flink. The Flink Streaming Agent sample is a later step.</li>
+            <li><span class="font-medium">Human approval: required</span>. A recommendation waits until you approve it. Switching that control lets the dashboard agent act on its own.</li>
+            <li><span class="font-medium">Restock</span> adds stock. <span class="font-medium">Send bad record</span> writes a row that breaks the schema rule. Schema Registry rejects it, which is the point of Stream Governance Advanced.</li>
+        </ol>
+        <p class="text-dark leading-relaxed mb-8">Keep the generator running while the dashboard is open. Event-time windows advance only while every partition keeps receiving data.</p>
+
+        <h3 id="poc-names" class="text-lg font-semibold text-dark mb-2">Names on the cluster</h3>
+        <p class="text-dark leading-relaxed mb-4">The diagrams on this page use the design names. The cluster uses the shorter names the generator and the Flink SQL already share. Look for the right-hand column in Confluent Cloud.</p>
+        <div class="bg-white shadow-lg rounded-lg p-4 border border-gray-100 mb-4 overflow-x-auto">
+            <table>
+                <thead>
+                    <tr><th>On this page</th><th>On the cluster</th><th>Who writes it</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Store and web sales, clickstream, carts</td><td>pos_sales, orders, clickstream, cart_events</td><td>Mock generator</td></tr>
+                    <tr><td>inventory.movements</td><td>inventory_updates</td><td>Mock generator</td></tr>
+                    <tr><td>merch.promo-events</td><td>promotions</td><td>Mock generator</td></tr>
+                    <tr><td>demand.sales-rollup</td><td>demand_windowed</td><td>Flink</td></tr>
+                    <tr><td>demand.forecast</td><td>demand_forecast</td><td>Flink <span class="font-medium">ML_FORECAST</span></td></tr>
+                    <tr><td>inventory.position</td><td>inventory_latest</td><td>Flink</td></tr>
+                    <tr><td>inventory.health</td><td>stockout_risk</td><td>Flink join</td></tr>
+                    <tr><td>Forecast explanation</td><td>forecast_explanations</td><td>Optional explainer</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="text-dark leading-relaxed mb-8">In the Flink SQL workspace, the catalog is the environment display name and the database is the cluster display name. Terraform prints that path as <span class="font-medium">flink_workspace_hint</span>.</p>
+
+        <h3 id="poc-lightning" class="text-lg font-semibold text-dark mb-2">Turn on Lightning Tables</h3>
+        <p class="text-dark leading-relaxed mb-4">Lightning Tables are available on this Standard cluster because it is on AWS in <span class="font-medium">us-east-1</span>. Enable them after the generator has been running and the Flink topics exist. A topic needs a registered schema. Flink registers one when it creates the table.</p>
+        <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
+            <li>In Confluent Cloud, open the environment, then the cluster.</li>
+            <li>Open <span class="font-medium">Lightning Tables</span>. Choose <span class="font-medium">Add Lightning Table</span>, or <span class="font-medium">Enable Lightning Table</span> if the cluster has none yet.</li>
+            <li>Enable a table for <span class="font-medium">demand_forecast</span>, <span class="font-medium">inventory_latest</span>, and <span class="font-medium">stockout_risk</span>. Each one moves from Pending to Provisioning to Active. That takes several minutes.</li>
+            <li>Query the table in the console. <span class="font-medium">stockout_risk</span> is the live health row: on-hand units, <span class="font-medium">forecast_next</span>, hours of cover, and <span class="font-medium">risk_level</span>.</li>
+        </ol>
+        <p class="text-dark leading-relaxed mb-8">These three tables are the backend the Real-Time Context Engine reads. The dashboard in this proof of concept still reads the Kafka topics directly. Lightning Tables are how an application or an agent looks up the current row without consuming the topic.</p>
+
+        <h3 id="poc-optional" class="text-lg font-semibold text-dark mb-2">Tableflow, the explainer, and the streaming agent</h3>
+        <p class="text-dark leading-relaxed mb-3"><span class="font-medium">Tableflow.</span> After <span class="font-medium">demand_windowed</span>, <span class="font-medium">demand_forecast</span>, and <span class="font-medium">stockout_risk</span> are receiving records, set <span class="font-medium">enable_tableflow = true</span> in <span class="font-medium">terraform.tfvars</span> and run <span class="font-medium">make up</span> again. The first Iceberg snapshot can take about 15 minutes. Then run <span class="font-medium">make analytics</span> to query the history with DuckDB.</p>
+        <p class="text-dark leading-relaxed mb-3"><span class="font-medium">Forecast explanations.</span> Add the IBM watsonx.ai key, project id, and region URL to <span class="font-medium">.env.local</span>, then run <span class="font-medium">make explainer</span> in a third terminal. Without those settings the explainer still writes a plain-language template to <span class="font-medium">forecast_explanations</span>.</p>
+        <p class="text-dark leading-relaxed mb-8"><span class="font-medium">Flink Streaming Agent.</span> Terraform does not deploy <a class="text-primary hover:text-dark font-semibold" href="flink/06_inventory_agent.sql">flink/06_inventory_agent.sql</a>. That file is the sample from the architecture: it reads <span class="font-medium">stockout_risk</span> and writes <span class="font-medium">ai_recommendations</span>. Before it can run, replace the model connection and register the <span class="font-medium">find_spare_stock</span> and <span class="font-medium">supplier_timing</span> functions. Those functions are not in this repository. Until then, the recommendations you see come from the dashboard agent.</p>
+
+        <h3 id="poc-stop" class="text-lg font-semibold text-dark mb-2">Stop the proof of concept</h3>
+        <p class="text-dark leading-relaxed mb-3">Stop the generator, the dashboard, and the explainer when you are not presenting. The Standard cluster, the Flink pool, and Stream Governance Advanced keep billing until you destroy them.</p>
+        <pre class="sql mb-4">make down</pre>
+        <p class="text-dark leading-relaxed mb-4">That destroys the demo cluster, its topics, the Flink statements, and the API keys Terraform created. If <span class="font-medium">environment_id</span> was empty, it also destroys the environment it created. If you pointed Terraform at an existing environment, that environment stays, and the demo cluster inside it is removed.</p>
+        <p class="text-dark leading-relaxed mb-3">If the dashboard looks wrong, check these first:</p>
+        <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-8">
+            <li><span class="font-medium">Forecast stays empty.</span> <span class="font-medium">ML_FORECAST</span> waits for 16 periods on each product, region, and channel. The backfill covers that. If you started the generator with no backfill, wait about three minutes and leave it running.</li>
+            <li><span class="font-medium">Hours never close.</span> A window closes only when every partition has data past that hour. The generator writes all partitions. Stopping it freezes the forecast.</li>
+            <li><span class="font-medium">The bad record is accepted.</span> The environment needs Stream Governance Advanced, and the generator must be the one installed by <span class="font-medium">make venv</span>.</li>
+            <li><span class="font-medium">Tableflow cannot find the tables.</span> Enable it only after the three Flink topics exist, then wait for the first snapshot.</li>
+        </ul>
     </div>
 </body>
 </html>

@@ -1,11 +1,23 @@
 data "confluent_organization" "main" {}
 
 resource "confluent_environment" "demo" {
+  count        = var.environment_id == "" ? 1 : 0
   display_name = var.prefix
 
   stream_governance {
     package = var.stream_governance_package
   }
+}
+
+data "confluent_environment" "existing" {
+  count = var.environment_id == "" ? 0 : 1
+  id    = var.environment_id
+}
+
+locals {
+  environment_id            = var.environment_id == "" ? confluent_environment.demo[0].id : data.confluent_environment.existing[0].id
+  environment_display_name  = var.environment_id == "" ? confluent_environment.demo[0].display_name : data.confluent_environment.existing[0].display_name
+  environment_resource_name = var.environment_id == "" ? confluent_environment.demo[0].resource_name : data.confluent_environment.existing[0].resource_name
 }
 
 resource "confluent_kafka_cluster" "main" {
@@ -16,13 +28,13 @@ resource "confluent_kafka_cluster" "main" {
   standard {}
 
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
 }
 
 data "confluent_schema_registry_cluster" "main" {
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
 
   depends_on = [confluent_kafka_cluster.main]
@@ -48,13 +60,13 @@ resource "confluent_service_account" "statements_runner" {
 resource "confluent_role_binding" "app_manager_env_admin" {
   principal   = "User:${confluent_service_account.app_manager.id}"
   role_name   = "EnvironmentAdmin"
-  crn_pattern = confluent_environment.demo.resource_name
+  crn_pattern = local.environment_resource_name
 }
 
 resource "confluent_role_binding" "statements_runner_env_admin" {
   principal   = "User:${confluent_service_account.statements_runner.id}"
   role_name   = "EnvironmentAdmin"
-  crn_pattern = confluent_environment.demo.resource_name
+  crn_pattern = local.environment_resource_name
 }
 
 resource "confluent_role_binding" "app_manager_assigner" {
@@ -83,7 +95,7 @@ resource "confluent_api_key" "kafka" {
     kind        = confluent_kafka_cluster.main.kind
 
     environment {
-      id = confluent_environment.demo.id
+      id = local.environment_id
     }
   }
 
@@ -106,7 +118,7 @@ resource "confluent_api_key" "schema_registry" {
     kind        = data.confluent_schema_registry_cluster.main.kind
 
     environment {
-      id = confluent_environment.demo.id
+      id = local.environment_id
     }
   }
 
@@ -134,7 +146,7 @@ resource "confluent_api_key" "flink" {
     kind        = data.confluent_flink_region.main.kind
 
     environment {
-      id = confluent_environment.demo.id
+      id = local.environment_id
     }
   }
 
@@ -160,7 +172,7 @@ resource "confluent_api_key" "tableflow" {
     kind        = "Tableflow"
 
     environment {
-      id = confluent_environment.demo.id
+      id = local.environment_id
     }
   }
 
@@ -174,7 +186,7 @@ resource "confluent_flink_compute_pool" "main" {
   max_cfu      = var.flink_max_cfu
 
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
 
   depends_on = [

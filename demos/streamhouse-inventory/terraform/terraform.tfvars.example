@@ -1,8 +1,13 @@
 confluent_cloud_api_key    = "<cloud-api-key>"
 confluent_cloud_api_secret = "<cloud-api-secret>"
 
-# Re-skin the resource names for a specific customer meeting.
-prefix = "demand-forecast-demo"
+# Leave empty to create a new environment named from prefix.
+# Or set an existing environment id, for example "env-abc123".
+# That environment must already have Stream Governance Advanced.
+environment_id = ""
+
+# Used when environment_id is empty, and always used for the demo cluster name.
+prefix = "streamhouse-inventory"
 
 cloud  = "AWS"
 region = "us-east-1"
@@ -10,3 +15,6 @@ region = "us-east-1"
 # Set to true if your org is enrolled in the AI_FORECAST Early Access Program
 # (IBM Granite TTM time-series foundation model hosted by Confluent).
 enable_ai_forecast = false
+
+# Turn on after `make gen` is running and Flink has created the derived topics.
+enable_tableflow = false

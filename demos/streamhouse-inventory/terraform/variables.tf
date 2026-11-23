@@ -11,9 +11,15 @@ variable "confluent_cloud_api_secret" {
 }
 
 variable "prefix" {
-  description = "Prefix used for the environment, cluster, service accounts and keys. Use a customer short name to re-skin, e.g. 'acme-demand'."
+  description = "Prefix used for a new environment, the cluster, service accounts and keys. Ignored as an environment name when environment_id is set."
   type        = string
-  default     = "demand-forecast-demo"
+  default     = "streamhouse-inventory"
+}
+
+variable "environment_id" {
+  description = "Existing Confluent Cloud environment to deploy the demo into. Leave empty to create a new environment named from prefix. An existing environment must already have Stream Governance Advanced, because the mock producer enforces schema rules."
+  type        = string
+  default     = ""
 }
 
 variable "cloud" {
@@ -59,7 +65,7 @@ variable "enable_ai_forecast" {
 }
 
 variable "enable_tableflow" {
-  description = "Materialize the demand and forecast topics as Iceberg tables with Tableflow (Confluent-managed storage)."
+  description = "Materialize demand_windowed, demand_forecast, and stockout_risk as Iceberg tables. Leave false for the first apply. Turn it on after `make gen` has been running and those Flink tables exist."
   type        = bool
-  default     = true
+  default     = false
 }

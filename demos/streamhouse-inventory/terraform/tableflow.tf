@@ -6,14 +6,14 @@ locals {
     "stockout_risk",
   ]) : toset([])
 
-  tableflow_catalog_uri = "https://tableflow.${var.region}.${lower(var.cloud)}.confluent.cloud/iceberg/catalog/organizations/${data.confluent_organization.main.id}/environments/${confluent_environment.demo.id}"
+  tableflow_catalog_uri = "https://tableflow.${var.region}.${lower(var.cloud)}.confluent.cloud/iceberg/catalog/organizations/${data.confluent_organization.main.id}/environments/${local.environment_id}"
 }
 
 resource "confluent_tableflow_topic" "derived" {
   for_each = local.tableflow_topics
 
   environment {
-    id = confluent_environment.demo.id
+    id = local.environment_id
   }
   kafka_cluster {
     id = confluent_kafka_cluster.main.id
