@@ -224,11 +224,26 @@
       border-radius: 8px;
       background: #fff;
     }
+    [data-tab-panel="summary"] .card-title {
+      width: 100%;
+    }
+    [data-tab-panel="summary"] .card-title > span:first-child {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      flex: 1 1 280px;
+    }
     #day-summary-note {
       display: block;
       margin-top: 4px;
-      max-width: 78ch;
+      max-width: 70ch;
       font-weight: 400;
+      white-space: normal;
+    }
+    #day-kpis {
+      width: 100%;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     }
     .day-group { margin-top: 16px; }
     .day-group h3 {
@@ -641,11 +656,40 @@
       const clock = when ? new Date(when).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
       return { what, clock, status: r.status || "", who: r.decided_by || "", result: r.result || "" };
     }
+    function allDecisions(agent) {
+      const recs = [...(agent.recommendations || [])];
+      const seen = new Set(recs.map((r) => r.id).filter(Boolean));
+      for (const d of agent.decisions || []) {
+        if (d.id && seen.has(d.id)) continue;
+        if (d.id) seen.add(d.id);
+        const person = d.approved_by && !/auto|agent/i.test(d.approved_by);
+        recs.push({
+          id: d.id,
+          t: d.t,
+          decided_t: d.t,
+          status: person ? "APPROVED" : "AUTO",
+          action: d.action,
+          sku: d.sku,
+          product: d.product,
+          channel: d.channel,
+          region: d.region || d.to_region,
+          from_region: d.from_region,
+          to_region: d.to_region,
+          units: d.units || 0,
+          executed_units: d.units || 0,
+          price: d.price || 0,
+          decided_by: person ? d.approved_by : "inventory agent",
+          result: d.headline || d.action_text || "",
+          proposal_text: d.action_text || d.headline || "",
+        });
+      }
+      return recs;
+    }
     window.renderRecHistory = function (agent) {
       const history = document.getElementById("rec-history");
       const humans = document.getElementById("human-actions");
       if (!history || !humans || !agent) return;
-      const recs = agent.recommendations || [];
+      const recs = allDecisions(agent);
       const past = recs.filter((r) => r.status !== "PENDING")
         .sort((a, b) => (b.decided_t || b.t) - (a.decided_t || a.t));
       const acted = recs.filter((r) => r.decided_by && !/agent|auto/i.test(r.decided_by))
@@ -679,7 +723,7 @@
       const list = document.getElementById("day-decisions");
       const picker = document.getElementById("day-picker");
       if (!kpis || !list || !picker || !agent) return;
-      const decided = (agent.recommendations || [])
+      const decided = allDecisions(agent)
         .filter((r) => r.status !== "PENDING" && r.status !== "WITHDRAWN" && (r.decided_t || r.t))
         .sort((a, b) => (a.decided_t || a.t) - (b.decided_t || b.t));
       const days = [...new Set(decided.map((r) => dayKey(r.decided_t || r.t)))];
@@ -713,6 +757,7 @@
       ];
       kpis.innerHTML = tiles.map(([value, label]) => `<div class="kpi"><div class="value">${value}</div><div class="label">${label}</div></div>`).join("");
       const whoFor = (r) => {
+        if (r.action === "ESCALATE") return "Escalated by the agent";
         if (r.status === "WITHDRAWN") return "Withdrawn by the agent";
         if (r.status === "AUTO") return "Done by the agent";
         if (r.status === "REJECTED") return `Rejected by ${r.decided_by || "a person"}`;
@@ -725,6 +770,7 @@
         const product = r.product || r.sku || "item";
         const channel = channelLabel(r.channel);
         const where = channel ? `, ${channel}` : "";
+        if (r.action === "ESCALATE") return r.result || `Escalate ${product}. No other region can spare stock.`;
         if (r.action === "ORDER") return `Order ${units} × ${product} from the warehouse for ${placeName(r.to_region)}${where}`;
         if (r.action === "MARKDOWN") return `Mark down ${product}${r.region ? ` in ${placeName(r.region)}` : ""}${where}`;
         if (r.from_region || r.to_region) return `Move ${units} × ${product} from ${placeName(r.from_region)} to ${placeName(r.to_region)}${where}`;
@@ -740,7 +786,7 @@
         return `<article class="history-item"><span class="muted">${whoFor(r)}${row.clock ? ` · ${row.clock}` : ""}</span><b>${decision}</b><div>${cost}</div>${outcome ? `<div>${outcome}</div>` : ""}</article>`;
       };
       if (!shown.length) {
-        list.innerHTML = `<div class="empty">No decisions on this day.</div>`;
+        list.innerHTML = `<div class="empty">${summaryDay === "all" ? "No decisions yet. They appear here after the agent acts." : "No decisions on this day."}</div>`;
         return;
       }
       const groups = summaryDay === "all" ? days : [summaryDay];

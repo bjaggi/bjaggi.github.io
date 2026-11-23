@@ -219,9 +219,11 @@ def profile():
 
 def full_snapshot(sku: str, region: str, channel: str) -> dict:
     view = agent.snapshot()
-    view["enabled"] = True
-    view["require_approval"] = False
-    view["recommendations"] = state.agent_recommendations()
+    streaming = state.agent_recommendations()
+    if streaming:
+        seen = {r.get("id") for r in streaming}
+        extra = [r for r in view["recommendations"] if r.get("id") not in seen]
+        view["recommendations"] = streaming + extra
     return state.snapshot(sku, region, channel) | {"agent": view, "scenario": SCENARIO or None}
 
 
