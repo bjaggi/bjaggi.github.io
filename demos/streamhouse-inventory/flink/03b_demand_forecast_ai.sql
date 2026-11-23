@@ -19,7 +19,7 @@ SELECT
   window_time,
   units_sold,
   revenue,
-  views,
+  `views`,
   cart_adds,
   promo_active,
   promo_discount_pct,

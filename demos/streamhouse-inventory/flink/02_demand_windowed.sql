@@ -18,7 +18,7 @@ SELECT
   window_time,
   CAST(SUM(units_sold) AS DOUBLE)              AS units_sold,
   ROUND(SUM(revenue), 2)                       AS revenue,
-  CAST(SUM(views) AS BIGINT)                   AS views,
+  CAST(SUM(`views`) AS BIGINT)                 AS `views`,
   CAST(SUM(cart_adds) AS BIGINT)               AS cart_adds,
   MAX(discount_pct)                            AS promo_discount_pct,
   MAX(discount_pct) > 0                        AS promo_active

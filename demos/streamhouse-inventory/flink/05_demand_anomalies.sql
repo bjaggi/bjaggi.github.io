@@ -15,7 +15,7 @@ SELECT
   channel,
   window_time,
   units_sold,
-  views,
+  `views`,
   cart_adds,
   promo_active,
   promo_discount_pct,

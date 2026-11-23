@@ -6,7 +6,7 @@ SELECT * FROM `orders`;
 SELECT * FROM `pos_sales`;
 
 -- 2. Demand per SKU / region / channel per period.
-SELECT sku, region, channel, window_end, units_sold, views, cart_adds, promo_active
+SELECT sku, region, channel, window_end, units_sold, `views`, cart_adds, promo_active
 FROM `demand_windowed`;
 
 -- 3. Forecast vs actual with confidence bounds for the hero SKU.

@@ -7,7 +7,7 @@ SELECT
   CAST('ONLINE' AS STRING)                      AS channel,
   units                                         AS units_sold,
   units * unit_price * (1 - discount_pct)       AS revenue,
-  CAST(0 AS INT)                                AS views,
+  CAST(0 AS INT)                                AS `views`,
   CAST(0 AS INT)                                AS cart_adds,
   discount_pct,
   event_time

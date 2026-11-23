@@ -8,7 +8,7 @@ SELECT
   window_start,
   window_end,
   SUM(units_sold)                                   AS units_last_6_periods,
-  SUM(views)                                        AS views_last_6_periods,
-  CAST(SUM(units_sold) AS DOUBLE) / NULLIF(SUM(views), 0) AS view_to_unit_conversion
+  SUM(`views`)                                      AS views_last_6_periods,
+  CAST(SUM(units_sold) AS DOUBLE) / NULLIF(SUM(`views`), 0) AS view_to_unit_conversion
 FROM HOP(TABLE `demand_signals`, DESCRIPTOR(event_time), INTERVAL '10' SECOND, INTERVAL '60' SECOND)
 GROUP BY sku, region, channel, window_start, window_end;
