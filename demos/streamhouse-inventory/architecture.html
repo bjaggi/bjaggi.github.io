@@ -642,52 +642,30 @@ ML_FORECAST(
         </ul>
 
         <h3 id="sample-code" class="text-lg font-semibold text-dark mb-2">Sample code</h3>
-        <p class="text-dark leading-relaxed mb-3">The demo pipeline calculates <span class="font-medium">stockout_risk</span>, but it does not yet run an agent. The statement below is the missing piece. Here is what it does:</p>
+        <p class="text-dark leading-relaxed mb-3">The demo pipeline runs the Streaming Agent <span class="font-medium">inventory_agent</span> on each risky <span class="font-medium">stockout_risk</span> row. Here is what it does:</p>
         <ol class="list-decimal pl-5 space-y-2 text-dark leading-relaxed mb-4">
             <li>Reads <span class="font-medium">stockout_risk</span> (this is the <span class="font-medium">inventory.health</span> topic).</li>
             <li>Asks the Streaming Agent for one decision.</li>
             <li>Inserts the result into a different table, <span class="font-medium">ai_recommendations</span> (this is the <span class="font-medium">ai.recommendations</span> topic).</li>
         </ol>
-        <p class="text-dark leading-relaxed mb-4">The same file is in the repo at <a class="text-primary hover:text-dark font-semibold" href="flink/06_inventory_agent.sql">flink/06_inventory_agent.sql</a>. It is a sample, so the demo Terraform does not deploy it.</p>
+        <p class="text-dark leading-relaxed mb-4">Terraform deploys this with the rest of the Flink jobs. The model is a Confluent managed LLM, so there is no external API key. On AWS the model is <span class="font-medium">anthropic.claude-sonnet-4-6</span>. The statements are <a class="text-primary hover:text-dark font-semibold" href="flink/06b_model.sql">flink/06b_model.sql</a>, <a class="text-primary hover:text-dark font-semibold" href="flink/06c_agent.sql">flink/06c_agent.sql</a>, and <a class="text-primary hover:text-dark font-semibold" href="flink/06e_run_agent.sql">flink/06e_run_agent.sql</a>. The agent replies with one line, <span class="font-medium">ORDER</span> or <span class="font-medium">MARKDOWN</span>, and Flink writes that line to <span class="font-medium">ai_recommendations</span>.</p>
         <pre class="sql mb-4">CREATE AGENT `inventory_agent`
 USING MODEL `inventory_llm`
-USING PROMPT 'You are the inventory agent for one product, region, and channel. Read the health row in the message. Call find_spare_stock and supplier_timing before you decide. Return one line only: TRANSFER from-region to-region units, or MARKDOWN region discount, or ESCALATE. Use TRANSFER when another region can spare units after keeping its own cover. The unit count is the smaller of what this location needs and what the donor can spare. Use ESCALATE when no region can spare stock and a supplier order would arrive after the stock-out. Use MARKDOWN when this location is overstocked and no other region is short. Do not invent a transfer. Do not move stock.'
-USING TOOLS `find_spare_stock`, `supplier_timing`
+USING PROMPT 'You are the inventory streaming agent. Reply with exactly one line: ORDER &lt;region&gt; &lt;units&gt; when the row is OUT_OF_STOCK or HIGH, or MARKDOWN &lt;region&gt; 0.2 when it is OVERSTOCK.'
 WITH (
-  'max_iterations' = '5'
+  'max_iterations' = '3'
 );
 
--- Read stockout_risk. Write the decision to a different table.
 INSERT INTO `ai_recommendations`
 SELECT
-  h.sku,
-  h.region,
-  h.channel,
-  h.window_time,
+  h.sku, h.region, h.channel, h.window_time,
   agent.response AS decision
 FROM `stockout_risk` AS h,
-LATERAL TABLE(
-  AI_RUN_AGENT(
-    'inventory_agent',
-    CONCAT(
-      'sku=', h.sku,
-      ', region=', h.region,
-      ', channel=', h.channel,
-      ', on_hand=', CAST(h.on_hand AS STRING),
-      ', on_order=', CAST(h.on_order AS STRING),
-      ', forecast_next=', CAST(h.forecast_next AS STRING),
-      ', periods_of_cover=', CAST(h.periods_of_cover AS STRING),
-      ', risk=', h.risk_level,
-      ', promo_active=', CAST(h.promo_active AS STRING)
-    ),
-    CONCAT(h.sku, '|', h.region, '|', h.channel)
-  )
-) AS agent
-WHERE h.risk_level IN ('OUT_OF_STOCK', 'HIGH', 'MEDIUM', 'OVERSTOCK');</pre>
+LATERAL TABLE(AI_RUN_AGENT('inventory_agent', h.risk_level, CONCAT(h.sku, '|', h.region, '|', h.channel))) AS agent
+WHERE h.risk_level IN ('OUT_OF_STOCK', 'HIGH', 'OVERSTOCK');</pre>
         <p class="text-dark leading-relaxed mb-2"><span class="font-medium">Before you run it:</span></p>
         <ul class="list-disc pl-5 space-y-1 text-dark leading-relaxed mb-4">
-            <li>Replace the model connection with one from your own environment.</li>
-            <li>Register the two lookup functions before you create the tools.</li>
+            <li>Run <span class="font-medium">make up</span>. Terraform creates the managed model, the agent, and the insert. If the model name is not in your region, run <span class="font-medium">SHOW MODELS</span> and set <span class="font-medium">managed_model_name</span> to that name without the <span class="font-medium">system.</span> prefix.</li>
             <li>Healthy rows are filtered out by the <span class="font-medium">WHERE</span> clause, so the model is not called when nothing needs a decision.</li>
         </ul>
         <p class="text-dark leading-relaxed mb-4"><a class="text-primary hover:text-dark font-semibold" href="https://docs.confluent.io/cloud/current/ai/streaming-agents/create-and-run-streaming-agents.html" target="_blank" rel="noopener noreferrer">Create and run Streaming Agents</a></p>
@@ -902,7 +880,7 @@ make dashboard</pre>
         <h3 id="poc-optional" class="text-lg font-semibold text-dark mb-2">Tableflow, the explainer, and the streaming agent</h3>
         <p class="text-dark leading-relaxed mb-3"><span class="font-medium">Tableflow.</span> From <span class="font-medium">demos/streamhouse-inventory</span>, after <span class="font-medium">demand_windowed</span>, <span class="font-medium">demand_forecast</span>, and <span class="font-medium">stockout_risk</span> are receiving records, set <span class="font-medium">enable_tableflow = true</span> in <span class="font-medium">terraform.tfvars</span> and run <span class="font-medium">make up</span> again. The first Iceberg snapshot can take about 15 minutes. Then run <span class="font-medium">make analytics</span> to query the history with DuckDB.</p>
         <p class="text-dark leading-relaxed mb-3"><span class="font-medium">Forecast explanations.</span> Add the IBM watsonx.ai key, project id, and region URL to <span class="font-medium">.env.local</span>, then run <span class="font-medium">make explainer</span> in a third terminal. Without those settings the explainer still writes a plain-language template to <span class="font-medium">forecast_explanations</span>.</p>
-        <p class="text-dark leading-relaxed mb-8"><span class="font-medium">Flink Streaming Agent.</span> Terraform does not deploy <a class="text-primary hover:text-dark font-semibold" href="flink/06_inventory_agent.sql">flink/06_inventory_agent.sql</a>. That file is the sample from the architecture: it reads <span class="font-medium">stockout_risk</span> and writes <span class="font-medium">ai_recommendations</span>. Before it can run, replace the model connection and register the <span class="font-medium">find_spare_stock</span> and <span class="font-medium">supplier_timing</span> functions. Those functions are not in this repository. Until then, the recommendations you see come from the dashboard agent.</p>
+        <p class="text-dark leading-relaxed mb-8"><span class="font-medium">Flink Streaming Agent.</span> <span class="font-medium">make up</span> registers <span class="font-medium">inventory_llm</span> on the Confluent managed model and starts <span class="font-medium">inventory_agent</span>. <span class="font-medium">AI_RUN_AGENT</span> reads <span class="font-medium">stockout_risk</span> and writes one line to <span class="font-medium">ai_recommendations</span>. Restart <span class="font-medium">make dashboard</span> after that topic exists. The dashboard reads that topic.</p>
 
         <h3 id="poc-stop" class="text-lg font-semibold text-dark mb-2">Stop the proof of concept</h3>
         <p class="text-dark leading-relaxed mb-3">Stop the generator, the dashboard, and the explainer when you are not presenting. The Standard cluster, the Flink pool, and Stream Governance Advanced keep billing until you destroy them.</p>

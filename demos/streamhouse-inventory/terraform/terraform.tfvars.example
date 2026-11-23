@@ -18,3 +18,8 @@ enable_ai_forecast = false
 
 # Turn on after `make gen` is running and Flink has created the derived topics.
 enable_tableflow = false
+
+# Streaming agent uses the Confluent managed LLM on this cluster's cloud.
+# AWS default. If SHOW MODELS lists a different name, set it here without the system. prefix.
+enable_streaming_agent = true
+managed_model_name     = "anthropic.claude-sonnet-4-6"

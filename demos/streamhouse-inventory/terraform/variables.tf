@@ -69,3 +69,15 @@ variable "enable_tableflow" {
   type        = bool
   default     = false
 }
+
+variable "enable_streaming_agent" {
+  description = "Deploy the Flink streaming agent inventory_agent on the Confluent managed LLM. No external API key. The model name must exist in the compute-pool region. Run SHOW MODELS and change managed_model_name if it does not."
+  type        = bool
+  default     = true
+}
+
+variable "managed_model_name" {
+  description = "Confluent managed text model, without the system. prefix. AWS default is Anthropic Claude Sonnet. Azure example: openai.gpt-5.4-mini. Google Cloud example: google.gemini-3.5-flash."
+  type        = string
+  default     = "anthropic.claude-sonnet-4-6"
+}

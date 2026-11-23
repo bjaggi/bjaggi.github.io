@@ -231,3 +231,118 @@ resource "confluent_flink_statement" "demand_anomalies" {
 
   depends_on = [confluent_flink_statement.demand_windowed]
 }
+
+locals {
+  deploy_streaming_agent = var.deploy_flink_statements && var.enable_streaming_agent
+}
+
+resource "confluent_flink_statement" "agent_model" {
+  count = local.deploy_streaming_agent ? 1 : 0
+
+  organization {
+    id = data.confluent_organization.main.id
+  }
+  environment {
+    id = local.environment_id
+  }
+  compute_pool {
+    id = confluent_flink_compute_pool.main.id
+  }
+  principal {
+    id = confluent_service_account.statements_runner.id
+  }
+  statement     = replace(file("${local.flink_dir}/06b_model.sql"), "MANAGED_MODEL_NAME", var.managed_model_name)
+  properties    = local.flink_properties
+  stopped       = false
+  rest_endpoint = data.confluent_flink_region.main.rest_endpoint
+  credentials {
+    key    = confluent_api_key.flink.id
+    secret = confluent_api_key.flink.secret
+  }
+
+  depends_on = [confluent_flink_statement.stockout_risk]
+}
+
+resource "confluent_flink_statement" "inventory_agent" {
+  count = local.deploy_streaming_agent ? 1 : 0
+
+  organization {
+    id = data.confluent_organization.main.id
+  }
+  environment {
+    id = local.environment_id
+  }
+  compute_pool {
+    id = confluent_flink_compute_pool.main.id
+  }
+  principal {
+    id = confluent_service_account.statements_runner.id
+  }
+  statement     = file("${local.flink_dir}/06c_agent.sql")
+  properties    = local.flink_properties
+  stopped       = false
+  rest_endpoint = data.confluent_flink_region.main.rest_endpoint
+  credentials {
+    key    = confluent_api_key.flink.id
+    secret = confluent_api_key.flink.secret
+  }
+
+  depends_on = [confluent_flink_statement.agent_model]
+}
+
+resource "confluent_flink_statement" "ai_recommendations" {
+  count = local.deploy_streaming_agent ? 1 : 0
+
+  organization {
+    id = data.confluent_organization.main.id
+  }
+  environment {
+    id = local.environment_id
+  }
+  compute_pool {
+    id = confluent_flink_compute_pool.main.id
+  }
+  principal {
+    id = confluent_service_account.statements_runner.id
+  }
+  statement     = file("${local.flink_dir}/06d_recommendations.sql")
+  properties    = local.flink_properties
+  stopped       = false
+  rest_endpoint = data.confluent_flink_region.main.rest_endpoint
+  credentials {
+    key    = confluent_api_key.flink.id
+    secret = confluent_api_key.flink.secret
+  }
+
+  depends_on = [confluent_flink_statement.stockout_risk]
+}
+
+resource "confluent_flink_statement" "run_inventory_agent" {
+  count = local.deploy_streaming_agent ? 1 : 0
+
+  organization {
+    id = data.confluent_organization.main.id
+  }
+  environment {
+    id = local.environment_id
+  }
+  compute_pool {
+    id = confluent_flink_compute_pool.main.id
+  }
+  principal {
+    id = confluent_service_account.statements_runner.id
+  }
+  statement     = file("${local.flink_dir}/06e_run_agent.sql")
+  properties    = local.flink_properties
+  stopped       = false
+  rest_endpoint = data.confluent_flink_region.main.rest_endpoint
+  credentials {
+    key    = confluent_api_key.flink.id
+    secret = confluent_api_key.flink.secret
+  }
+
+  depends_on = [
+    confluent_flink_statement.inventory_agent,
+    confluent_flink_statement.ai_recommendations,
+  ]
+}

@@ -22,7 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from common.config import consumer_conf, load_profile, schema_registry_conf
 
 from .agent import InventoryAgent
-from .state import DemandState
+from .state import DemandState, ms
 
 log = logging.getLogger("dashboard")
 STATIC = Path(__file__).parent / "static"
@@ -51,6 +51,61 @@ def execute(action: str, body: dict) -> dict:
 agent = InventoryAgent(PROFILE, state, execute)
 app = FastAPI(title="Real-time demand and inventory management dashboard")
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
+
+
+def streaming_recommendation(v: dict) -> dict | None:
+    """Turn one Flink streaming-agent line into a dashboard recommendation."""
+    raw = (v.get("decision") or "").strip()
+    if not raw:
+        return None
+    parts = raw.splitlines()[0].split()
+    if not parts:
+        return None
+    action = parts[0].upper().strip(".,")
+    if action not in ("ORDER", "MARKDOWN", "TRANSFER"):
+        return None
+    sku, region, channel = v.get("sku"), v.get("region"), v.get("channel")
+    when = ms(v.get("window_time")) or int(time.time() * 1000)
+    product = next((p for p in PROFILE["products"] if p["sku"] == sku), {})
+    units, from_region, to_region, discount = 0, None, region, 0.0
+    try:
+        if action == "ORDER" and len(parts) >= 3:
+            to_region, units = parts[1], int(float(parts[2]))
+        elif action == "MARKDOWN" and len(parts) >= 3:
+            to_region, discount = parts[1], float(parts[2])
+        elif action == "TRANSFER" and len(parts) >= 4:
+            from_region, to_region, units = parts[1], parts[2], int(float(parts[3]))
+        else:
+            return None
+    except ValueError:
+        return None
+    return {
+        "id": f"{sku}-{region}-{channel}-{when}",
+        "t": when,
+        "decided_t": when,
+        "status": "AUTO",
+        "action": action,
+        "kind": "OVERSTOCK" if action == "MARKDOWN" else "STOCKOUT",
+        "sku": sku,
+        "product": product.get("name") or sku,
+        "channel": channel,
+        "region": region,
+        "from_region": from_region,
+        "to_region": to_region,
+        "units": units,
+        "executed_units": units,
+        "max_units": max(units, 1),
+        "price": float(product.get("price") or 0),
+        "rate": 1,
+        "dest_on_hand": 0,
+        "discount_pct": discount,
+        "periods": 8,
+        "detected": raw.splitlines()[0],
+        "found": "Decision from the Flink streaming agent inventory_agent.",
+        "proposal_text": raw.splitlines()[0],
+        "result": raw.splitlines()[0],
+        "decided_by": "Flink streaming agent",
+    }
 
 
 @app.middleware("http")
@@ -93,6 +148,39 @@ def consume_forever():
             log.exception("Failed to process message from %s", msg.topic())
 
 
+def consume_agent_forever():
+    """Read ai_recommendations, written by the Flink streaming agent."""
+    from confluent_kafka import Consumer
+    from confluent_kafka.schema_registry import SchemaRegistryClient
+    from confluent_kafka.schema_registry.avro import AvroDeserializer
+    from confluent_kafka.serialization import MessageField, SerializationContext
+
+    while True:
+        consumer = None
+        try:
+            deserializer = AvroDeserializer(SchemaRegistryClient(schema_registry_conf()))
+            consumer = Consumer(consumer_conf("demand-dashboard-agent"))
+            consumer.subscribe(["ai_recommendations"])
+            log.info("Dashboard consuming ai_recommendations from the streaming agent")
+            while True:
+                msg = consumer.poll(1.0)
+                if msg is None:
+                    continue
+                if msg.error():
+                    log.debug("agent consumer: %s", msg.error())
+                    continue
+                value = deserializer(msg.value(), SerializationContext(msg.topic(), MessageField.VALUE))
+                rec = streaming_recommendation(value) if value else None
+                if rec:
+                    state.add_agent_rec(rec)
+        except Exception:
+            log.exception("Streaming agent consumer stopped; retrying in 15s")
+            time.sleep(15)
+        finally:
+            if consumer is not None:
+                consumer.close()
+
+
 @app.on_event("startup")
 def start_background():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -102,6 +190,7 @@ def start_background():
         threading.Thread(target=run_synthetic, args=(state, PROFILE), daemon=True).start()
     else:
         threading.Thread(target=consume_forever, daemon=True, name="consumer").start()
+        threading.Thread(target=consume_agent_forever, daemon=True, name="agent-consumer").start()
     threading.Thread(target=agent.run_forever, daemon=True, name="agent").start()
 
 
@@ -129,7 +218,11 @@ def profile():
 
 
 def full_snapshot(sku: str, region: str, channel: str) -> dict:
-    return state.snapshot(sku, region, channel) | {"agent": agent.snapshot(), "scenario": SCENARIO or None}
+    view = agent.snapshot()
+    view["enabled"] = True
+    view["require_approval"] = False
+    view["recommendations"] = state.agent_recommendations()
+    return state.snapshot(sku, region, channel) | {"agent": view, "scenario": SCENARIO or None}
 
 
 @app.get("/api/snapshot")

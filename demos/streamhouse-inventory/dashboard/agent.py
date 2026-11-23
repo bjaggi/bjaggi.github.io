@@ -46,7 +46,7 @@ class InventoryAgent:
         self.markdown_pct = markdown_pct
         self.markdown_periods = markdown_periods
 
-        self.enabled = True
+        self.enabled = False
         self.require_approval = True
         self.pending: dict[str, dict] = {}
         self.rejected_until: dict[tuple, int] = {}

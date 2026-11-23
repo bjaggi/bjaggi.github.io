@@ -36,6 +36,7 @@ class DemandState:
         self.promo_history: dict[str, dict] = {}
         self.model = None
         self.counts = defaultdict(int)
+        self.agent_recs: deque = deque(maxlen=100)
 
     def _bump(self, topic: str):
         self.version += 1
@@ -109,6 +110,15 @@ class DemandState:
                 if v["promo_id"] in self.promo_history:
                     self.promo_history[v["promo_id"]]["end_t"] = row["event_time"]
             self._bump("promotion")
+
+    def add_agent_rec(self, rec: dict):
+        with self.lock:
+            self.agent_recs.appendleft(rec)
+            self._bump("agent")
+
+    def agent_recommendations(self) -> list:
+        with self.lock:
+            return list(self.agent_recs)
 
     # ------------------------------------------------------------- queries
 

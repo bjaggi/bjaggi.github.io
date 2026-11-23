@@ -623,7 +623,7 @@ function renderRecs(a) {
 
   if (!shown.length) {
     list.innerHTML = `<div class="empty">${recs.length ? "No recommendations match this filter."
-      : a.enabled ? "The agent is watching every location. Recommendations appear here when stock runs low or piles up."
+      : a.enabled ? "The Flink streaming agent is watching stockout_risk. A decision shows up here when a location is short or overstocked."
       : "The agent is off. Turn it on with AI agent on the Trend & Forecast tab."}</div>`;
     return;
   }
