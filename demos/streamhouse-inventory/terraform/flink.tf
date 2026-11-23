@@ -251,7 +251,7 @@ resource "confluent_flink_statement" "agent_model" {
   principal {
     id = confluent_service_account.statements_runner.id
   }
-  statement     = replace(file("${local.flink_dir}/06b_model.sql"), "MANAGED_MODEL_NAME", var.managed_model_name)
+  statement     = replace(file("${path.module}/sql/06b_model.sql"), "MANAGED_MODEL_NAME", var.managed_model_name)
   properties    = local.flink_properties
   stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint
@@ -278,7 +278,7 @@ resource "confluent_flink_statement" "inventory_agent" {
   principal {
     id = confluent_service_account.statements_runner.id
   }
-  statement     = file("${local.flink_dir}/06c_agent.sql")
+  statement     = file("${path.module}/sql/06c_agent.sql")
   properties    = local.flink_properties
   stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint
@@ -305,7 +305,7 @@ resource "confluent_flink_statement" "ai_recommendations" {
   principal {
     id = confluent_service_account.statements_runner.id
   }
-  statement     = file("${local.flink_dir}/06d_recommendations.sql")
+  statement     = file("${path.module}/sql/06d_recommendations.sql")
   properties    = local.flink_properties
   stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint
@@ -332,7 +332,7 @@ resource "confluent_flink_statement" "run_inventory_agent" {
   principal {
     id = confluent_service_account.statements_runner.id
   }
-  statement     = file("${local.flink_dir}/06e_run_agent.sql")
+  statement     = file("${path.module}/sql/06e_run_agent.sql")
   properties    = local.flink_properties
   stopped       = false
   rest_endpoint = data.confluent_flink_region.main.rest_endpoint

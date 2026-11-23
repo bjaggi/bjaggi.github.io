@@ -1,9 +1,9 @@
--- Deployed by Terraform with the other Flink statements.
--- The model is a Confluent managed LLM. No external API key.
---   06b_model.sql           inventory_llm on the managed model
---   06c_agent.sql           streaming agent inventory_agent
---   06d_recommendations.sql output table ai_recommendations
---   06e_run_agent.sql       AI_RUN_AGENT reads stockout_risk and writes one decision
+-- The streaming agent statements live in terraform/sql so Terraform can
+-- read them from inside the module. Apply order:
+--   sql/06b_model.sql           managed model inventory_llm
+--   sql/06c_agent.sql           streaming agent inventory_agent
+--   sql/06d_recommendations.sql output table ai_recommendations
+--   sql/06e_run_agent.sql       AI_RUN_AGENT reads stockout_risk and writes one decision
 --
 -- On AWS the default model is anthropic.claude-sonnet-4-6. Run SHOW MODELS
 -- in the Flink workspace and set managed_model_name if your region lists
